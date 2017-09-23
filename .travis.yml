@@ -1,0 +1,23 @@
+language: generic
+
+git:
+  depth: 1
+
+cache:
+  directories:
+    - $HOME/.stack/
+
+matrix:
+  include:
+    - os: linux
+      sudo: false
+      dist: trusty
+      group: edge
+
+before_install:
+  - mkdir -p ~/.local/bin
+  - export PATH=~/.local/bin:$PATH
+  - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+
+install:
+  - stack --no-terminal test nodejs-eval-test:nodejs-eval-test

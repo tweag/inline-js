@@ -1,0 +1,4 @@
+resolver: nightly-2017-09-20
+packages:
+  - nodejs-eval
+  - nodejs-eval-test

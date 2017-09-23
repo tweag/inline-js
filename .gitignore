@@ -1,0 +1,5 @@
+.stack-work/
+*.buildinfo
+*.cabal
+node_modules/
+.idea/

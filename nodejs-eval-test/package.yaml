@@ -1,0 +1,22 @@
+name: nodejs-eval-test
+version: 0.0.1
+
+custom-setup:
+  dependencies:
+    - base
+    - Cabal
+    - nodejs-eval
+
+ghc-options: -Wall
+
+dependencies:
+  - base
+  - nodejs-eval
+
+tests:
+  nodejs-eval-test:
+    source-dirs: test
+    main: nodejs-eval-test.hs
+    other-extensions:
+      - OverloadedStrings
+      - TemplateHaskell

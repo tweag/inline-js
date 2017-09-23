@@ -1,0 +1,48 @@
+name: nodejs-eval
+version: 0.0.1
+category: Language
+synopsis: Execute Node.js scripts in Haskell.
+stability: alpha
+maintainer: Shao Cheng <astrohavoc@gmail.com>
+copyright: (c) 2017 Shao Cheng
+license: BSD3
+github: TerrorJack/nodejs-eval
+
+extra-source-files:
+  - LICENSE
+  - README.md
+  - CHANGELOG.md
+
+data-files:
+  - jsbits/package.json
+  - jsbits/server.js
+
+custom-setup:
+  dependencies:
+    - base
+    - binary
+    - Cabal
+
+ghc-options: -Wall
+
+dependencies:
+  - aeson
+  - base
+  - binary
+  - bytestring
+  - Cabal
+  - directory
+  - filepath
+  - http-conduit
+  - http-types
+  - process
+  - template-haskell
+  - text
+  - unordered-containers
+
+library:
+  source-dirs: src
+  other-modules:
+    - Language.JavaScript.NodeJS.CabalHook.Splices
+  other-extensions:
+    - TemplateHaskell
