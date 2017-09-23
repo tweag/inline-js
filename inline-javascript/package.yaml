@@ -1,12 +1,12 @@
-name: nodejs-eval
+name: inline-javascript
 version: 0.0.1
 category: Language
 synopsis: Execute Node.js scripts in Haskell.
 stability: alpha
 maintainer: Shao Cheng <astrohavoc@gmail.com>
-copyright: (c) 2017 Shao Cheng
+copyright: (c) 2018 EURL Tweag
 license: BSD3
-github: TerrorJack/nodejs-eval
+github: TerrorJack/inline-javascript
 
 extra-source-files:
   - LICENSE
@@ -31,18 +31,27 @@ dependencies:
   - binary
   - bytestring
   - Cabal
+  - containers
   - directory
+  - extra
   - filepath
-  - http-conduit
+  - http-client
   - http-types
   - process
+  - stache
   - template-haskell
   - text
   - unordered-containers
 
 library:
   source-dirs: src
-  other-modules:
-    - Language.JavaScript.NodeJS.CabalHook.Splices
   other-extensions:
+    - DeriveAnyClass
+    - DuplicateRecordFields
+    - LambdaCase
+    - OverloadedStrings
+    - RankNTypes
+    - RecordWildCards
+    - ScopedTypeVariables
+    - StrictData
     - TemplateHaskell

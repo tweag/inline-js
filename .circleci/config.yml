@@ -1,0 +1,20 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: terrorjack/vanilla:haskell
+    steps:
+      - checkout
+      - restore_cache:
+          key: stack-work-
+      - run: stack --no-terminal --stack-yaml stack-nix.yaml build --haddock --test --no-run-tests
+      - save_cache:
+          key: stack-work-
+          paths:
+            - /root/.stack
+            - .stack-work
+            - inline-javascript/.stack-work
+            - inline-javascript-examples/.stack-work
+            - inline-javascript/.buildinfo
+            - inline-javascript-examples/.buildinfo
+      - run: stack --no-terminal --stack-yaml stack-nix.yaml test inline-javascript-examples:inline-javascript-examples

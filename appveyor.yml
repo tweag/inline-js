@@ -1,0 +1,19 @@
+version: 0.0.1.{build}
+
+shallow_clone: true
+
+cache:
+  - "%APPDATA%\\stack"
+  - .stack-work
+  - "inline-javascript\\.stack-work"
+  - "inline-javascript-examples\\.stack-work"
+  - "inline-javascript\\.buildinfo"
+  - "inline-javascript-examples\\.buildinfo"
+
+build_script:
+  - choco install haskell-stack nodejs
+  - stack --no-terminal setup > NUL
+  - stack --no-terminal build --haddock --test --no-run-tests
+
+test_script:
+  - stack --no-terminal test inline-javascript-examples:inline-javascript-examples

@@ -1,22 +1,25 @@
-name: nodejs-eval-test
+name: inline-javascript-examples
 version: 0.0.1
 
 custom-setup:
   dependencies:
     - base
     - Cabal
-    - nodejs-eval
+    - inline-javascript
 
 ghc-options: -Wall
 
 dependencies:
+  - aeson
   - base
-  - nodejs-eval
+  - inline-javascript
+  - template-haskell
 
 tests:
-  nodejs-eval-test:
+  inline-javascript-examples:
     source-dirs: test
-    main: nodejs-eval-test.hs
+    main: inline-javascript-examples.hs
     other-extensions:
       - OverloadedStrings
+      - QuasiQuotes
       - TemplateHaskell
