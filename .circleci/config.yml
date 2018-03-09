@@ -7,7 +7,7 @@ jobs:
       - checkout
       - restore_cache:
           key: stack-work-
-      - run: stack --no-terminal --stack-yaml stack-nix.yaml build --haddock --test --no-run-tests
+      - run: stack --no-terminal build --haddock --test --no-run-tests
       - save_cache:
           key: stack-work-
           paths:
@@ -17,4 +17,4 @@ jobs:
             - inline-javascript-examples/.stack-work
             - inline-javascript/.buildinfo
             - inline-javascript-examples/.buildinfo
-      - run: stack --no-terminal --stack-yaml stack-nix.yaml test inline-javascript-examples:inline-javascript-examples
+      - run: stack --no-terminal test inline-js-examples:inline-js-examples
