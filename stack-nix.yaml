@@ -1,9 +1,0 @@
-resolver: nightly-2018-02-28
-nix:
-  enable: true
-  packages:
-    - nodejs-9_x
-    - zlib
-packages:
-  - inline-javascript
-  - inline-javascript-examples
