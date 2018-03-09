@@ -3,7 +3,7 @@ version: 0.0.1
 category: Language
 synopsis: Execute Node.js scripts in Haskell.
 stability: alpha
-maintainer: Shao Cheng <astrohavoc@gmail.com>
+maintainer: Shao Cheng <shao.cheng@tweag.io>
 copyright: (c) 2018 EURL Tweag
 license: BSD3
 github: TerrorJack/inline-javascript
