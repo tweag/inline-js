@@ -1,15 +1,13 @@
-# `inline-javascript`
+# inline-js: execute Node.js scripts in Haskell
 
-[![CircleCI](https://circleci.com/gh/TerrorJack/inline-javascript/tree/master.svg?style=shield)](https://circleci.com/gh/TerrorJack/inline-javascript/tree/master)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/TerrorJack/inline-javascript?branch=master&svg=true)](https://ci.appveyor.com/project/TerrorJack/inline-javascript?branch=master)
-
-Execute Node.js scripts in Haskell.
+[![CircleCI](https://circleci.com/gh/TerrorJack/inline-js/tree/master.svg?style=shield)](https://circleci.com/gh/TerrorJack/inline-js/tree/master)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/TerrorJack/inline-js?branch=master&svg=true)](https://ci.appveyor.com/project/TerrorJack/inline-js?branch=master)
 
 ## Usage
 
 ### Adding dependency
 
-First, add `inline-javascript` to the [`custom-setup`](https://cabal.readthedocs.io/en/latest/developing-packages.html#custom-setup-scripts) stanza of your package's `.cabal` config. The `Setup.hs` script looks like:
+First, add `inline-js` to the [`custom-setup`](https://cabal.readthedocs.io/en/latest/developing-packages.html#custom-setup-scripts) stanza of your package's `.cabal` config. The `Setup.hs` script looks like:
 
 ```haskell
 import Language.JavaScript.Inline.Configure
@@ -31,7 +29,7 @@ main :: IO ()
 main = defaultMainWithInlineJS $ defaultConfigureOptions { commands = ["npm install left-pad"] }
 ```
 
-Then, add `inline-javascript` as a regular dependency for your build target. The above `Setup.hs` scripts will produce a `.buildinfo` file in the project directory, so you may want to add it to the `.gitignore`.
+Then, add `inline-js` as a regular dependency for your build target. The above `Setup.hs` scripts will produce a `.buildinfo` file in the project directory, so you may want to add it to the `.gitignore`.
 
 ### Usage
 
@@ -69,4 +67,14 @@ You can use the `js` quasi-quoter to embed inline JavaScript in Haskell. The inl
 
 `closeSession` will terminate the eval server. Remember to use a `bracket`-like function to make sure the finalizer is invoked even in case of exception, to prevent dangling `node` processes.
 
-The above demo is included in [`inline-javascript-examples`](inline-javascript-examples).
+The above demo is included in [`inline-js-examples`](inline-js-examples).
+
+## Sponsors
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[![Tweag I/O](https://www.tweag.io/img/tweag-small.png)](https://www.tweag.io)
+
+inline-js is maintained by [Tweag I/O](https://tweag.io/).
+
+Have questions? Need help? Tweet at
+[@tweagio](https://twitter.com/tweagio).
