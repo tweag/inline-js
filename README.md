@@ -3,6 +3,8 @@
 [![CircleCI](https://circleci.com/gh/TerrorJack/inline-js/tree/master.svg?style=shield)](https://circleci.com/gh/TerrorJack/inline-js/tree/master)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/github/TerrorJack/inline-js?branch=master&svg=true)](https://ci.appveyor.com/project/TerrorJack/inline-js?branch=master)
 
+**NOTE: this is alpha quality software. Please don't publicize widely.**
+
 ## Usage
 
 ### Adding dependency
