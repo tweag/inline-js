@@ -12,7 +12,7 @@ ghc-options: -Wall
 dependencies:
   - aeson
   - base
-  - inline-javascript
+  - inline-js
   - template-haskell
 
 tests:

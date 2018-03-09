@@ -1,4 +1,4 @@
-name: inline-javascript
+name: inline-js
 version: 0.0.1
 category: Language
 synopsis: Execute Node.js scripts in Haskell.
@@ -6,7 +6,7 @@ stability: alpha
 maintainer: Shao Cheng <shao.cheng@tweag.io>
 copyright: (c) 2018 EURL Tweag
 license: BSD3
-github: TerrorJack/inline-javascript
+github: tweag/inline-js
 
 extra-source-files:
   - LICENSE

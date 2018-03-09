@@ -13,8 +13,8 @@ jobs:
           paths:
             - /root/.stack
             - .stack-work
-            - inline-javascript/.stack-work
-            - inline-javascript-examples/.stack-work
-            - inline-javascript/.buildinfo
-            - inline-javascript-examples/.buildinfo
+            - inline-js/.stack-work
+            - inline-js-examples/.stack-work
+            - inline-js/.buildinfo
+            - inline-js-examples/.buildinfo
       - run: stack --no-terminal test inline-js-examples:inline-js-examples

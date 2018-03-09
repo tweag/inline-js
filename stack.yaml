@@ -1,8 +1,8 @@
 resolver: lts-10.8
 
 packages:
-  - inline-javascript
-  - inline-javascript-examples
+  - inline-js
+  - inline-js-examples
 
 nix:
   packages:
