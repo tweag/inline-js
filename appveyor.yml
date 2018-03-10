@@ -5,10 +5,9 @@ shallow_clone: true
 cache:
   - "%APPDATA%\\stack"
   - .stack-work
-  - "inline-js\\.stack-work"
-  - "inline-js-examples\\.stack-work"
-  - "inline-js\\.buildinfo"
-  - "inline-js-examples\\.buildinfo"
+  - "examples\\.stack-work"
+  - .buildinfo
+  - "examples\\.buildinfo"
 
 build_script:
   - choco install haskell-stack nodejs

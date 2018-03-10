@@ -1,11 +1,11 @@
-name: inline-javascript-examples
+name: inline-js-examples
 version: 0.0.1
 
 custom-setup:
   dependencies:
     - base
     - Cabal
-    - inline-javascript
+    - inline-js
 
 ghc-options: -Wall
 
@@ -16,9 +16,9 @@ dependencies:
   - template-haskell
 
 tests:
-  inline-javascript-examples:
+  inline-js-examples:
     source-dirs: test
-    main: inline-javascript-examples.hs
+    main: inline-js-examples.hs
     other-extensions:
       - OverloadedStrings
       - QuasiQuotes

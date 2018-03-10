@@ -1,7 +1,7 @@
 # inline-js: execute Node.js scripts in Haskell
 
-[![CircleCI](https://circleci.com/gh/TerrorJack/inline-js/tree/master.svg?style=shield)](https://circleci.com/gh/TerrorJack/inline-js/tree/master)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/TerrorJack/inline-js?branch=master&svg=true)](https://ci.appveyor.com/project/TerrorJack/inline-js?branch=master)
+[![CircleCI](https://circleci.com/gh/tweag/inline-js/tree/master.svg?style=shield)](https://circleci.com/gh/tweag/inline-js/tree/master)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/tweag/inline-js?branch=master&svg=true)](https://ci.appveyor.com/project/tweag/inline-js?branch=master)
 
 **NOTE: this is alpha quality software. Please don't publicize widely.**
 
@@ -69,7 +69,7 @@ You can use the `js` quasi-quoter to embed inline JavaScript in Haskell. The inl
 
 `closeSession` will terminate the eval server. Remember to use a `bracket`-like function to make sure the finalizer is invoked even in case of exception, to prevent dangling `node` processes.
 
-The above demo is included in [`inline-js-examples`](inline-js-examples).
+The above demo is included in [`examples`](examples).
 
 ## Sponsors
 
