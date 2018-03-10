@@ -35,8 +35,11 @@ dependencies:
   - directory
   - extra
   - filepath
+  - ghc-prim
+  - hashable
   - http-client
   - http-types
+  - primitive
   - process
   - stache
   - template-haskell
@@ -46,12 +49,15 @@ dependencies:
 library:
   source-dirs: src
   other-extensions:
+    - BangPatterns
     - DeriveAnyClass
     - DuplicateRecordFields
     - LambdaCase
+    - MagicHash
     - OverloadedStrings
     - RankNTypes
     - RecordWildCards
     - ScopedTypeVariables
     - StrictData
     - TemplateHaskell
+    - UnboxedTuples
