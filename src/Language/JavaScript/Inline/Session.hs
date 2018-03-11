@@ -108,7 +108,5 @@ newSession ConfigureOptions {..} = do
                   Error err -> throwIO $ ResultDecodingFailed js_src err
                   Success r -> pure r
               EvalError _ v -> throwIO $ EvalFailed js_src v
-      , closeSession =
-          do terminateProcess h_node
-             throwTo tid ConnectionClosed
+      , closeSession = terminateProcess h_node
       }

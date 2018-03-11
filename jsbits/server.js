@@ -1,8 +1,6 @@
 "use strict";
 
-const sandbox = {};
-Object.assign(sandbox, global);
-sandbox.require = require;
+const sandbox = Object.assign({require: require}, global);
 
 const vm = require("vm");
 const context = vm.createContext(sandbox);
