@@ -10,12 +10,14 @@
 module Language.JavaScript.Inline.Session
   ( JSSource
   , Session
+  , EvalException(..)
   , eval
   , closeSession
   , newSession
   ) where
 
 import Control.Concurrent
+import Control.Exception
 import Control.Monad
 import Data.Aeson
 import Data.Aeson.TH
@@ -51,6 +53,15 @@ data EvalResp
               , error :: Value }
 
 $(deriveFromJSON defaultOptions {sumEncoding = UntaggedValue} ''EvalResp)
+
+data EvalException
+  = EvalFailed { code :: JSSource
+               , error :: Value }
+  | ResultDecodingFailed { code :: JSSource
+                         , decodingError :: String }
+  deriving (Show)
+
+instance Exception EvalException
 
 newSession :: ConfigureOptions -> IO Session
 newSession ConfigureOptions {..} = do
@@ -94,15 +105,9 @@ newSession ConfigureOptions {..} = do
             case resp_v of
               EvalResult _ v ->
                 case fromJSON v of
-                  Error err ->
-                    fail $
-                    "Received result for code: " ++
-                    show js_src ++ "\nDecoding failed with: " ++ show err
+                  Error err -> throwIO $ ResultDecodingFailed js_src err
                   Success r -> pure r
-              EvalError _ v ->
-                fail $
-                "Evaluation failed for code: " ++
-                show js_src ++ "\nError message: " ++ show v
+              EvalError _ v -> throwIO $ EvalFailed js_src v
       , closeSession =
           do terminateProcess h_node
              throwTo tid ConnectionClosed
