@@ -1,7 +1,11 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Language.JavaScript.Inline.Session
   ( JSSource
@@ -11,11 +15,16 @@ module Language.JavaScript.Inline.Session
   , newSession
   ) where
 
+import Control.Concurrent
+import Control.Monad
 import Data.Aeson
+import Data.Aeson.TH
+import qualified Data.HashMap.Strict as HM
+import Data.IORef
 import qualified Data.Text as T
 import Language.JavaScript.Inline.Configure
-import Network.HTTP.Client
-import Network.HTTP.Types
+import Language.JavaScript.Inline.Internals
+import Network.WebSockets
 import System.Environment
 import System.IO
 import System.Process
@@ -28,8 +37,23 @@ data Session = Session
   , closeSession :: IO ()
   }
 
+data EvalReq = EvalReq
+  { id :: MsgId
+  , code :: JSSource
+  }
+
+$(deriveToJSON defaultOptions ''EvalReq)
+
+data EvalResp
+  = EvalResult { id :: MsgId
+               , result :: Value }
+  | EvalError { id :: MsgId
+              , error :: Value }
+
+$(deriveFromJSON defaultOptions {sumEncoding = UntaggedValue} ''EvalResp)
+
 newSession :: ConfigureOptions -> IO Session
-newSession conf_opts@ConfigureOptions {..} = do
+newSession ConfigureOptions {..} = do
   current_env <- getEnvironment
   (_, Just h_stdout, _, h_node) <-
     createProcess
@@ -39,33 +63,47 @@ newSession conf_opts@ConfigureOptions {..} = do
         , std_out = CreatePipe
         }
   node_port <- read <$> hGetLine h_stdout
-  init_req <- parseUrlThrow "http://localhost/eval"
-  let req =
-        init_req
-          { method = methodPost
-          , port = node_port
-          , requestHeaders =
-              [ (hAccept, "application/json")
-              , (hContentType, "application/json; charset=utf-8")
-              ]
-          , cookieJar = Nothing
-          }
-  mgr <-
-    newManager
-      defaultManagerSettings {managerResponseTimeout = responseTimeoutNone}
+  conn_ref <- newEmptyMVar
+  chan_pool <- newIORef HM.empty
+  tid <-
+    forkIO $
+    runClient "127.0.0.1" node_port "" $ \conn -> do
+      putMVar conn_ref conn
+      forever $ do
+        msg_buf <- receiveData conn
+        let Just eval_resp = decode' msg_buf
+        let resp_id =
+              case eval_resp of
+                EvalResult {id = x} -> x
+                EvalError {id = x} -> x
+        resp_chan <-
+          atomicModifyIORef' chan_pool $ \cp ->
+            (HM.delete resp_id cp, cp HM.! resp_id)
+        putMVar resp_chan eval_resp
   pure
     Session
       { eval =
           \js_src -> do
-            let req' =
-                  req {requestBody = RequestBodyLBS $ encode $ String js_src}
-            resp <- httpLbs req' mgr
-            case eitherDecode' $ responseBody resp of
-              Right v -> pure v
-              _ ->
+            conn <- readMVar conn_ref
+            msg_id <- newMsgId
+            resp_chan <- newEmptyMVar
+            atomicModifyIORef' chan_pool $ \cp ->
+              (HM.insert msg_id resp_chan cp, ())
+            sendBinaryData conn $ encode EvalReq {id = msg_id, code = js_src}
+            resp_v <- takeMVar resp_chan
+            case resp_v of
+              EvalResult _ v ->
+                case fromJSON v of
+                  Error err ->
+                    fail $
+                    "Received result for code: " ++
+                    show js_src ++ "\nDecoding failed with: " ++ show err
+                  Success r -> pure r
+              EvalError _ v ->
                 fail $
-                "Illegal response from eval server.\nConfigureOptions: " ++
-                show conf_opts ++
-                "\nRequest: " ++ show req' ++ "\nResponse: " ++ show resp
-      , closeSession = terminateProcess h_node
+                "Evaluation failed for code: " ++
+                show js_src ++ "\nError message: " ++ show v
+      , closeSession =
+          do terminateProcess h_node
+             throwTo tid ConnectionClosed
       }

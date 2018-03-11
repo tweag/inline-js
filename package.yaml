@@ -37,14 +37,13 @@ dependencies:
   - filepath
   - ghc-prim
   - hashable
-  - http-client
-  - http-types
   - primitive
   - process
   - stache
   - template-haskell
   - text
   - unordered-containers
+  - websockets
 
 library:
   source-dirs: src
@@ -54,6 +53,7 @@ library:
     - DuplicateRecordFields
     - LambdaCase
     - MagicHash
+    - OverloadedLists
     - OverloadedStrings
     - RankNTypes
     - RecordWildCards

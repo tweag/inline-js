@@ -8,6 +8,6 @@
     "url": "https://github.com/tweag/inline-js.git"
   },
   "dependencies": {
-    "express": "^4.16.2"
+    "ws": "^5.0.0"
   }
 }

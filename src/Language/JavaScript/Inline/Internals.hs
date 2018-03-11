@@ -18,7 +18,7 @@ import System.IO.Unsafe
 
 newtype MsgId = MsgId
   { unMsgId :: Int
-  } deriving (Show, Hashable, FromJSON, ToJSON)
+  } deriving (Show, Eq, Hashable, FromJSON, ToJSON)
 
 {-# NOINLINE msgIdRef #-}
 msgIdRef :: MutableByteArray RealWorld
