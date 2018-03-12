@@ -16,4 +16,17 @@ jobs:
             - examples/.stack-work
             - .buildinfo
             - examples/.buildinfo
-      - run: stack --no-terminal test inline-js-examples:inline-js-examples
+      - run: |
+          stack --no-terminal test inline-js-examples:inline-js-examples
+          if [ $CIRCLE_PROJECT_USERNAME == "tweag" ] && [ $CIRCLE_BRANCH == "master" ]
+          then
+            cd `stack path --local-doc-root`/inline-js-0.0.1
+            touch .nojekyll
+            git init
+            git config user.email "cheng.shao@tweag.io"
+            git config user.name "Shao Cheng"
+            git checkout -b gh-pages
+            git add --all
+            git commit -q --message="Haddock documentation of tweag/inline-js@$CIRCLE_SHA1"
+            git push https://TerrorJack:$GH_TOKEN@github.com/tweag/inline-js.git gh-pages --force
+          fi

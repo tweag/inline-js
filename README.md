@@ -69,7 +69,7 @@ You can use the `js` quasi-quoter to embed inline JavaScript in Haskell. The inl
 
 `closeSession` will terminate the eval server. Remember to use a `bracket`-like function to make sure the finalizer is invoked even in case of exception, to prevent dangling `node` processes.
 
-The above demo is included in [`examples`](examples).
+The above demo is included in [`examples`](examples). The haddock documentation of the `master` branch is available [here](https://tweag.github.io/inline-js).
 
 ## Sponsors
 
