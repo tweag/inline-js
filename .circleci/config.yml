@@ -20,7 +20,7 @@ jobs:
           stack --no-terminal test inline-js-examples:inline-js-examples
           if [ $CIRCLE_PROJECT_USERNAME == "tweag" ] && [ $CIRCLE_BRANCH == "master" ]
           then
-            cd `stack path --local-doc-root`/inline-js-0.0.1
+            cd `stack path --local-doc-root`
             touch .nojekyll
             git init
             git config user.email "cheng.shao@tweag.io"
