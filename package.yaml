@@ -17,12 +17,6 @@ data-files:
   - jsbits/package.json
   - jsbits/server.js
 
-custom-setup:
-  dependencies:
-    - base
-    - binary
-    - Cabal
-
 ghc-options: -Wall
 
 dependencies:
@@ -37,16 +31,21 @@ dependencies:
   - filepath
   - ghc-prim
   - hashable
+  - megaparsec
   - primitive
   - process
   - stache
   - template-haskell
   - text
+  - unliftio
   - unordered-containers
   - websockets
 
 library:
   source-dirs: src
+  other-modules:
+    - Language.JavaScript.Inline.Internals
+    - Paths_inline_js
   other-extensions:
     - BangPatterns
     - DeriveAnyClass

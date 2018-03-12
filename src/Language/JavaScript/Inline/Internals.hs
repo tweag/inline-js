@@ -15,6 +15,7 @@ import Data.Primitive.Types
 import GHC.Exts
 import GHC.Types
 import System.IO.Unsafe
+import UnliftIO
 
 newtype MsgId = MsgId
   { unMsgId :: Int
@@ -29,11 +30,12 @@ msgIdRef =
     pure mba
 
 {-# INLINEABLE newMsgId #-}
-newMsgId :: IO MsgId
+newMsgId :: MonadIO m => m MsgId
 newMsgId =
-  IO
-    (\s0 ->
-       case fetchAddIntArray# mba 0# 1# s0 of
-         (# s1, x #) -> (# s1, MsgId (I# x) #))
+  liftIO
+    (IO
+       (\s0 ->
+          case fetchAddIntArray# mba 0# 1# s0 of
+            (# s1, x #) -> (# s1, MsgId (I# x) #)))
   where
     !(MutableByteArray mba) = msgIdRef

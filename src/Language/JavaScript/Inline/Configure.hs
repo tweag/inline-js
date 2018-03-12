@@ -5,7 +5,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE StrictData #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Language.JavaScript.Inline.Configure
@@ -26,11 +25,13 @@ import Distribution.Simple hiding (Version)
 import Distribution.Simple.LocalBuildInfo
 import GHC.Generics
 import Language.Haskell.TH.Syntax
+import Paths_inline_js
 import System.Directory
 import System.Environment
 import System.Exit
 import System.FilePath
 import System.Process
+import UnliftIO
 
 deriving instance Lift Version
 
@@ -73,13 +74,13 @@ withInlineJS conf_opts@ConfigureOptions {..} hooks =
             'v':nv' ->
               let v = makeVersion $ map read $ splitOn "." nv'
                in unless (minNodeVer <= v) $
-                  fail $
+                  throwString $
                   "node version is " ++
                   show v ++
                   ", but minimum required version is " ++ show minNodeVer
-            _ -> fail $ "unrecognized output from node --version: " ++ nv
-          let src_datadir = $(runIO (decodeFile ".buildinfo") >>= liftString)
-              src_jsbits = src_datadir </> "jsbits"
+            _ -> throwString $ "unrecognized output from node --version: " ++ nv
+          src_datadir <- getDataDir
+          let src_jsbits = src_datadir </> "jsbits"
               target_datadir =
                 datadir (absoluteInstallDirs pkg_descr lbi NoCopyDest)
               target_jsbits = target_datadir </> "jsbits"
@@ -97,7 +98,7 @@ withInlineJS conf_opts@ConfigureOptions {..} hooks =
               case r of
                 ExitSuccess -> pure ()
                 ExitFailure x ->
-                  fail $
+                  throwString $
                   show command ++ " failed with exit code " ++ show x
           encodeFile ".buildinfo" conf_opts {jsbitsPath = target_jsbits}
           postConf hooks args flags pkg_descr lbi

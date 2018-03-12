@@ -2,9 +2,9 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-import Control.Exception
 import Data.Aeson
 import Language.JavaScript.Inline
+import UnliftIO
 
 main :: IO ()
 main = do
@@ -16,8 +16,8 @@ main = do
     print (answer :: Double)
     tmpdir <- eval s "require('os').tmpdir()"
     print (tmpdir :: String)
-    async <-
+    async_str <-
       eval
         s
         [js|new Promise((resolve, reject) => resolve('the answer is: ' + {{answer}}))|]
-    print (async :: String)
+    print (async_str :: String)

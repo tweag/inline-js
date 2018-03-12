@@ -16,13 +16,10 @@ module Language.JavaScript.Inline.Session
   , newSession
   ) where
 
-import Control.Concurrent
-import Control.Exception
 import Control.Monad
 import Data.Aeson
 import Data.Aeson.TH
 import qualified Data.HashMap.Strict as HM
-import Data.IORef
 import qualified Data.Text as T
 import Language.JavaScript.Inline.Configure
 import Language.JavaScript.Inline.Internals
@@ -30,13 +27,15 @@ import Network.WebSockets
 import System.Environment
 import System.IO
 import System.Process
+import UnliftIO
 
 type JSSource = T.Text
 
 data Session = Session
-  { eval :: forall a. FromJSON a =>
-                        JSSource -> IO a
-  , closeSession :: IO ()
+  { eval :: forall m a. (MonadIO m, FromJSON a) =>
+                          JSSource -> m a
+  , closeSession :: forall m. MonadIO m =>
+                                m ()
   }
 
 data EvalReq = EvalReq
@@ -63,21 +62,23 @@ data EvalException
 
 instance Exception EvalException
 
-newSession :: ConfigureOptions -> IO Session
+newSession :: MonadIO m => ConfigureOptions -> m Session
 newSession ConfigureOptions {..} = do
-  current_env <- getEnvironment
+  current_env <- liftIO getEnvironment
   (_, Just h_stdout, _, h_node) <-
+    liftIO $
     createProcess
       (proc "node" nodeArgs)
         { cwd = Just jsbitsPath
         , env = Just $ additionalEnv ++ current_env
         , std_out = CreatePipe
         }
-  node_port <- read <$> hGetLine h_stdout
+  node_port <- fmap read $ liftIO $ hGetLine h_stdout
   conn_ref <- newEmptyMVar
   chan_pool <- newIORef HM.empty
-  tid <-
-    forkIO $
+  ws_t <-
+    liftIO $
+    async $
     runClient "127.0.0.1" node_port "" $ \conn -> do
       putMVar conn_ref conn
       forever $ do
@@ -100,7 +101,8 @@ newSession ConfigureOptions {..} = do
             resp_chan <- newEmptyMVar
             atomicModifyIORef' chan_pool $ \cp ->
               (HM.insert msg_id resp_chan cp, ())
-            sendBinaryData conn $ encode EvalReq {id = msg_id, code = js_src}
+            liftIO $
+              sendBinaryData conn $ encode EvalReq {id = msg_id, code = js_src}
             resp_v <- takeMVar resp_chan
             case resp_v of
               EvalResult _ v ->
@@ -108,5 +110,7 @@ newSession ConfigureOptions {..} = do
                   Error err -> throwIO $ ResultDecodingFailed js_src err
                   Success r -> pure r
               EvalError _ v -> throwIO $ EvalFailed js_src v
-      , closeSession = terminateProcess h_node
+      , closeSession =
+          do liftIO $ terminateProcess h_node
+             cancel ws_t
       }

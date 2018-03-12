@@ -1,9 +1,7 @@
 "use strict";
 
-const sandbox = Object.assign({require: require}, global);
-
 const vm = require("vm");
-const context = vm.createContext(sandbox);
+const context = vm.createContext(Object.assign({require: require}, global));
 
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({host: "127.0.0.1", port: 0, perMessageDeflate: true});

@@ -8,7 +8,6 @@ module Language.JavaScript.Inline.Splices
   ( js
   ) where
 
-import Control.Exception
 import Data.Aeson
 import qualified Data.ByteString.Lazy as LBS
 import Data.Either
@@ -19,6 +18,7 @@ import Data.Traversable
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
 import Text.Mustache
+import UnliftIO
 
 js :: QuasiQuoter
 js =
@@ -28,7 +28,8 @@ js =
           case compileMustacheText "" $ T.pack js_tmp_str of
             Left err -> runIO $ throwIO err
             Right js_tmp@Template {..} ->
-              let fail_tmp = fail $ "Illegal template: " ++ show js_tmp
+              let fail_tmp =
+                    runIO $ throwString $ "Illegal template: " ++ show js_tmp
                in case M.toList templateCache of
                     [(_, ns)] -> do
                       l <-

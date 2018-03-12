@@ -1,5 +1,5 @@
 module Language.JavaScript.Inline
-  ( module Language.JavaScript.Inline.Configure
+  ( configureOptionsQ
   , module Language.JavaScript.Inline.Session
   , module Language.JavaScript.Inline.Splices
   ) where
