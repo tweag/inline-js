@@ -51,6 +51,7 @@ library:
     - ApplicativeDo
     - BangPatterns
     - DeriveAnyClass
+    - DeriveFunctor
     - DuplicateRecordFields
     - FlexibleInstances
     - GeneralizedNewtypeDeriving

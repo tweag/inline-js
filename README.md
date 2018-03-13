@@ -33,7 +33,7 @@ main = defaultMainWithInlineJS $ defaultConfigureOptions { commands = ["npm inst
 
 Then, add `inline-js` as a regular dependency for your build target. The above `Setup.hs` scripts will produce a `.buildinfo` file in the project directory, so you may want to add it to the `.gitignore`.
 
-### Usage
+### Using inline JavaScript
 
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -42,7 +42,8 @@ Then, add `inline-js` as a regular dependency for your build target. The above `
 
 import Control.Exception
 import Data.Aeson
-import Language.JavaScript.Inline
+import Language.JavaScript.Inline.Configure
+import Language.JavaScript.Inline.Session
 
 main :: IO ()
 main = do
@@ -68,6 +69,43 @@ Executing `newSession` will start the eval server. An eval server has a single V
 You can use the `js` quasi-quoter to embed inline JavaScript in Haskell. The inline JavaScript snippet can contain interpolations like `$(var)`. `var` is a Haskell binding in scope, and it will be marshalled from the Haskell world with a `ToJSON` instance.
 
 `closeSession` will terminate the eval server. Remember to use a `bracket`-like function to make sure the finalizer is invoked even in case of exception, to prevent dangling `node` processes.
+
+### Using `foreign import javascript`
+
+There is another higher-level wrapper for `Session` and its operations. `Language.JavaScript.Inline.MonadJS` provides a `MonadJS` class which supports `eval`, along with a `JST` monad transformer.
+
+Combined with `Language.JavaScript.Inline.Import.js`, we can actually use `foreign import javascript` in our code like this:
+
+```haskell
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+
+import Control.Monad.IO.Class
+import Data.Aeson
+import Language.JavaScript.Inline.Configure
+import Language.JavaScript.Inline.Import
+import Language.JavaScript.Inline.MonadJS
+
+$(js [d|
+
+  foreign import javascript "$(0) * $(1)" mul :: MonadJS m => Double -> Double -> m Double
+
+  foreign import javascript "require('os').tmpdir()" getTmpDir :: MonadJS m => m FilePath
+
+  foreign import javascript "new Promise(resolve => resolve('The answer is: ' + $(0)))" oracle :: (MonadJS m, ToJSON a) => a -> m String
+
+  |])
+
+main :: IO ()
+main =
+  runJST $(configureOptionsQ) $ do
+    answer <- mul 6 7
+    liftIO $ print answer
+    tmpdir <- getTmpDir
+    liftIO $ print tmpdir
+    s <- oracle answer
+    liftIO $ print s
+```
 
 The above demo is included in [`examples`](examples). The haddock documentation of the `master` branch is available [here](https://tweag.github.io/inline-js/inline-js-0.0.1/index.html).
 

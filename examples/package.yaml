@@ -13,14 +13,11 @@ dependencies:
   - aeson
   - base
   - inline-js
-  - template-haskell
-  - unliftio
 
 tests:
   inline-js-examples:
     source-dirs: test
     main: inline-js-examples.hs
     other-extensions:
-      - OverloadedStrings
       - QuasiQuotes
       - TemplateHaskell

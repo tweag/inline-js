@@ -5,7 +5,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Language.JavaScript.Inline.MonadJS
-  ( MonadJS(..)
+  ( JSSource
+  , MonadJS
+  , eval
   , JST
   , runJST
   ) where

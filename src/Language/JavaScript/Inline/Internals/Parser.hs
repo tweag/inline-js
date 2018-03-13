@@ -1,4 +1,5 @@
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE StrictData #-}
 
 module Language.JavaScript.Inline.Internals.Parser
@@ -12,10 +13,10 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import UnliftIO (throwIO)
 
-data Chunk
+data Chunk a
   = LitChunk String
-  | QuotedChunk String
-  deriving (Show)
+  | QuotedChunk a
+  deriving (Functor, Show)
 
 type Parser = Parsec Void String
 
@@ -25,7 +26,7 @@ parseQuotedChunk = do
   c <- between (char '(') (char ')') $ takeWhile1P Nothing (/= ')')
   pure c
 
-parseChunks :: Parser [Chunk]
+parseChunks :: Parser [Chunk String]
 parseChunks =
   (do x <- try (Right <$> parseQuotedChunk) <|> Left <$> anyChar
       cs <- parseChunks
@@ -38,7 +39,7 @@ parseChunks =
           Right c -> QuotedChunk c : cs) <|>
   pure []
 
-parseChunksIO :: String -> IO [Chunk]
+parseChunksIO :: String -> IO [Chunk String]
 parseChunksIO s =
   case runParser parseChunks "" s of
     Left err -> throwIO err
