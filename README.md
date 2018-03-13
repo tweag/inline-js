@@ -57,7 +57,7 @@ main = do
     async <-
       eval
         s
-        [js|new Promise((resolve, reject) => resolve('the answer is: ' + {{answer}}))|]
+        [js|new Promise((resolve, reject) => resolve('the answer is: ' + $(answer)))|]
     print (async :: String)
 ```
 
@@ -65,7 +65,7 @@ Executing `newSession` will start the eval server. An eval server has a single V
 
 `eval` accepts `Text` as a JavaScript source code, performs evaluation and returns the result. The result is marshalled to the Haskell world with a `FromJSON` instance, so you may need to annotate the result type if it can't be inferred from the context. Evaluation failure will raise an exception.
 
-You can use the `js` quasi-quoter to embed inline JavaScript in Haskell. The inline JavaScript snippet can contain interpolations like `{{var}}`. `var` is a Haskell binding in scope, and it will be marshalled from the Haskell world with a `ToJSON` instance.
+You can use the `js` quasi-quoter to embed inline JavaScript in Haskell. The inline JavaScript snippet can contain interpolations like `$(var)`. `var` is a Haskell binding in scope, and it will be marshalled from the Haskell world with a `ToJSON` instance.
 
 `closeSession` will terminate the eval server. Remember to use a `bracket`-like function to make sure the finalizer is invoked even in case of exception, to prevent dangling `node` processes.
 

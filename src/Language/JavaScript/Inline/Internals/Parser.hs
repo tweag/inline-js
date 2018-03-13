@@ -3,14 +3,14 @@
 
 module Language.JavaScript.Inline.Internals.Parser
   ( Chunk(..)
-  , Parser
-  , parseChunks
+  , parseChunksIO
   ) where
 
 import Data.Functor
 import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
+import UnliftIO (throwIO)
 
 data Chunk
   = LitChunk String
@@ -26,15 +26,20 @@ parseQuotedChunk = do
   pure c
 
 parseChunks :: Parser [Chunk]
-parseChunks = do
-  l <- w
-  pure $ foldr f [] l
-  where
-    w =
-      (do x <- try (Right <$> parseQuotedChunk) <|> Left <$> anyChar
-          cs <- w
-          pure $ x : cs) <|>
-      pure []
-    f (Left c) (LitChunk c':cs) = LitChunk (c : c') : cs
-    f (Left c) cs = LitChunk [c] : cs
-    f (Right c) cs = QuotedChunk c : cs
+parseChunks =
+  (do x <- try (Right <$> parseQuotedChunk) <|> Left <$> anyChar
+      cs <- parseChunks
+      pure $
+        case x of
+          Left c ->
+            case cs of
+              LitChunk c':cs' -> LitChunk (c : c') : cs'
+              _ -> LitChunk [c] : cs
+          Right c -> QuotedChunk c : cs) <|>
+  pure []
+
+parseChunksIO :: String -> IO [Chunk]
+parseChunksIO s =
+  case runParser parseChunks "" s of
+    Left err -> throwIO err
+    Right r -> pure r

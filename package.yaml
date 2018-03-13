@@ -25,7 +25,6 @@ dependencies:
   - binary
   - bytestring
   - Cabal
-  - containers
   - directory
   - extra
   - filepath
@@ -34,7 +33,6 @@ dependencies:
   - megaparsec
   - primitive
   - process
-  - stache
   - template-haskell
   - text
   - unliftio
@@ -49,6 +47,7 @@ library:
     - Language.JavaScript.Inline.Internals.Parser
     - Paths_inline_js
   other-extensions:
+    - ApplicativeDo
     - BangPatterns
     - DeriveAnyClass
     - DuplicateRecordFields

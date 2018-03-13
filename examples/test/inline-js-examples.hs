@@ -19,5 +19,5 @@ main = do
     async_str <-
       eval
         s
-        [js|new Promise((resolve, reject) => resolve('the answer is: ' + {{answer}}))|]
+        [js|new Promise((resolve, reject) => resolve('the answer is: ' + $(answer)))|]
     print (async_str :: String)
