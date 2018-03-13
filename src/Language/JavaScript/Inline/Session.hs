@@ -1,11 +1,8 @@
-{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Language.JavaScript.Inline.Session
   ( JSSource
@@ -18,18 +15,15 @@ module Language.JavaScript.Inline.Session
 
 import Control.Monad
 import Data.Aeson
-import Data.Aeson.TH
 import qualified Data.HashMap.Strict as HM
-import qualified Data.Text as T
 import Language.JavaScript.Inline.Configure
-import Language.JavaScript.Inline.Internals
+import Language.JavaScript.Inline.Internals.MsgId
+import Language.JavaScript.Inline.Internals.SessionTypes
 import Network.WebSockets
 import System.Environment
 import System.IO
 import System.Process
 import UnliftIO
-
-type JSSource = T.Text
 
 data Session = Session
   { eval :: forall m a. (MonadIO m, FromJSON a) =>
@@ -37,30 +31,6 @@ data Session = Session
   , closeSession :: forall m. MonadIO m =>
                                 m ()
   }
-
-data EvalReq = EvalReq
-  { id :: MsgId
-  , code :: JSSource
-  }
-
-$(deriveToJSON defaultOptions ''EvalReq)
-
-data EvalResp
-  = EvalResult { id :: MsgId
-               , result :: Value }
-  | EvalError { id :: MsgId
-              , error :: Value }
-
-$(deriveFromJSON defaultOptions {sumEncoding = UntaggedValue} ''EvalResp)
-
-data EvalException
-  = EvalFailed { code :: JSSource
-               , error :: Value }
-  | ResultDecodingFailed { code :: JSSource
-                         , decodingError :: String }
-  deriving (Show)
-
-instance Exception EvalException
 
 newSession :: MonadIO m => ConfigureOptions -> m Session
 newSession ConfigureOptions {..} = do
