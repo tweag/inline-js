@@ -31,6 +31,7 @@ dependencies:
   - ghc-prim
   - hashable
   - megaparsec
+  - mtl
   - primitive
   - process
   - template-haskell
@@ -51,13 +52,18 @@ library:
     - BangPatterns
     - DeriveAnyClass
     - DuplicateRecordFields
+    - FlexibleInstances
+    - GeneralizedNewtypeDeriving
     - LambdaCase
     - MagicHash
+    - MultiParamTypeClasses
     - OverloadedLists
     - OverloadedStrings
     - RankNTypes
     - RecordWildCards
     - ScopedTypeVariables
+    - StandaloneDeriving
     - StrictData
     - TemplateHaskell
     - UnboxedTuples
+    - UndecidableInstances

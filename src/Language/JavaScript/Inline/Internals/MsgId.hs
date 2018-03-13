@@ -29,7 +29,7 @@ msgIdRef =
     writeByteArray mba 0 (0 :: Int)
     pure mba
 
-{-# INLINEABLE newMsgId #-}
+{-# INLINE newMsgId #-}
 newMsgId :: MonadIO m => m MsgId
 newMsgId =
   liftIO
