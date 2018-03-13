@@ -45,6 +45,8 @@ library:
   source-dirs: src
   other-modules:
     - Language.JavaScript.Inline.Internals
+    - Language.JavaScript.Inline.Internals.MsgId
+    - Language.JavaScript.Inline.Internals.Parser
     - Paths_inline_js
   other-extensions:
     - BangPatterns

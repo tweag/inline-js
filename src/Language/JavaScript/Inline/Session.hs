@@ -84,7 +84,7 @@ newSession ConfigureOptions {..} = do
       forever $ do
         msg_buf <- receiveData conn
         let Just eval_resp = decode' msg_buf
-        let resp_id =
+            resp_id =
               case eval_resp of
                 EvalResult {id = x} -> x
                 EvalError {id = x} -> x
