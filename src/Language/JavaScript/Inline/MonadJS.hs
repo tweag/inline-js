@@ -6,8 +6,7 @@
 
 module Language.JavaScript.Inline.MonadJS
   ( JSSource
-  , MonadJS
-  , eval
+  , MonadJS(..)
   , JST
   , runJST
   ) where
