@@ -6,10 +6,10 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: stack-work-gen2-
+          key: stack-work-gen4-
       - run: stack --no-terminal build --haddock --test --no-run-tests
       - save_cache:
-          key: stack-work-gen2-
+          key: stack-work-gen4-
           paths:
             - /root/.stack
             - .stack-work
