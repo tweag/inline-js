@@ -11,13 +11,14 @@ jobs:
           nix-channel --update
           nix-env -iA \
             nixpkgs.cacert \
-            nixpkgs.stack
+            nixpkgs.stack \
+            nixpkgs.strace
           mkdir ~/.stack
           printf "nix:\n  enable: true\n" > ~/.stack/config.yaml
       - checkout
       - restore_cache:
           key: stack-work-gen5-
-      - run: stack --no-terminal build --haddock --test --no-run-tests
+      - run: strace -e trace=open stack --no-terminal build --haddock --test --no-run-tests
       - save_cache:
           key: stack-work-gen5-
           paths:
