@@ -18,7 +18,9 @@ jobs:
       - checkout
       - restore_cache:
           key: stack-work-gen5-
-      - run: strace -e trace=open -f stack --no-terminal build --haddock --test --no-run-tests
+      - run: |
+          ls /etc/ssl/certs/
+          strace -e trace=open,execve -f stack --no-terminal build --haddock --test --no-run-tests
       - save_cache:
           key: stack-work-gen5-
           paths:
