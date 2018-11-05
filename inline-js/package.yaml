@@ -1,0 +1,49 @@
+name: inline-js
+version: 0.0.1
+category: Web
+stability: alpha
+maintainer: Shao Cheng <cheng.shao@tweag.io>
+copyright: (c) 2018 Tweag I/O
+license: BSD3
+github: tweag/inline-js
+
+extra-source-files:
+  - CHANGELOG.md
+  - LICENSE
+  - README.md
+
+data-files:
+  - jsbits/server.js
+
+ghc-options: -Wall
+
+dependencies:
+  - base
+  - binary
+  - bytestring
+  - containers
+  - filepath
+  - ghc-prim
+  - process
+  - stm
+  - text
+
+library:
+  source-dirs: src
+  other-modules: Paths_inline_js
+
+tests:
+  pingpong:
+    source-dirs: tests
+    main: pingpong.hs
+    ghc-options: -threaded -with-rtsopts=-N
+    dependencies:
+      - inline-js
+      - QuickCheck
+
+  eval:
+    source-dirs: tests
+    main: eval.hs
+    ghc-options: -threaded -with-rtsopts=-N
+    dependencies:
+      - inline-js
