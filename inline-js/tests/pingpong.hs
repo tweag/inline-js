@@ -1,11 +1,13 @@
 {-# LANGUAGE TypeApplications #-}
 
+import Control.Monad hiding (fail)
 import Control.Monad.Fail
 import Data.Int
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
+import Language.JavaScript.Inline.Command
+import Language.JavaScript.Inline.JSCode
 import Language.JavaScript.Inline.JSON
-import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 import Test.QuickCheck
@@ -34,14 +36,13 @@ genValue =
 
 main :: IO ()
 main =
-  withJSSession defJSSessionOpts $ \s ->
+  withJSSession defJSSessionOpts $ \s -> do
+    r <- evalTo parseJSRefRegion s newJSRefRegion
     quickCheckWith stdArgs {maxSuccess = 65536} $
-    monadicIO $
-    forAllM genValue $ \v ->
-      run $ do
-        _msg_id <- sendMsg s $ Ping v
-        _recv_msg <- recvMsg s _msg_id
-        case _recv_msg of
-          Pong _recv_v
-            | v == _recv_v -> pure ()
-          _ -> fail $ "pingpong: pong mismatch: " <> show (v, _recv_msg)
+      monadicIO $
+      forAllM genValue $ \v ->
+        run $ do
+          p <- evalTo parseJSRef s $ newJSRef r $ codeFromValue v
+          _recv_v <- eval s $ deRefJSRef r p
+          unless (v == _recv_v) $
+            fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)

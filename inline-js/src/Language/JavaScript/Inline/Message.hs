@@ -8,59 +8,42 @@ module Language.JavaScript.Inline.Message
   , decodeRecvMsg
   ) where
 
-import qualified Data.Text as Text
+import qualified Language.JavaScript.Inline.JSCode as JSCode
 import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.MessageCounter
 
-data SendMsg
-  = Ping JSON.Value
-  | Eval { evalCode :: Text.Text
-         , evalTimeout :: Maybe Double }
-  | EvalAsync { evalAsyncCode :: Text.Text
-              , evalAsyncTimeout, resolveAsyncTimeout :: Maybe Double }
-  deriving (Show)
+data SendMsg = Eval
+  { evalCode :: JSCode.JSCode
+  , evalTimeout, resolveTimeout :: Maybe Double
+  , isAsync :: Bool
+  } deriving (Show)
 
 encodeSendMsg :: MsgId -> SendMsg -> JSON.Value
 encodeSendMsg msg_id msg =
   case msg of
-    Ping v -> JSON.Array [_head, JSON.Number 0, v]
     Eval {..} ->
       JSON.Array
         [ _head
-        , JSON.Number 1
-        , JSON.Array [JSON.String evalCode, _maybe_number evalTimeout]
-        ]
-    EvalAsync {..} ->
-      JSON.Array
-        [ _head
-        , JSON.Number 2
-        , JSON.Array
-            [ JSON.String evalAsyncCode
-            , _maybe_number evalAsyncTimeout
-            , _maybe_number resolveAsyncTimeout
-            ]
+        , JSON.Number 0
+        , JSON.String $ JSCode.codeToString evalCode
+        , _maybe_number evalTimeout
+        , _maybe_number resolveTimeout
+        , JSON.Bool isAsync
         ]
   where
     _head = JSON.Number $ fromIntegral msg_id
     _maybe_number = maybe (JSON.Bool False) JSON.Number
 
-data RecvMsg
-  = Error JSON.Value
-  | Ready
-  | Pong JSON.Value
-  | Result JSON.Value
-  deriving (Show)
+data RecvMsg = Result
+  { isError :: Bool
+  , result :: JSON.Value
+  } deriving (Show)
 
 decodeRecvMsg :: JSON.Value -> Either String (MsgId, RecvMsg)
 decodeRecvMsg v =
   case v of
-    JSON.Array [JSON.Number _msg_id, JSON.Number 0, err] ->
-      Right (truncate _msg_id, Error err)
-    JSON.Array [JSON.Number 0, JSON.Number 1, JSON.Null] -> Right (0, Ready)
-    JSON.Array [JSON.Number _msg_id, JSON.Number 2, r] ->
-      Right (truncate _msg_id, Pong r)
-    JSON.Array [JSON.Number _msg_id, JSON.Number 3, r] ->
-      Right (truncate _msg_id, Result r)
+    JSON.Array [JSON.Number _msg_id, JSON.Number 0, JSON.Bool is_err, r] ->
+      Right (truncate _msg_id, Result {isError = is_err, result = r})
     _ -> _err
   where
     _err =
