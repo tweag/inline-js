@@ -21,11 +21,28 @@
     sendMsg([0, 0, err], true, "server.js: uncaughtException: ");
   });
 
+  const __jsref_regions = [undefined];
+
+  global.JSRef = class {
+    static newJSRefRegion() {
+      return __jsref_regions.push([undefined]) - 1;
+    }
+    static freeJSRefRegion(r) {
+      delete __jsref_regions[r];
+    }
+    static newJSRef(r, v) {
+      return __jsref_regions[r].push(v) - 1;
+    }
+    static deRefJSRef(r, p) {
+      return __jsref_regions[r][p];
+    }
+  };
+
+  const vm = require("vm");
+
   process.stdin.setEncoding("utf8");
 
   const readline = require("readline");
-
-  const vm = require("vm");
 
   const rl = readline.createInterface({
     input: process.stdin,
