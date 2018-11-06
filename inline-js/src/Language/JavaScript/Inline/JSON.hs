@@ -6,7 +6,7 @@ module Language.JavaScript.Inline.JSON
   , Object
   , Array
   , encode
-  , encodeLBS
+  , encodeLazyText
   , decode
   ) where
 
@@ -15,7 +15,6 @@ import Control.Monad hiding (fail)
 import Control.Monad.Fail
 import Data.Binary.Get
 import Data.Bits
-import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char
 import Data.Foldable
@@ -24,6 +23,10 @@ import Data.List
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Data.Text.Internal.Encoding.Utf8 as Text
+import qualified Data.Text.Lazy as LText
+import Data.Text.Lazy.Builder
+import Data.Text.Lazy.Builder.Int
+import Data.Text.Lazy.Builder.RealFloat
 import Prelude hiding (fail)
 
 data Value
@@ -41,36 +44,47 @@ type Object = Map.Map JSString Value
 
 type Array = [Value]
 
+encodeWord16 :: Int -> Builder
+encodeWord16 x =
+  fromString (replicate (4 - fromIntegral (LText.length t)) '0') <> b
+  where
+    b = hexadecimal x
+    t = toLazyText b
+
 encodeChar :: Char -> Builder
 encodeChar c
   | c <= '\x1F' || c == '"' || c == '\\' =
-    string7 "\\u" <> word16HexFixed (fromIntegral (ord c))
-  | otherwise = charUtf8 c
+    fromString "\\u" <> encodeWord16 (ord c)
+  | otherwise = singleton c
 
 encodeString :: JSString -> Builder
 encodeString s =
-  char7 '"' <> Text.foldl' (\b c -> b <> encodeChar c) mempty s <> char7 '"'
+  singleton '"' <> Text.foldl' (\b c -> b <> encodeChar c) mempty s <>
+  singleton '"'
 
 encode :: Value -> Builder
 encode v =
   case v of
     Object o ->
-      char7 '{' <>
+      singleton '{' <>
       mconcat
         (intersperse
-           (char7 ',')
-           [encodeString k <> char7 ':' <> encode v' | (k, v') <- Map.toList o]) <>
-      char7 '}'
+           (singleton ',')
+           [ encodeString k <> singleton ':' <> encode v'
+           | (k, v') <- Map.toList o
+           ]) <>
+      singleton '}'
     Array l ->
-      char7 '[' <> mconcat (intersperse (char7 ',') (map encode l)) <> char7 ']'
+      singleton '[' <> mconcat (intersperse (singleton ',') (map encode l)) <>
+      singleton ']'
     String s -> encodeString s
-    Number x -> doubleDec x
-    Bool False -> string7 "false"
-    Bool True -> string7 "true"
-    Null -> string7 "null"
+    Number x -> realFloat x
+    Bool False -> fromString "false"
+    Bool True -> fromString "true"
+    Null -> fromString "null"
 
-encodeLBS :: Value -> LBS.ByteString
-encodeLBS = toLazyByteString . encode
+encodeLazyText :: Value -> LText.Text
+encodeLazyText = toLazyText . encode
 
 anyChar :: Get Char
 anyChar = do

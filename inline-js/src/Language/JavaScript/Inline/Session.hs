@@ -18,11 +18,11 @@ import Control.Exception
 import Control.Monad hiding (fail)
 import Control.Monad.Fail
 import qualified Data.ByteString as BS
-import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Coerce
 import Data.Functor
 import qualified Data.IntMap.Strict as IntMap
+import qualified Data.Text.Lazy.IO as LText
 import Language.JavaScript.Inline.Async
 import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.Message
@@ -78,9 +78,10 @@ startJSSession JSSessionOpts {..} = do
               then Inherit
               else CreatePipe
         }
-  hSetBinaryMode _stdin True
   hSetBinaryMode _stdout True
   hSetBuffering _stdin LineBuffering
+  hSetEncoding _stdin utf8
+  hSetNewlineMode _stdin noNewlineTranslation
   (0, Result {isError = False, result = JSON.Null}) <- unsafeRecvMsg _stdout
   _msg_counter <- newMsgCounter
   _send_queue <- newTQueueIO
@@ -119,7 +120,7 @@ withJSSession opts = bracket (startJSSession opts) killJSSession
 
 unsafeSendMsg :: Handle -> MsgId -> SendMsg -> IO ()
 unsafeSendMsg _node_stdin msg_id msg =
-  hPutBuilder _node_stdin $ JSON.encode (encodeSendMsg msg_id msg) <> char7 '\n'
+  LText.hPutStrLn _node_stdin $ JSON.encodeLazyText (encodeSendMsg msg_id msg)
 
 unsafeRecvMsg :: Handle -> IO (MsgId, RecvMsg)
 unsafeRecvMsg _node_stdout = do
