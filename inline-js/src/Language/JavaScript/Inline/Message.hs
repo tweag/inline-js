@@ -15,9 +15,8 @@ import Language.JavaScript.Inline.MessageCounter
 data SendMsg
   = Ping JSON.Value
   | Eval { evalCode :: JSCode.JSCode
-         , evalTimeout :: Maybe Double }
-  | EvalAsync { evalAsyncCode :: JSCode.JSCode
-              , evalAsyncTimeout, resolveAsyncTimeout :: Maybe Double }
+         , evalTimeout, resolveTimeout :: Maybe Double
+         , isAsync :: Bool }
   deriving (Show)
 
 encodeSendMsg :: MsgId -> SendMsg -> JSON.Value
@@ -28,20 +27,10 @@ encodeSendMsg msg_id msg =
       JSON.Array
         [ _head
         , JSON.Number 1
-        , JSON.Array
-            [ JSON.String $ JSCode.codeToString evalCode
-            , _maybe_number evalTimeout
-            ]
-        ]
-    EvalAsync {..} ->
-      JSON.Array
-        [ _head
-        , JSON.Number 2
-        , JSON.Array
-            [ JSON.String $ JSCode.codeToString evalAsyncCode
-            , _maybe_number evalAsyncTimeout
-            , _maybe_number resolveAsyncTimeout
-            ]
+        , JSON.String $ JSCode.codeToString evalCode
+        , _maybe_number evalTimeout
+        , _maybe_number resolveTimeout
+        , JSON.Bool isAsync
         ]
   where
     _head = JSON.Number $ fromIntegral msg_id

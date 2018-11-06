@@ -6,6 +6,7 @@ module Language.JavaScript.Inline.JSON
   , Object
   , Array
   , encode
+  , encodeLBS
   , decode
   ) where
 
@@ -67,6 +68,9 @@ encode v =
     Bool False -> string7 "false"
     Bool True -> string7 "true"
     Null -> string7 "null"
+
+encodeLBS :: Value -> LBS.ByteString
+encodeLBS = toLazyByteString . encode
 
 anyChar :: Get Char
 anyChar = do

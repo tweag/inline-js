@@ -54,7 +54,14 @@
 
   rl.on("line", async raw_msg => {
     try {
-      const [msg_id, msg_tag, msg_content] = JSON.parse(raw_msg);
+      const [
+        msg_id,
+        msg_tag,
+        msg_content,
+        eval_timeout,
+        resolve_timeout,
+        is_async
+      ] = JSON.parse(raw_msg);
       try {
         switch (msg_tag) {
           case 0: {
@@ -62,47 +69,46 @@
             break;
           }
           case 1: {
-            const [eval_code, eval_timeout] = msg_content;
-            sendMsg([
-              msg_id,
-              0,
-              false,
-              noUndefined(
-                vm.runInThisContext(
-                  eval_code,
-                  extendObject({ displayErrors: true }, eval_timeout, {
-                    timeout: eval_timeout
-                  })
+            if (is_async) {
+              const promise = vm.runInThisContext(
+                msg_content,
+                extendObject({ displayErrors: true }, eval_timeout, {
+                  timeout: eval_timeout
+                })
+              );
+              sendMsg([
+                msg_id,
+                0,
+                false,
+                noUndefined(
+                  await (resolve_timeout !== false
+                    ? Promise.race([
+                        promise,
+                        new Promise((_, reject) =>
+                          setTimeout(reject, resolve_timeout, "")
+                        )
+                      ])
+                    : promise)
                 )
-              )
-            ]);
+              ]);
+            } else {
+              sendMsg([
+                msg_id,
+                0,
+                false,
+                noUndefined(
+                  vm.runInThisContext(
+                    msg_content,
+                    extendObject({ displayErrors: true }, eval_timeout, {
+                      timeout: eval_timeout
+                    })
+                  )
+                )
+              ]);
+            }
             break;
           }
-          case 2: {
-            const [eval_code, eval_timeout, resolve_timeout] = msg_content;
-            const promise = vm.runInThisContext(
-              eval_code,
-              extendObject({ displayErrors: true }, eval_timeout, {
-                timeout: eval_timeout
-              })
-            );
-            sendMsg([
-              msg_id,
-              0,
-              false,
-              noUndefined(
-                await (resolve_timeout !== false
-                  ? Promise.race([
-                      promise,
-                      new Promise((_, reject) =>
-                        setTimeout(reject, resolve_timeout, "")
-                      )
-                    ])
-                  : promise)
-              )
-            ]);
-            break;
-          }
+
           default: {
             throw ["parsing SendMsg failed: ", raw_msg];
           }
