@@ -2,6 +2,7 @@
 
 module Language.JavaScript.Inline.JSON
   ( Value(..)
+  , JSString
   , Object
   , Array
   , encode
@@ -27,13 +28,15 @@ import Prelude hiding (fail)
 data Value
   = Object Object
   | Array Array
-  | String Text.Text
+  | String JSString
   | Number Double
   | Bool Bool
   | Null
   deriving (Eq, Show)
 
-type Object = Map.Map Text.Text Value
+type JSString = Text.Text
+
+type Object = Map.Map JSString Value
 
 type Array = [Value]
 
@@ -43,7 +46,7 @@ encodeChar c
     string7 "\\u" <> word16HexFixed (fromIntegral (ord c))
   | otherwise = charUtf8 c
 
-encodeString :: Text.Text -> Builder
+encodeString :: JSString -> Builder
 encodeString s =
   char7 '"' <> Text.foldl' (\b c -> b <> encodeChar c) mempty s <> char7 '"'
 
@@ -164,10 +167,10 @@ textChar = do
         show [c]
       | otherwise -> pure c
 
-text :: Get Text.Text
+text :: Get JSString
 text = bracket (char' '"') (char' '"') (Text.pack <$> many textChar)
 
-lexemeText :: Get Text.Text
+lexemeText :: Get JSString
 lexemeText = lexeme text
 
 nullableString :: Get String -> Get String

@@ -8,15 +8,15 @@ module Language.JavaScript.Inline.Message
   , decodeRecvMsg
   ) where
 
-import qualified Data.Text as Text
+import qualified Language.JavaScript.Inline.JSCode as JSCode
 import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.MessageCounter
 
 data SendMsg
   = Ping JSON.Value
-  | Eval { evalCode :: Text.Text
+  | Eval { evalCode :: JSCode.JSCode
          , evalTimeout :: Maybe Double }
-  | EvalAsync { evalAsyncCode :: Text.Text
+  | EvalAsync { evalAsyncCode :: JSCode.JSCode
               , evalAsyncTimeout, resolveAsyncTimeout :: Maybe Double }
   deriving (Show)
 
@@ -28,14 +28,17 @@ encodeSendMsg msg_id msg =
       JSON.Array
         [ _head
         , JSON.Number 1
-        , JSON.Array [JSON.String evalCode, _maybe_number evalTimeout]
+        , JSON.Array
+            [ JSON.String $ JSCode.codeToString evalCode
+            , _maybe_number evalTimeout
+            ]
         ]
     EvalAsync {..} ->
       JSON.Array
         [ _head
         , JSON.Number 2
         , JSON.Array
-            [ JSON.String evalAsyncCode
+            [ JSON.String $ JSCode.codeToString evalAsyncCode
             , _maybe_number evalAsyncTimeout
             , _maybe_number resolveAsyncTimeout
             ]
