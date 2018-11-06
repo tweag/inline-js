@@ -40,8 +40,7 @@ main =
     monadicIO $
     forAllM genValue $ \v ->
       run $ do
-        _msg_id <- sendMsg s $ Eval (codeFromValue v) Nothing Nothing False
-        _recv_msg <- recvMsg s _msg_id
+        _recv_msg <- sendRecv s $ Eval (codeFromValue v) Nothing Nothing False
         case _recv_msg of
           Result {isError = False, result = _recv_v}
             | v == _recv_v -> pure ()

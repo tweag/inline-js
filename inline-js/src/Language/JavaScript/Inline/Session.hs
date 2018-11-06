@@ -11,6 +11,7 @@ module Language.JavaScript.Inline.Session
   , withJSSession
   , sendMsg
   , recvMsg
+  , sendRecv
   ) where
 
 import Control.Concurrent
@@ -20,6 +21,7 @@ import Control.Monad
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Coerce
+import Data.Function
 import Data.Functor
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.Text.Lazy.IO as LText
@@ -86,19 +88,23 @@ startJSSession JSSessionOpts {..} = do
   _send_queue <- newTQueueIO
   _sender <-
     forkIO $
-    forever $ do
+    fix $ \w -> do
       (_msg_id, _msg) <- atomically $ readTQueue _send_queue
-      unsafeSendMsg _stdin _msg_id _msg
+      r <- unsafeSendMsg _stdin _msg_id _msg
+      case r of
+        Left _ -> pure ()
+        Right _ -> w
   _recv_map <- newTVarIO IntMap.empty
   _recver <-
     forkIO $
-    forever $ do
+    fix $ \w -> do
       r <- unsafeRecvMsg _stdout
       case r of
-        Right (_msg_id, _msg) ->
+        Left _ -> pure ()
+        Right (_msg_id, _msg) -> do
           atomically $
-          modifyTVar' _recv_map $ IntMap.insert (coerce _msg_id) _msg
-        _ -> pure ()
+            modifyTVar' _recv_map $ IntMap.insert (coerce _msg_id) _msg
+          w
   pure
     JSSession
       { nodeStdIn = _stdin
@@ -121,26 +127,41 @@ killJSSession JSSession {..} = do
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (startJSSession opts) killJSSession
 
-unsafeSendMsg :: Handle -> MsgId -> SendMsg -> IO ()
-unsafeSendMsg _node_stdin msg_id msg =
-  LText.hPutStrLn _node_stdin $ JSON.encodeLazyText (encodeSendMsg msg_id msg)
+unsafeSendMsg :: Handle -> MsgId -> SendMsg -> IO (Either String ())
+unsafeSendMsg _node_stdin msg_id msg = do
+  r <-
+    try $
+    LText.hPutStrLn _node_stdin $ JSON.encodeLazyText (encodeSendMsg msg_id msg)
+  pure $
+    case r of
+      Left err ->
+        Left $
+        "Language.JavaScript.Inline.JSON.unsafeSendMsg: writing to stdin of node process failed with " <>
+        show (err :: SomeException)
+      Right _ -> Right ()
 
 unsafeRecvMsg :: Handle -> IO (Either String (MsgId, RecvMsg))
 unsafeRecvMsg _node_stdout = do
-  l <- BS.hGetLine _node_stdout
+  r <- try $ BS.hGetLine _node_stdout
   pure $
-    case JSON.decode $ LBS.fromStrict l of
+    case r of
       Left err ->
         Left $
-        "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing Value failed with " <>
-        err
-      Right v ->
-        case decodeRecvMsg v of
+        "Language.JavaScript.Inline.JSON.unsafeRecvMsg: reading stdout of node process failed with " <>
+        show (err :: SomeException)
+      Right l ->
+        case JSON.decode $ LBS.fromStrict l of
           Left err ->
             Left $
-            "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing RecvMsg failed with " <>
+            "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing Value failed with " <>
             err
-          Right msg -> Right msg
+          Right v ->
+            case decodeRecvMsg v of
+              Left err ->
+                Left $
+                "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing RecvMsg failed with " <>
+                err
+              Right msg -> Right msg
 
 sendMsg :: JSSession -> SendMsg -> IO MsgId
 sendMsg JSSession {..} msg = do
@@ -158,3 +179,6 @@ recvMsg JSSession {..} msg_id =
            _recv_map_prev of
       (Just _msg, _recv_map) -> writeTVar recvMap _recv_map $> _msg
       _ -> retry
+
+sendRecv :: JSSession -> SendMsg -> IO RecvMsg
+sendRecv s = recvMsg s <=< sendMsg s
