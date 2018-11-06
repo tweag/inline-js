@@ -2,8 +2,10 @@
 
 module Language.JavaScript.Inline.Command
   ( eval
+  , evalJSRef
   , evalTo
   , evalAsync
+  , evalAsyncJSRef
   , evalAsyncTo
   ) where
 
@@ -31,8 +33,26 @@ eval s c =
       , evalTimeout = Nothing
       , resolveTimeout = Nothing
       , isAsync = False
+      , region = Nothing
       } >>=
   checkRecvMsg
+
+evalJSRef :: JSSession -> JSRefRegion -> JSCode -> IO JSRef
+evalJSRef s r c = do
+  v <-
+    sendRecv
+      s
+      Eval
+        { evalCode = c
+        , evalTimeout = Nothing
+        , resolveTimeout = Nothing
+        , isAsync = False
+        , region = Just r
+        } >>=
+    checkRecvMsg
+  case parseJSRef v of
+    Left err -> fail err
+    Right p -> pure p
 
 evalTo :: (Value -> Either String a) -> JSSession -> JSCode -> IO a
 evalTo p s c = do
@@ -50,8 +70,26 @@ evalAsync s c =
       , evalTimeout = Nothing
       , resolveTimeout = Nothing
       , isAsync = True
+      , region = Nothing
       } >>=
   checkRecvMsg
+
+evalAsyncJSRef :: JSSession -> JSRefRegion -> JSCode -> IO JSRef
+evalAsyncJSRef s r c = do
+  v <-
+    sendRecv
+      s
+      Eval
+        { evalCode = c
+        , evalTimeout = Nothing
+        , resolveTimeout = Nothing
+        , isAsync = True
+        , region = Just r
+        } >>=
+    checkRecvMsg
+  case parseJSRef v of
+    Left err -> fail err
+    Right p -> pure p
 
 evalAsyncTo :: (Value -> Either String a) -> JSSession -> JSCode -> IO a
 evalAsyncTo p s c = do

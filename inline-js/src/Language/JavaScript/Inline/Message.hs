@@ -16,6 +16,7 @@ data SendMsg = Eval
   { evalCode :: JSCode.JSCode
   , evalTimeout, resolveTimeout :: Maybe Double
   , isAsync :: Bool
+  , region :: Maybe JSCode.JSRefRegion
   } deriving (Show)
 
 encodeSendMsg :: MsgId -> SendMsg -> JSON.Value
@@ -26,13 +27,13 @@ encodeSendMsg msg_id msg =
         [ _head
         , JSON.Number 0
         , JSON.String $ JSCode.codeToString evalCode
-        , _maybe_number evalTimeout
-        , _maybe_number resolveTimeout
+        , maybe (JSON.Bool False) JSON.Number evalTimeout
+        , maybe (JSON.Bool False) JSON.Number resolveTimeout
         , JSON.Bool isAsync
+        , maybe (JSON.Bool False) JSCode.valueFromJSRefRegion region
         ]
   where
     _head = JSON.Number $ fromIntegral msg_id
-    _maybe_number = maybe (JSON.Bool False) JSON.Number
 
 data RecvMsg = Result
   { isError :: Bool

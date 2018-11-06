@@ -3,13 +3,14 @@ module Language.JavaScript.Inline.JSCode
   , codeToString
   , codeFromValue
   , JSRefRegion
+  , valueFromJSRefRegion
   , parseJSRefRegion
   , JSRef
   , parseJSRef
   , newJSRefRegion
   , freeJSRefRegion
-  , newJSRef
   , deRefJSRef
+  , asyncify
   ) where
 
 import qualified Data.Text.Lazy as LText
@@ -30,6 +31,9 @@ codeFromValue v =
 newtype JSRefRegion =
   JSRefRegion Int
   deriving (Eq, Ord, Show)
+
+valueFromJSRefRegion :: JSRefRegion -> JSON.Value
+valueFromJSRefRegion (JSRefRegion r) = JSON.Number $ fromIntegral r
 
 parseJSRefRegion :: JSON.Value -> Either String JSRefRegion
 parseJSRefRegion v =
@@ -54,13 +58,11 @@ freeJSRefRegion :: JSRefRegion -> JSCode
 freeJSRefRegion (JSRefRegion r) =
   fromString "JSRef.freeJSRefRegion(0x" <> hexadecimal r <> singleton ')'
 
-newJSRef :: JSRefRegion -> JSCode -> JSCode
-newJSRef (JSRefRegion r) expr =
-  fromString "JSRef.newJSRef(0x" <> hexadecimal r <> fromString ",(" <> expr <>
-  fromString "))"
-
 deRefJSRef :: JSRefRegion -> JSRef -> JSCode
 deRefJSRef (JSRefRegion r) (JSRef p) =
   fromString "JSRef.deRefJSRef(0x" <> hexadecimal r <> fromString ",0x" <>
   hexadecimal p <>
   fromString ")"
+
+asyncify :: JSCode -> JSCode
+asyncify expr = fromString "(async () => (" <> expr <> fromString "))()"

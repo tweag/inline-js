@@ -36,9 +36,15 @@
     static deRefJSRef(r, p) {
       return __jsref_regions[r][p];
     }
+
+    static maybeNewJSRef(r, v) {
+      return r ? JSRef.newJSRef(r, v) : v;
+    }
   };
 
   const vm = require("vm");
+
+  const ctx = vm.createContext(Object.assign({ require: require }, global));
 
   process.stdin.setEncoding("utf8");
 
@@ -60,14 +66,16 @@
         msg_content,
         eval_timeout,
         resolve_timeout,
-        is_async
+        is_async,
+        region
       ] = JSON.parse(raw_msg);
       try {
         switch (msg_tag) {
           case 0: {
             if (is_async) {
-              const promise = vm.runInThisContext(
+              const promise = vm.runInContext(
                 msg_content,
+                ctx,
                 extendObject({ displayErrors: true }, eval_timeout, {
                   timeout: eval_timeout
                 })
@@ -76,15 +84,18 @@
                 msg_id,
                 0,
                 false,
-                noUndefined(
-                  await (resolve_timeout !== false
-                    ? Promise.race([
-                        promise,
-                        new Promise((_, reject) =>
-                          setTimeout(reject, resolve_timeout, "")
-                        )
-                      ])
-                    : promise)
+                JSRef.maybeNewJSRef(
+                  region,
+                  noUndefined(
+                    await (resolve_timeout !== false
+                      ? Promise.race([
+                          promise,
+                          new Promise((_, reject) =>
+                            setTimeout(reject, resolve_timeout, "")
+                          )
+                        ])
+                      : promise)
+                  )
                 )
               ]);
             } else {
@@ -92,12 +103,16 @@
                 msg_id,
                 0,
                 false,
-                noUndefined(
-                  vm.runInThisContext(
-                    msg_content,
-                    extendObject({ displayErrors: true }, eval_timeout, {
-                      timeout: eval_timeout
-                    })
+                JSRef.maybeNewJSRef(
+                  region,
+                  noUndefined(
+                    vm.runInContext(
+                      msg_content,
+                      ctx,
+                      extendObject({ displayErrors: true }, eval_timeout, {
+                        timeout: eval_timeout
+                      })
+                    )
                   )
                 )
               ]);

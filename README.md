@@ -38,9 +38,9 @@ Several months later, after accumulating enough experience in the development of
         * [x] Regional destruction of `JSRef`s in Haskell
     * [ ] Modeling arbitrary Haskell values
         * [ ] `Dynamic`-based? More strongly typed? Yet to be explored.
-* [ ] Phase 3: Haskell syntactic sugar, e.g. `foreign import javascript`
-    * [ ] Monad transformer to thread a session around
-    * [ ] Template Haskell splices to convert from syntactic sugar to actual logic
+* [ ] Further enhancements:
+    * [x] Interaction with Headless Chrome via `puppeteer`
+    * [ ] Haskell syntactic sugar, e.g. `foreign import javascript`
 
 For the use case of `asterius`, proceeding to the middle of Phase 2 shall be mostly enough. By then `inline-js-ng` becomes a reliable lightweight Haskell/Node.js bridge which allows `asterius` to run its compiled code and inspect structured debugging data in its test suites.
 

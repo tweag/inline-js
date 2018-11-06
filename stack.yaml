@@ -3,5 +3,4 @@ packages:
   - inline-js
 nix:
   enable: true
-  packages:
-    - nodejs-10_x
+  pure: false

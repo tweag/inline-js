@@ -38,11 +38,11 @@ main :: IO ()
 main =
   withJSSession defJSSessionOpts $ \s -> do
     r <- evalTo parseJSRefRegion s newJSRefRegion
-    quickCheckWith stdArgs {maxSuccess = 65536} $
+    quickCheckWith stdArgs {maxSuccess = 512} $
       monadicIO $
       forAllM genValue $ \v ->
         run $ do
-          p <- evalTo parseJSRef s $ newJSRef r $ codeFromValue v
+          p <- evalJSRef s r $ codeFromValue v
           _recv_v <- eval s $ deRefJSRef r p
           unless (v == _recv_v) $
             fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)

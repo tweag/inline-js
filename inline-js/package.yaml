@@ -22,6 +22,7 @@ dependencies:
   - binary
   - bytestring
   - containers
+  - directory
   - filepath
   - ghc-prim
   - process
@@ -44,6 +45,13 @@ tests:
   eval:
     source-dirs: tests
     main: eval.hs
+    ghc-options: -threaded -with-rtsopts=-N
+    dependencies:
+      - inline-js
+
+  puppeteer:
+    source-dirs: tests
+    main: puppeteer.hs
     ghc-options: -threaded -with-rtsopts=-N
     dependencies:
       - inline-js

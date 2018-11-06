@@ -12,17 +12,24 @@ jobs:
             nix-channel --update
             nix-env -u
             nix-env -iA \
+              nixpkgs.chromium \
               nixpkgs.gitMinimal \
               nixpkgs.gnutar \
               nixpkgs.gzip \
+              nixpkgs.nodejs-10_x \
               nixpkgs.openssh \
               nixpkgs.stack
+            mkdir /tmp/inline-js-npm
+            cd /tmp/inline-js-npm
+            npm install puppeteer-core
       - checkout
       - restore_cache:
           key: lts-12-17-
       - run:
           name: Test inline-js
           command: |
+            export FONTCONFIG_FILE=$(nix eval --raw nixpkgs.fontconfig.out.outPath)/etc/fonts/fonts.conf
+            export NODE_PATH=/tmp/inline-js-npm
             stack --no-terminal build inline-js --test --no-run-tests
             stack --no-terminal test inline-js:pingpong
             stack --no-terminal test inline-js:eval
