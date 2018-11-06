@@ -13,6 +13,7 @@ module Language.JavaScript.Inline.Session
   , recvMsg
   ) where
 
+import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception
 import Control.Monad
@@ -22,7 +23,6 @@ import Data.Coerce
 import Data.Functor
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.Text.Lazy.IO as LText
-import Language.JavaScript.Inline.Async
 import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.MessageCounter
@@ -57,7 +57,7 @@ data JSSession = JSSession
   , msgCounter :: MsgCounter
   , sendQueue :: TQueue (MsgId, SendMsg)
   , recvMap :: TVar (IntMap.IntMap RecvMsg)
-  , sendAsync, recvAsync :: Async ()
+  , sendWorker, recvWorker :: ThreadId
   }
 
 startJSSession :: JSSessionOpts -> IO JSSession
@@ -85,13 +85,13 @@ startJSSession JSSessionOpts {..} = do
   _msg_counter <- newMsgCounter
   _send_queue <- newTQueueIO
   _sender <-
-    newAsync $
+    forkIO $
     forever $ do
       (_msg_id, _msg) <- atomically $ readTQueue _send_queue
       unsafeSendMsg _stdin _msg_id _msg
   _recv_map <- newTVarIO IntMap.empty
   _recver <-
-    newAsync $
+    forkIO $
     forever $ do
       r <- unsafeRecvMsg _stdout
       case r of
@@ -108,15 +108,15 @@ startJSSession JSSessionOpts {..} = do
       , msgCounter = _msg_counter
       , sendQueue = _send_queue
       , recvMap = _recv_map
-      , sendAsync = _sender
-      , recvAsync = _recver
+      , sendWorker = _sender
+      , recvWorker = _recver
       }
 
 killJSSession :: JSSession -> IO ()
 killJSSession JSSession {..} = do
   terminateProcess nodeProc
-  killAsync sendAsync
-  killAsync recvAsync
+  killThread sendWorker
+  killThread recvWorker
 
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (startJSSession opts) killJSSession
