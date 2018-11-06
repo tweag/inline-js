@@ -36,11 +36,13 @@ genValue =
 
 main :: IO ()
 main =
-  withJSSession defJSSessionOpts $ \s ->
+  withJSSession defJSSessionOpts $ \s -> do
+    r <- evalTo parseJSRefRegion s newJSRefRegion
     quickCheckWith stdArgs {maxSuccess = 65536} $
-    monadicIO $
-    forAllM genValue $ \v ->
-      run $ do
-        _recv_v <- eval s $ codeFromValue v
-        unless (v == _recv_v) $
-          fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
+      monadicIO $
+      forAllM genValue $ \v ->
+        run $ do
+          p <- evalTo parseJSRef s $ newJSRef r $ codeFromValue v
+          _recv_v <- eval s $ deRefJSRef r p
+          unless (v == _recv_v) $
+            fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)

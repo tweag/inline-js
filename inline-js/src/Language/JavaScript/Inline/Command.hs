@@ -2,7 +2,9 @@
 
 module Language.JavaScript.Inline.Command
   ( eval
+  , evalTo
   , evalAsync
+  , evalAsyncTo
   ) where
 
 import Control.Monad.Fail
@@ -32,6 +34,13 @@ eval s c =
       } >>=
   checkRecvMsg
 
+evalTo :: (Value -> Either String a) -> JSSession -> JSCode -> IO a
+evalTo p s c = do
+  v <- eval s c
+  case p v of
+    Left err -> fail err
+    Right r -> pure r
+
 evalAsync :: JSSession -> JSCode -> IO Value
 evalAsync s c =
   sendRecv
@@ -43,3 +52,10 @@ evalAsync s c =
       , isAsync = True
       } >>=
   checkRecvMsg
+
+evalAsyncTo :: (Value -> Either String a) -> JSSession -> JSCode -> IO a
+evalAsyncTo p s c = do
+  v <- evalAsync s c
+  case p v of
+    Left err -> fail err
+    Right r -> pure r

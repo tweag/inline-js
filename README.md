@@ -31,11 +31,11 @@ Several months later, after accumulating enough experience in the development of
     * [x] Eval server for synchronous code, supporting eval timeouts
     * [x] Eval server for asynchronous code, supporting eval/resolve timeouts
 * [ ] Phase 2: Marshaling arbitrary Haskell/Node.js values, including functions
-    * [ ] Modeling arbitrary Node.js values as `JSRef`s
-        * [ ] Mapping from `JSRef`s to JavaScript values in the eval server
-        * [ ] Explicit construction/destruction of `JSRef`s based on Haskell eval commands
-        * [ ] Assembling a Haskell `JSRef` into an eval command
-        * [ ] Implicit scoped destruction/garbage collection of `JSRef`s in Haskell
+    * [x] Modeling arbitrary Node.js values as `JSRef`s
+        * [x] Mapping from `JSRef`s to JavaScript values in the eval server
+        * [x] Explicit construction of `JSRef`s based on Haskell eval commands
+        * [x] Assembling a Haskell `JSRef` into an eval command
+        * [x] Regional destruction of `JSRef`s in Haskell
     * [ ] Modeling arbitrary Haskell values
         * [ ] `Dynamic`-based? More strongly typed? Yet to be explored.
 * [ ] Phase 3: Haskell syntactic sugar, e.g. `foreign import javascript`
