@@ -5,19 +5,39 @@
 {-# LANGUAGE StrictData #-}
 
 module Language.JavaScript.Inline.Puppeteer
-  ( PuppeteerOpts(..)
+  ( installPuppeteer
+  , PuppeteerOpts(..)
   , getDefPuppeteerOpts
   , Puppeteer
   , newPuppeteer
   , userAgent
   ) where
 
+import Control.Monad.Fail
 import qualified Data.Text as Text
 import Language.JavaScript.Inline.Command
 import Language.JavaScript.Inline.JSCode
 import Language.JavaScript.Inline.JSON
 import Language.JavaScript.Inline.Session
+import qualified Paths_inline_js
+import Prelude hiding (fail)
 import System.Directory
+import System.Exit
+import System.FilePath
+import System.Process
+
+installPuppeteer :: IO ()
+installPuppeteer = do
+  _data_dir <- Paths_inline_js.getDataDir
+  withCreateProcess
+    (shell "npm install puppeteer-core") {cwd = Just $ _data_dir </> "jsbits"} $ \_ _ _ ph -> do
+    ec <- waitForProcess ph
+    case ec of
+      ExitSuccess -> pure ()
+      _ ->
+        fail $
+        "Language.JavaScript.Inline.Puppeteer.installPuppeteer failed with " <>
+        show ec
 
 data PuppeteerOpts = PuppeteerOpts
   { executablePath :: FilePath
