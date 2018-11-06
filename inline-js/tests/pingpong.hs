@@ -1,12 +1,13 @@
 {-# LANGUAGE TypeApplications #-}
 
+import Control.Monad hiding (fail)
 import Control.Monad.Fail
 import Data.Int
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
+import Language.JavaScript.Inline.Command
 import Language.JavaScript.Inline.JSCode
 import Language.JavaScript.Inline.JSON
-import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 import Test.QuickCheck
@@ -40,8 +41,6 @@ main =
     monadicIO $
     forAllM genValue $ \v ->
       run $ do
-        _recv_msg <- sendRecv s $ Eval (codeFromValue v) Nothing Nothing False
-        case _recv_msg of
-          Result {isError = False, result = _recv_v}
-            | v == _recv_v -> pure ()
-          _ -> fail $ "pingpong: pong mismatch: " <> show (v, _recv_msg)
+        _recv_v <- eval s $ codeFromValue v
+        unless (v == _recv_v) $
+          fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
