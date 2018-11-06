@@ -19,7 +19,7 @@ jobs:
               nixpkgs.stack
       - checkout
       - restore_cache:
-          key: lts-12-16-
+          key: lts-12-17-
       - run:
           name: Test inline-js
           command: |
@@ -31,4 +31,4 @@ jobs:
             - /root/.stack/snapshots
             - .stack-work
             - inline-js/.stack-work
-          key: lts-12-16-{{ .BuildNum }}
+          key: lts-12-17-{{ .BuildNum }}
