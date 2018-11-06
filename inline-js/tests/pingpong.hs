@@ -42,6 +42,6 @@ main =
         _msg_id <- sendMsg s $ Ping v
         _recv_msg <- recvMsg s _msg_id
         case _recv_msg of
-          Pong _recv_v
+          Result {isError = False, result = _recv_v}
             | v == _recv_v -> pure ()
           _ -> fail $ "pingpong: pong mismatch: " <> show (v, _recv_msg)

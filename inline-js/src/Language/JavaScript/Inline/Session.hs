@@ -81,7 +81,7 @@ startJSSession JSSessionOpts {..} = do
   hSetBinaryMode _stdin True
   hSetBinaryMode _stdout True
   hSetBuffering _stdin LineBuffering
-  (0, Ready) <- unsafeRecvMsg _stdout
+  (0, Result {isError = False, result = JSON.Null}) <- unsafeRecvMsg _stdout
   _msg_counter <- newMsgCounter
   _send_queue <- newTQueueIO
   _sender <-

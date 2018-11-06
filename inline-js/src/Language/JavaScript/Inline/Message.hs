@@ -47,23 +47,16 @@ encodeSendMsg msg_id msg =
     _head = JSON.Number $ fromIntegral msg_id
     _maybe_number = maybe (JSON.Bool False) JSON.Number
 
-data RecvMsg
-  = Error JSON.Value
-  | Ready
-  | Pong JSON.Value
-  | Result JSON.Value
-  deriving (Show)
+data RecvMsg = Result
+  { isError :: Bool
+  , result :: JSON.Value
+  } deriving (Show)
 
 decodeRecvMsg :: JSON.Value -> Either String (MsgId, RecvMsg)
 decodeRecvMsg v =
   case v of
-    JSON.Array [JSON.Number _msg_id, JSON.Number 0, err] ->
-      Right (truncate _msg_id, Error err)
-    JSON.Array [JSON.Number 0, JSON.Number 1, JSON.Null] -> Right (0, Ready)
-    JSON.Array [JSON.Number _msg_id, JSON.Number 2, r] ->
-      Right (truncate _msg_id, Pong r)
-    JSON.Array [JSON.Number _msg_id, JSON.Number 3, r] ->
-      Right (truncate _msg_id, Result r)
+    JSON.Array [JSON.Number _msg_id, JSON.Number 0, JSON.Bool is_err, r] ->
+      Right (truncate _msg_id, Result {isError = is_err, result = r})
     _ -> _err
   where
     _err =

@@ -18,7 +18,7 @@
   }
 
   process.on("uncaughtException", err => {
-    sendMsg([0, 0, err], true, "server.js: uncaughtException: ");
+    sendMsg([0, 0, true, err], true, "server.js: uncaughtException: ");
   });
 
   const __jsref_regions = [undefined];
@@ -58,14 +58,15 @@
       try {
         switch (msg_tag) {
           case 0: {
-            sendMsg([msg_id, 2, msg_content]);
+            sendMsg([msg_id, 0, false, msg_content]);
             break;
           }
           case 1: {
             const [eval_code, eval_timeout] = msg_content;
             sendMsg([
               msg_id,
-              3,
+              0,
+              false,
               noUndefined(
                 vm.runInThisContext(
                   eval_code,
@@ -87,7 +88,8 @@
             );
             sendMsg([
               msg_id,
-              3,
+              0,
+              false,
               noUndefined(
                 await (resolve_timeout !== false
                   ? Promise.race([
@@ -106,12 +108,16 @@
           }
         }
       } catch (err) {
-        sendMsg([msg_id, 0, err.stack], true, "failed to process SendMsg: ");
+        sendMsg(
+          [msg_id, 0, true, err.stack],
+          true,
+          "failed to process SendMsg: "
+        );
       }
     } catch (err) {
-      sendMsg([0, 0, err.stack], true, "failed to parse SendMsg: ");
+      sendMsg([0, 0, true, err.stack], true, "failed to parse SendMsg: ");
     }
   });
 
-  sendMsg([0, 1, null]);
+  sendMsg([0, 0, false, null]);
 })();
