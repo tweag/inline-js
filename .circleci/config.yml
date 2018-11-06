@@ -33,6 +33,7 @@ jobs:
             stack --no-terminal build inline-js --test --no-run-tests
             stack --no-terminal test inline-js:pingpong
             stack --no-terminal test inline-js:eval
+            stack --no-terminal test inline-js:puppeteer
       - save_cache:
           paths:
             - /root/.stack/snapshots
