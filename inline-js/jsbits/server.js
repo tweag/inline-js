@@ -65,10 +65,6 @@
       try {
         switch (msg_tag) {
           case 0: {
-            sendMsg([msg_id, 0, false, msg_content]);
-            break;
-          }
-          case 1: {
             if (is_async) {
               const promise = vm.runInThisContext(
                 msg_content,

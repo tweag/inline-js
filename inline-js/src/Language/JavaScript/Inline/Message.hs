@@ -12,21 +12,19 @@ import qualified Language.JavaScript.Inline.JSCode as JSCode
 import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.MessageCounter
 
-data SendMsg
-  = Ping JSON.Value
-  | Eval { evalCode :: JSCode.JSCode
-         , evalTimeout, resolveTimeout :: Maybe Double
-         , isAsync :: Bool }
-  deriving (Show)
+data SendMsg = Eval
+  { evalCode :: JSCode.JSCode
+  , evalTimeout, resolveTimeout :: Maybe Double
+  , isAsync :: Bool
+  } deriving (Show)
 
 encodeSendMsg :: MsgId -> SendMsg -> JSON.Value
 encodeSendMsg msg_id msg =
   case msg of
-    Ping v -> JSON.Array [_head, JSON.Number 0, v]
     Eval {..} ->
       JSON.Array
         [ _head
-        , JSON.Number 1
+        , JSON.Number 0
         , JSON.String $ JSCode.codeToString evalCode
         , _maybe_number evalTimeout
         , _maybe_number resolveTimeout

@@ -5,7 +5,9 @@ module Language.JavaScript.Inline.JSON
   , JSString
   , Object
   , Array
+  , encodeString
   , encode
+  , encodeText
   , encodeLazyText
   , decode
   ) where
@@ -82,6 +84,9 @@ encode v =
     Bool False -> fromString "false"
     Bool True -> fromString "true"
     Null -> fromString "null"
+
+encodeText :: Value -> Text.Text
+encodeText = LText.toStrict . encodeLazyText
 
 encodeLazyText :: Value -> LText.Text
 encodeLazyText = toLazyText . encode

@@ -4,6 +4,7 @@ import Control.Monad.Fail
 import Data.Int
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
+import Language.JavaScript.Inline.JSCode
 import Language.JavaScript.Inline.JSON
 import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.Session
@@ -39,7 +40,7 @@ main =
     monadicIO $
     forAllM genValue $ \v ->
       run $ do
-        _msg_id <- sendMsg s $ Ping v
+        _msg_id <- sendMsg s $ Eval (codeFromValue v) Nothing Nothing False
         _recv_msg <- recvMsg s _msg_id
         case _recv_msg of
           Result {isError = False, result = _recv_v}

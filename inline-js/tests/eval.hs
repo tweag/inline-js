@@ -14,6 +14,7 @@ main =
         , Eval "undefined" Nothing Nothing False
         , Eval "let x = 6*7" Nothing Nothing False
         , Eval "x" Nothing Nothing False
+        , Eval "\"left\" + \"pad\"" Nothing Nothing False
         , Eval "Promise.reject('BOOM')" Nothing Nothing True
         , Eval "Promise.resolve(x)" Nothing Nothing True
         , Eval
