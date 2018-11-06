@@ -15,8 +15,7 @@ module Language.JavaScript.Inline.Session
 
 import Control.Concurrent.STM
 import Control.Exception
-import Control.Monad hiding (fail)
-import Control.Monad.Fail
+import Control.Monad
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Coerce
@@ -28,7 +27,6 @@ import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.MessageCounter
 import qualified Paths_inline_js
-import Prelude hiding (fail)
 import System.Environment.Blank
 import System.FilePath
 import System.IO
@@ -82,7 +80,8 @@ startJSSession JSSessionOpts {..} = do
   hSetBuffering _stdin LineBuffering
   hSetEncoding _stdin utf8
   hSetNewlineMode _stdin noNewlineTranslation
-  (0, Result {isError = False, result = JSON.Null}) <- unsafeRecvMsg _stdout
+  Right (0, Result {isError = False, result = JSON.Null}) <-
+    unsafeRecvMsg _stdout
   _msg_counter <- newMsgCounter
   _send_queue <- newTQueueIO
   _sender <-
@@ -94,8 +93,12 @@ startJSSession JSSessionOpts {..} = do
   _recver <-
     newAsync $
     forever $ do
-      (_msg_id, _msg) <- unsafeRecvMsg _stdout
-      atomically $ modifyTVar' _recv_map $ IntMap.insert (coerce _msg_id) _msg
+      r <- unsafeRecvMsg _stdout
+      case r of
+        Right (_msg_id, _msg) ->
+          atomically $
+          modifyTVar' _recv_map $ IntMap.insert (coerce _msg_id) _msg
+        _ -> pure ()
   pure
     JSSession
       { nodeStdIn = _stdin
@@ -122,21 +125,22 @@ unsafeSendMsg :: Handle -> MsgId -> SendMsg -> IO ()
 unsafeSendMsg _node_stdin msg_id msg =
   LText.hPutStrLn _node_stdin $ JSON.encodeLazyText (encodeSendMsg msg_id msg)
 
-unsafeRecvMsg :: Handle -> IO (MsgId, RecvMsg)
+unsafeRecvMsg :: Handle -> IO (Either String (MsgId, RecvMsg))
 unsafeRecvMsg _node_stdout = do
   l <- BS.hGetLine _node_stdout
-  case JSON.decode $ LBS.fromStrict l of
-    Left err ->
-      fail $
-      "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing Value failed with " <>
-      err
-    Right v ->
-      case decodeRecvMsg v of
-        Left err ->
-          fail $
-          "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing RecvMsg failed with " <>
-          err
-        Right msg -> pure msg
+  pure $
+    case JSON.decode $ LBS.fromStrict l of
+      Left err ->
+        Left $
+        "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing Value failed with " <>
+        err
+      Right v ->
+        case decodeRecvMsg v of
+          Left err ->
+            Left $
+            "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing RecvMsg failed with " <>
+            err
+          Right msg -> Right msg
 
 sendMsg :: JSSession -> SendMsg -> IO MsgId
 sendMsg JSSession {..} msg = do
