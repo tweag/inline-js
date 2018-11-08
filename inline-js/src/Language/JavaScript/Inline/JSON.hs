@@ -38,7 +38,10 @@ data Value
   | Number Double
   | Bool Bool
   | Null
-  deriving (Eq, Show)
+  deriving (Eq, Ord)
+
+instance Show Value where
+  show = LText.unpack . encodeLazyText
 
 type JSString = Text.Text
 
