@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE StrictData #-}
 
@@ -21,6 +22,7 @@ import Data.Binary.Get
 import Data.Bits
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char
+import Data.Data
 import Data.Foldable
 import Data.Functor
 import Data.List
@@ -41,7 +43,7 @@ data Value
   | Number Double
   | Bool Bool
   | Null
-  deriving (Eq, Generic, Ord)
+  deriving (Data, Eq, Generic, Ord)
 
 instance Binary Value
 
