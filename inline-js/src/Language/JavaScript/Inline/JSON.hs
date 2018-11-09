@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE StrictData #-}
 
 module Language.JavaScript.Inline.JSON
@@ -15,6 +16,7 @@ module Language.JavaScript.Inline.JSON
 import Control.Applicative
 import Control.Monad hiding (fail)
 import Control.Monad.Fail
+import Data.Binary (Binary)
 import Data.Binary.Get
 import Data.Bits
 import qualified Data.ByteString.Lazy as LBS
@@ -29,6 +31,7 @@ import qualified Data.Text.Lazy as LText
 import Data.Text.Lazy.Builder
 import Data.Text.Lazy.Builder.Int
 import Data.Text.Lazy.Builder.RealFloat
+import GHC.Generics
 import Prelude hiding (fail)
 
 data Value
@@ -38,7 +41,9 @@ data Value
   | Number Double
   | Bool Bool
   | Null
-  deriving (Eq, Ord)
+  deriving (Eq, Generic, Ord)
+
+instance Binary Value
 
 instance Show Value where
   show = LText.unpack . encodeLazyText
