@@ -29,6 +29,7 @@ jobs:
               libgmp-dev \
               libncurses-dev \
               libnuma-dev \
+              make \
               nodejs \
               openssh-client \
               xz-utils \
