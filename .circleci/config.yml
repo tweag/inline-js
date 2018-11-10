@@ -3,29 +3,44 @@ version: 2
 jobs:
   build:
     docker:
-      - image: terrorjack/pixie:latest
+      - image: debian:unstable
+    environment:
+      - DEBIAN_FRONTEND: noninteractive
+      - LANG: C.UTF-8
+      - PATH: /root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     steps:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.03pre157897.c9e13806267 nixpkgs
-            nix-channel --update
-            nix-env -u
-            nix-env -iA \
-              nixpkgs.chromium \
-              nixpkgs.gitMinimal \
-              nixpkgs.gnutar \
-              nixpkgs.gzip \
-              nixpkgs.nodejs-10_x \
-              nixpkgs.openssh \
-              nixpkgs.stack
+            apt update
+            apt install -y \
+              apt-transport-https \
+              curl \
+              gnupg
+            curl https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+            echo "deb https://deb.nodesource.com/node_11.x sid main" >> /etc/apt/sources.list
+            apt update
+            apt full-upgrade -y
+            apt install -y \
+              chromium \
+              gcc \
+              git \
+              libffi-dev \
+              libgmp-dev \
+              libncurses-dev \
+              libnuma-dev \
+              nodejs \
+              openssh-client \
+              xz-utils \
+              zlib1g-dev
+            mkdir -p /root/.local/bin
+            curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C /root/.local/bin '*/stack'
       - checkout
       - restore_cache:
-          key: lts-12-17-
+          key: lts-12-17-2-
       - run:
           name: Test inline-js
           command: |
-            export FONTCONFIG_FILE=$(nix eval --raw nixpkgs.fontconfig.out.outPath)/etc/fonts/fonts.conf
             stack --no-terminal build inline-js --test --no-run-tests
             stack --no-terminal test inline-js:pingpong
             stack --no-terminal test inline-js:eval
@@ -35,4 +50,4 @@ jobs:
             - /root/.stack/snapshots
             - .stack-work
             - inline-js/.stack-work
-          key: lts-12-17-{{ .BuildNum }}
+          key: lts-12-17-2-{{ .BuildNum }}

@@ -41,6 +41,7 @@ tests:
     dependencies:
       - inline-js
       - QuickCheck
+      - quickcheck-instances
 
   eval:
     source-dirs: tests

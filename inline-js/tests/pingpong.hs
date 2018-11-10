@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 import Control.Monad hiding (fail)
 import Control.Monad.Fail
@@ -12,6 +13,7 @@ import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 import Test.QuickCheck
 import Test.QuickCheck.Gen
+import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic
 
 genString :: Gen Text.Text
@@ -34,15 +36,23 @@ genValue =
           ])
     ]
 
+instance Arbitrary Value where
+  arbitrary = genValue
+  shrink = genericShrink
+
 main :: IO ()
 main =
-  withJSSession defJSSessionOpts $ \s -> do
-    r <- evalTo parseJSRefRegion s newJSRefRegion
-    quickCheckWith stdArgs {maxSuccess = 512} $
-      monadicIO $
-      forAllM genValue $ \v ->
-        run $ do
-          p <- evalJSRef s r $ codeFromValue v
+  quickCheckWith stdArgs {maxSuccess = 1024} $
+  forAllShrink genValue genericShrink $ \v ->
+    monadicIO $ do
+      (_recv_v, _recv_v') <-
+        run $
+        withJSSession defJSSessionOpts $ \s -> do
+          let c = codeFromValue v
+          r <- evalTo parseJSRefRegion s newJSRefRegion
+          p <- evalJSRef s r c
           _recv_v <- eval s $ deRefJSRef r p
-          unless (v == _recv_v) $
-            fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
+          _recv_v' <- eval s c
+          pure (_recv_v, _recv_v')
+      unless (v == _recv_v && v == _recv_v') $
+        fail $ "inline-js:pingpong: mismatch: " <> show (v, _recv_v, _recv_v')
