@@ -5,5 +5,5 @@ main :: IO ()
 main = do
   installPuppeteer Full
   withJSSession defJSSessionOpts $ \s -> do
-    p <- newPuppeteer s defPuppeteerLaunchOpts
+    p <- newPuppeteer s defPuppeteerOpts
     userAgent p >>= print

@@ -8,7 +8,8 @@ module Language.JavaScript.Inline.Puppeteer
   ( PuppeteerPackage(..)
   , installPuppeteer
   , PuppeteerLaunchOpts(..)
-  , defPuppeteerLaunchOpts
+  , PuppeteerOpts(..)
+  , defPuppeteerOpts
   , Puppeteer
   , newPuppeteer
   , userAgent
@@ -47,19 +48,28 @@ installPuppeteer pkg = do
       ExitSuccess -> pure ()
       _ ->
         fail $
-        "Language.JavaScript.Inline.Puppeteer.installPuppeteer failed with " <>
+        "Language.JavaScript.Inline.Puppeteer.installPuppeteer " <> show pkg <>
+        " failed with " <>
         show ec
 
-data PuppeteerLaunchOpts = PuppeteerLaunchOpts
+data PuppeteerLaunchOpts
+  = PuppeteerLaunch { executablePath :: Maybe FilePath
+                    , args :: [String] }
+  | PuppeteerConnect { browserWSEndpoint :: Text.Text }
+  deriving (Show)
+
+data PuppeteerOpts = PuppeteerOpts
   { package :: PuppeteerPackage
-  , executablePath :: Maybe FilePath
-  , args :: [String]
+  , launchOpts :: PuppeteerLaunchOpts
   } deriving (Show)
 
-defPuppeteerLaunchOpts :: PuppeteerLaunchOpts
-defPuppeteerLaunchOpts =
-  PuppeteerLaunchOpts
-    {package = Full, executablePath = Nothing, args = ["--no-sandbox"]}
+defPuppeteerOpts :: PuppeteerOpts
+defPuppeteerOpts =
+  PuppeteerOpts
+    { package = Full
+    , launchOpts =
+        PuppeteerLaunch {executablePath = Nothing, args = ["--no-sandbox"]}
+    }
 
 data Puppeteer = Puppeteer
   { jsSession :: JSSession
@@ -68,21 +78,30 @@ data Puppeteer = Puppeteer
   , browser :: JSCode
   }
 
-newPuppeteer :: JSSession -> PuppeteerLaunchOpts -> IO Puppeteer
-newPuppeteer s PuppeteerLaunchOpts {..} = do
+newPuppeteer :: JSSession -> PuppeteerOpts -> IO Puppeteer
+newPuppeteer s PuppeteerOpts {..} = do
   _region <- evalTo parseJSRefRegion s newJSRefRegion
   _ref <-
     evalAsyncJSRef s _region $
     asyncify $
-    "await (require(\"" <> fromString (pkgName package) <> "\").launch(" <>
-    codeFromValue
-      (Object $
-       maybe
-         mempty
-         (\p -> [("executablePath", String $ Text.pack p)])
-         executablePath <>
-       [("args", Array $ map (String . Text.pack) args)]) <>
-    "))"
+    "await (require(\"" <> fromString (pkgName package) <> "\")" <>
+    (case launchOpts of
+       PuppeteerLaunch {..} ->
+         ".launch(" <>
+         codeFromValue
+           (Object $
+            maybe
+              mempty
+              (\p -> [("executablePath", String $ Text.pack p)])
+              executablePath <>
+            [("args", Array $ map (String . Text.pack) args)]) <>
+         ")"
+       PuppeteerConnect {..} ->
+         ".connect(" <>
+         codeFromValue
+           (Object [("browserWSEndpoint", String browserWSEndpoint)]) <>
+         ")") <>
+    ")"
   pure
     Puppeteer
       { jsSession = s
