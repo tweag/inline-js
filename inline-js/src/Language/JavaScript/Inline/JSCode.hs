@@ -24,7 +24,7 @@ codeToString :: JSCode -> JSON.JSString
 codeToString = LText.toStrict . toLazyText
 
 codeFromValue :: JSON.Value -> JSCode
-codeFromValue v = fromString "(()=>(" <> JSON.encode v <> fromString "))()"
+codeFromValue v = singleton '(' <> JSON.encode v <> singleton ')'
 
 newtype JSRefRegion =
   JSRefRegion Int
