@@ -3,7 +3,7 @@ import Language.JavaScript.Inline.Session
 
 main :: IO ()
 main = do
-  installPuppeteer
+  installPuppeteer Full
   withJSSession defJSSessionOpts $ \s -> do
-    p <- getDefPuppeteerOpts >>= newPuppeteer s
+    p <- newPuppeteer s defPuppeteerLaunchOpts
     userAgent p >>= print

@@ -5,9 +5,10 @@
 {-# LANGUAGE StrictData #-}
 
 module Language.JavaScript.Inline.Puppeteer
-  ( installPuppeteer
-  , PuppeteerOpts(..)
-  , getDefPuppeteerOpts
+  ( PuppeteerPackage(..)
+  , installPuppeteer
+  , PuppeteerLaunchOpts(..)
+  , defPuppeteerLaunchOpts
   , Puppeteer
   , newPuppeteer
   , userAgent
@@ -15,22 +16,32 @@ module Language.JavaScript.Inline.Puppeteer
 
 import Control.Monad.Fail
 import qualified Data.Text as Text
+import Data.Text.Lazy.Builder
 import Language.JavaScript.Inline.Command
 import Language.JavaScript.Inline.JSCode
 import Language.JavaScript.Inline.JSON
 import Language.JavaScript.Inline.Session
 import qualified Paths_inline_js
 import Prelude hiding (fail)
-import System.Directory
 import System.Exit
 import System.FilePath
 import System.Process
 
-installPuppeteer :: IO ()
-installPuppeteer = do
+data PuppeteerPackage
+  = Core
+  | Full
+  deriving (Show)
+
+pkgName :: PuppeteerPackage -> String
+pkgName Core = "puppeteer-core"
+pkgName Full = "puppeteer"
+
+installPuppeteer :: PuppeteerPackage -> IO ()
+installPuppeteer pkg = do
   _data_dir <- Paths_inline_js.getDataDir
   withCreateProcess
-    (shell "npm install puppeteer-core") {cwd = Just $ _data_dir </> "jsbits"} $ \_ _ _ ph -> do
+    (shell $ "npm install " <> pkgName pkg)
+      {cwd = Just $ _data_dir </> "jsbits"} $ \_ _ _ ph -> do
     ec <- waitForProcess ph
     case ec of
       ExitSuccess -> pure ()
@@ -39,15 +50,16 @@ installPuppeteer = do
         "Language.JavaScript.Inline.Puppeteer.installPuppeteer failed with " <>
         show ec
 
-data PuppeteerOpts = PuppeteerOpts
-  { executablePath :: FilePath
+data PuppeteerLaunchOpts = PuppeteerLaunchOpts
+  { package :: PuppeteerPackage
+  , executablePath :: Maybe FilePath
   , args :: [String]
   } deriving (Show)
 
-getDefPuppeteerOpts :: IO PuppeteerOpts
-getDefPuppeteerOpts = do
-  Just _chromium <- findExecutable "chromium"
-  pure PuppeteerOpts {executablePath = _chromium, args = ["--no-sandbox"]}
+defPuppeteerLaunchOpts :: PuppeteerLaunchOpts
+defPuppeteerLaunchOpts =
+  PuppeteerLaunchOpts
+    {package = Full, executablePath = Nothing, args = ["--no-sandbox"]}
 
 data Puppeteer = Puppeteer
   { jsSession :: JSSession
@@ -56,18 +68,20 @@ data Puppeteer = Puppeteer
   , browser :: JSCode
   }
 
-newPuppeteer :: JSSession -> PuppeteerOpts -> IO Puppeteer
-newPuppeteer s PuppeteerOpts {..} = do
+newPuppeteer :: JSSession -> PuppeteerLaunchOpts -> IO Puppeteer
+newPuppeteer s PuppeteerLaunchOpts {..} = do
   _region <- evalTo parseJSRefRegion s newJSRefRegion
   _ref <-
     evalAsyncJSRef s _region $
     asyncify $
-    "await (require(\"puppeteer-core\").launch(" <>
+    "await (require(\"" <> fromString (pkgName package) <> "\").launch(" <>
     codeFromValue
-      (Object
-         [ ("executablePath", String $ Text.pack executablePath)
-         , ("args", Array $ map (String . Text.pack) args)
-         ]) <>
+      (Object $
+       maybe
+         mempty
+         (\p -> [("executablePath", String $ Text.pack p)])
+         executablePath <>
+       [("args", Array $ map (String . Text.pack) args)]) <>
     "))"
   pure
     Puppeteer

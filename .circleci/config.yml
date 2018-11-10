@@ -17,14 +17,16 @@ jobs:
               apt-transport-https \
               curl \
               gnupg
+            curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+            echo "deb http://dl.google.com/linux/chrome/deb stable main" > /etc/apt/sources.list.d/google-chrome-unstable.list
             curl https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
-            echo "deb https://deb.nodesource.com/node_11.x sid main" >> /etc/apt/sources.list
+            echo "deb https://deb.nodesource.com/node_11.x sid main" > /etc/apt/sources.list.d/nodejs.list
             apt update
             apt full-upgrade -y
             apt install -y \
-              chromium \
               gcc \
               git \
+              google-chrome-unstable \
               libffi-dev \
               libgmp-dev \
               libncurses-dev \
