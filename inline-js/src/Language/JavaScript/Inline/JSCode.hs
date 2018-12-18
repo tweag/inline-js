@@ -15,6 +15,7 @@ module Language.JavaScript.Inline.JSCode
   ) where
 
 import Data.String (IsString)
+import Data.Text (Text)
 import qualified Data.Text.Lazy as LText
 import Data.Text.Lazy.Builder
 import Data.Text.Lazy.Builder.Int
@@ -27,7 +28,7 @@ newtype JSCode =
 unwrap :: JSCode -> Builder
 unwrap (JSCode builder) = builder
 
-codeToString :: JSCode -> JSON.JSString
+codeToString :: JSCode -> Text
 codeToString = LText.toStrict . toLazyText . unwrap
 
 codeFromValue :: JSON.Value -> JSCode

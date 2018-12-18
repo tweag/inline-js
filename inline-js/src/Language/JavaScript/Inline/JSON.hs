@@ -2,9 +2,6 @@
 
 module Language.JavaScript.Inline.JSON
   ( Value(..)
-  , JSString
-  , Object
-  , Array
   , encodeString
   , encode
   , encodeText
@@ -23,6 +20,7 @@ import Data.Foldable
 import Data.Functor
 import Data.List
 import qualified Data.Map.Strict as Map
+import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Internal.Encoding.Utf8 as Text
 import qualified Data.Text.Lazy as LText
@@ -32,19 +30,13 @@ import Data.Text.Lazy.Builder.RealFloat
 import Prelude hiding (fail)
 
 data Value
-  = Object Object
-  | Array Array
-  | String JSString
+  = Object (Map.Map Text Value)
+  | Array [Value]
+  | String Text
   | Number Double
   | Bool Bool
   | Null
   deriving (Eq, Show)
-
-type JSString = Text.Text
-
-type Object = Map.Map JSString Value
-
-type Array = [Value]
 
 encodeWord16 :: Int -> Builder
 encodeWord16 x =
@@ -59,7 +51,7 @@ encodeChar c
     fromString "\\u" <> encodeWord16 (ord c)
   | otherwise = singleton c
 
-encodeString :: JSString -> Builder
+encodeString :: Text -> Builder
 encodeString s =
   singleton '"' <> Text.foldl' (\b c -> b <> encodeChar c) mempty s <>
   singleton '"'
@@ -190,10 +182,10 @@ textChar = do
         show [c]
       | otherwise -> pure c
 
-text :: Get JSString
+text :: Get Text
 text = bracket (char' '"') (char' '"') (Text.pack <$> many textChar)
 
-lexemeText :: Get JSString
+lexemeText :: Get Text
 lexemeText = lexeme text
 
 nullableString :: Get String -> Get String
