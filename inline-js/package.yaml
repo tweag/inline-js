@@ -15,7 +15,13 @@ extra-source-files:
 data-files:
   - jsbits/server.js
 
-ghc-options: -Wall
+ghc-options:
+  - -Wall
+  - -Wcompat
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wredundant-constraints
+  - -Wnoncanonical-monad-instances
 
 dependencies:
   - base

@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Language.JavaScript.Inline.JSCode
   ( JSCode
   , codeToString
@@ -12,20 +14,31 @@ module Language.JavaScript.Inline.JSCode
   , deRefJSRef
   ) where
 
+import Data.String (IsString)
+import Data.Text (Text)
 import qualified Data.Text.Lazy as LText
 import Data.Text.Lazy.Builder
 import Data.Text.Lazy.Builder.Int
 import qualified Language.JavaScript.Inline.JSON as JSON
 
-type JSCode = Builder
+newtype JSCode =
+  JSCode Builder
+  deriving (Show, IsString)
 
-codeToString :: JSCode -> JSON.JSString
-codeToString = LText.toStrict . toLazyText
+unwrap :: JSCode -> Builder
+unwrap (JSCode builder) = builder
+
+codeToString :: JSCode -> Text
+codeToString = LText.toStrict . toLazyText . unwrap
 
 codeFromValue :: JSON.Value -> JSCode
 codeFromValue v =
-  fromString "JSON.parse(" <> JSON.encode (JSON.String $ JSON.encodeText v) <>
-  singleton ')'
+  JSCode $
+  mconcat
+    [ fromString "JSON.parse("
+    , JSON.encode $ JSON.String $ JSON.encodeText v
+    , singleton ')'
+    ]
 
 newtype JSRefRegion =
   JSRefRegion Int
@@ -48,19 +61,31 @@ parseJSRef v =
     _ -> Left "Language.JavaScript.Inline.JSCode.parseJSRef"
 
 newJSRefRegion :: JSCode
-newJSRefRegion = fromString "JSRef.newJSRefRegion()"
+newJSRefRegion = JSCode $ fromString "JSRef.newJSRefRegion()"
 
 freeJSRefRegion :: JSRefRegion -> JSCode
 freeJSRefRegion (JSRefRegion r) =
-  fromString "JSRef.freeJSRefRegion(0x" <> hexadecimal r <> singleton ')'
+  JSCode $
+  mconcat [fromString "JSRef.freeJSRefRegion(0x", hexadecimal r, singleton ')']
 
 newJSRef :: JSRefRegion -> JSCode -> JSCode
 newJSRef (JSRefRegion r) expr =
-  fromString "JSRef.newJSRef(0x" <> hexadecimal r <> fromString ",(" <> expr <>
-  fromString "))"
+  JSCode $
+  mconcat
+    [ fromString "JSRef.newJSRef(0x"
+    , hexadecimal r
+    , fromString ",("
+    , unwrap expr
+    , fromString "))"
+    ]
 
 deRefJSRef :: JSRefRegion -> JSRef -> JSCode
 deRefJSRef (JSRefRegion r) (JSRef p) =
-  fromString "JSRef.deRefJSRef(0x" <> hexadecimal r <> fromString ",0x" <>
-  hexadecimal p <>
-  fromString ")"
+  JSCode $
+  mconcat
+    [ fromString "JSRef.deRefJSRef(0x"
+    , hexadecimal r
+    , fromString ",0x"
+    , hexadecimal p
+    , fromString ")"
+    ]
