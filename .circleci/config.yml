@@ -21,13 +21,13 @@ jobs:
       - restore_cache:
           key: lts-12-17-
       - run:
-          name: Test inline-js
+          name: Test inline-js-core
           command: |
-            stack --no-terminal build inline-js --test --no-run-tests
+            stack --no-terminal build inline-js-core --test --no-run-tests
             stack --no-terminal test
       - save_cache:
           paths:
             - /root/.stack/snapshots
             - .stack-work
-            - inline-js/.stack-work
+            - inline-js-core/.stack-work
           key: lts-12-17-{{ .BuildNum }}

@@ -1,4 +1,4 @@
-name: inline-js
+name: inline-js-core
 version: 0.0.1
 category: Web
 stability: alpha
@@ -8,8 +8,12 @@ license: BSD3
 github: tweag/inline-js
 
 extra-source-files:
+  - CHANGELOG.md
   - LICENSE
-  - package.yaml
+  - README.md
+
+data-files:
+  - jsbits/server.js
 
 ghc-options:
   - -Wall
@@ -21,14 +25,21 @@ ghc-options:
 
 dependencies:
   - base
-  - template-haskell
-  - inline-js-core
+  - binary
+  - bytestring
+  - containers
+  - filepath
+  - ghc-prim
+  - process
+  - stm
+  - text
 
 library:
   source-dirs: src
+  other-modules: Paths_inline_js
 
 tests:
-  inline-js-test-suite:
+  inline-js-core-test-suite:
     source-dirs: tests
     main: Main.hs
     ghc-options:
@@ -40,6 +51,7 @@ tests:
       - -Wnoncanonical-monad-instances
     dependencies:
       - inline-js-core
-      - inline-js
+      - QuickCheck
       - tasty
       - tasty-hspec
+      - tasty-quickcheck

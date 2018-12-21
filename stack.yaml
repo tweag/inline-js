@@ -1,6 +1,7 @@
 resolver: lts-12.17
 packages:
   - inline-js
+  - inline-js-core
 nix:
   enable: true
   packages:
