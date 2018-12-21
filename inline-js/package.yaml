@@ -39,22 +39,6 @@ library:
   other-modules: Paths_inline_js
 
 tests:
-  pingpong:
-    source-dirs: tests
-    main: pingpong.hs
-    ghc-options: -threaded -with-rtsopts=-N
-    dependencies:
-      - inline-js
-      - QuickCheck
-
-  eval:
-    source-dirs: tests
-    main: eval.hs
-    ghc-options: -threaded -with-rtsopts=-N
-    dependencies:
-      - inline-js
-
-tests:
   inline-js-test-suite:
     source-dirs: tests
     main: Main.hs
