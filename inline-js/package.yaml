@@ -65,12 +65,12 @@ tests:
     source-dirs: tests
     main: Main.hs
     ghc-options:
-    - -Wall
-    - -Wcompat
-    - -Wincomplete-record-updates
-    - -Wincomplete-uni-patterns
-    - -Wredundant-constraints
-    - -Wnoncanonical-monad-instances
+      - -Wall
+      - -Wcompat
+      - -Wincomplete-record-updates
+      - -Wincomplete-uni-patterns
+      - -Wredundant-constraints
+      - -Wnoncanonical-monad-instances
     dependencies:
       - inline-js
       - QuickCheck
