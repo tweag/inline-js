@@ -21,8 +21,9 @@ jobs:
       - restore_cache:
           key: lts-12-17-
       - run:
-          name: Test inline-js-core
+          name: Test inline-js and inline-js-core
           command: |
+            stack --no-terminal build inline-js --test --no-run-tests
             stack --no-terminal build inline-js-core --test --no-run-tests
             stack --no-terminal test
       - save_cache:

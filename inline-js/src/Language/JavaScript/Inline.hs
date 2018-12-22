@@ -18,13 +18,21 @@ module Language.JavaScript.Inline
   ( js
   ) where
 
+import Data.Text as Text
+import qualified Language.Haskell.TH as TH
+import Language.Haskell.TH (Q)
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
+import Language.JavaScript.Inline.Command (eval)
+import Language.JavaScript.Inline.JSCode (codeFromString)
 
 js :: QuasiQuoter
 js =
   QuasiQuoter
-    { quoteExp = error "Language.Java.Inline: quoteExp"
+    { quoteExp = expQQ
     , quotePat = error "Language.Java.Inline: quotePat"
     , quoteType = error "Language.Java.Inline: quoteType"
     , quoteDec = error "Language.Java.Inline: quoteDec"
     }
+
+expQQ :: String -> Q TH.Exp
+expQQ input = [|\session -> eval session (codeFromString $ Text.pack input)|]

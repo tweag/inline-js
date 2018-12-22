@@ -21,8 +21,9 @@ ghc-options:
 
 dependencies:
   - base
-  - template-haskell
   - inline-js-core
+  - template-haskell
+  - text
 
 library:
   source-dirs: src
