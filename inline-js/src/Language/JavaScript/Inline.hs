@@ -29,9 +29,9 @@ js :: QuasiQuoter
 js =
   QuasiQuoter
     { quoteExp = expQQ
-    , quotePat = error "Language.Java.Inline: quotePat"
-    , quoteType = error "Language.Java.Inline: quoteType"
-    , quoteDec = error "Language.Java.Inline: quoteDec"
+    , quotePat = error "Language.JavaScript.Inline: quotePat"
+    , quoteType = error "Language.JavaScript.Inline: quoteType"
+    , quoteDec = error "Language.JavaScript.Inline: quoteDec"
     }
 
 expQQ :: String -> Q TH.Exp
