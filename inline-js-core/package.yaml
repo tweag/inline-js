@@ -36,7 +36,7 @@ dependencies:
 
 library:
   source-dirs: src
-  other-modules: Paths_inline_js
+  other-modules: Paths_inline_js_core
 
 tests:
   inline-js-core-test-suite:
