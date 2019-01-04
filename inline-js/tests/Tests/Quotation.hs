@@ -10,7 +10,6 @@ module Tests.Quotation
 import Control.Monad (void)
 import Language.JavaScript.Inline
 import Language.JavaScript.Inline.JSON
-import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.Session
 import Test.Tasty (TestTree)
 import Test.Tasty.Hspec (it, shouldBe, testSpec)
@@ -25,3 +24,11 @@ tests =
     it "should concatenate two Strings" $ do
       result <- withJSSession defJSSessionOpts [js| "hello" + " goodbye" |]
       result `shouldBe` String "hello goodbye"
+    it "should take in a Haskell String and return it" $ do
+      let sentence = String "This is a String"
+      result <- withJSSession defJSSessionOpts [js| $sentence |]
+      result `shouldBe` sentence
+    it "should append a Haskell-inserted String to a JavaScript String" $ do
+      let sentence = String "Pineapple"
+      result <- withJSSession defJSSessionOpts [js| $sentence + " on pizza" |]
+      result `shouldBe` String "Pineapple on pizza"

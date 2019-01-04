@@ -22,6 +22,7 @@ ghc-options:
 dependencies:
   - base
   - inline-js-core
+  - language-javascript
   - template-haskell
   - text
 
