@@ -4,6 +4,7 @@ module Language.JavaScript.Inline
   ( js
   ) where
 
+import Data.List (nub)
 import qualified Data.Text as Text
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH (Q)
@@ -28,7 +29,7 @@ expQuasiQuoter :: String -> Q TH.Exp
 expQuasiQuoter input =
   let tokens = either error id $ alexTestTokeniser input
       antiquotedParameterNames =
-        [name | IdentifierToken {tokenLiteral = ('$':name)} <- tokens]
+        nub [name | IdentifierToken {tokenLiteral = ('$':name)} <- tokens]
    in do [|\session -> do
              void $
                $(evaluateAll $

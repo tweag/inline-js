@@ -32,3 +32,7 @@ tests =
       let sentence = String "Pineapple"
       result <- withJSSession defJSSessionOpts [js| $sentence + " on pizza" |]
       result `shouldBe` String "Pineapple on pizza"
+    it "should work when reusing the same variable in the same splice" $ do
+      let myNumber = Number 4
+      result <- withJSSession defJSSessionOpts [js| $myNumber + $myNumber |]
+      result `shouldBe` Number 8
