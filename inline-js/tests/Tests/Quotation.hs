@@ -36,3 +36,22 @@ tests =
       let myNumber = Number 4
       result <- withJSSession defJSSessionOpts [js| $myNumber + $myNumber |]
       result `shouldBe` Number 8
+    it "should not share state when reusing the same variable across splices" $ do
+      let myNumber = Number 3
+      result1 <- withJSSession defJSSessionOpts [js| $myNumber + 3 |]
+      result2 <- withJSSession defJSSessionOpts [js| $myNumber + 4 |]
+      result1 `shouldBe` Number 6
+      result2 `shouldBe` Number 7
+    it
+      "should not share state when resuing the same variable name across splices" $ do
+      let firstOperation =
+            let word = String "Bananas"
+             in do result <- withJSSession defJSSessionOpts [js| $word |]
+                   result `shouldBe` word
+      let secondOperation =
+            let word = String "Pears"
+             in do result <- withJSSession defJSSessionOpts [js| $word |]
+                   result `shouldBe` word
+      firstOperation
+      secondOperation
+      firstOperation
