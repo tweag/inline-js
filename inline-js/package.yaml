@@ -9,7 +9,6 @@ github: tweag/inline-js
 
 extra-source-files:
   - LICENSE
-  - package.yaml
 
 ghc-options:
   - -Wall
