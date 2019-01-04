@@ -9,7 +9,6 @@ import qualified Data.Text as Text
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH (Q)
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
-import Language.Haskell.TH.Syntax (liftString)
 import Language.JavaScript.Inline.Command (eval)
 import Language.JavaScript.Inline.JSCode (codeFromString)
 import Language.JavaScript.Inline.JSON (encodeText)
@@ -46,6 +45,5 @@ nameToJSVarDeclaration name =
   let variableReference :: Q TH.Exp
       variableReference = TH.varE $ TH.mkName name
    in [|codeFromString $
-        "const $" <> $(liftString name) <> " = " <>
-        encodeText $(variableReference) <>
-        ";"|]
+        Text.concat
+          ["const $", name, " = ", encodeText $(variableReference), ";"]|]
