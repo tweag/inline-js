@@ -46,6 +46,6 @@ nameToJSVarDeclaration name =
   let variableReference :: Q TH.Exp
       variableReference = TH.varE $ TH.mkName name
    in [|codeFromString $
-        "let $" <> $(liftString name) <> " = " <>
+        "const $" <> $(liftString name) <> " = " <>
         encodeText $(variableReference) <>
         ";"|]
