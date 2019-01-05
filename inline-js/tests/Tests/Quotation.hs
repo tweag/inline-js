@@ -7,7 +7,7 @@ module Tests.Quotation
   ( tests
   ) where
 
-import Control.Monad (void)
+import Control.Monad (forM_)
 import Language.JavaScript.Inline
 import Language.JavaScript.Inline.JSON
 import Language.JavaScript.Inline.Session
@@ -36,6 +36,15 @@ tests =
       let myNumber = Number 4
       result <- withJSSession defJSSessionOpts [js| $myNumber + $myNumber |]
       result `shouldBe` Number 8
+    it "should compute the result of three separate variables" $ do
+      let firstName = Number 1
+          secondName = Number 2
+          thirdName = Number 9
+      result <-
+        withJSSession
+          defJSSessionOpts
+          [js| $firstName + $secondName + $thirdName |]
+      result `shouldBe` Number 12
     it "should not share state when reusing the same variable across splices" $ do
       let myNumber = Number 3
       result1 <- withJSSession defJSSessionOpts [js| $myNumber + 3 |]
@@ -55,3 +64,11 @@ tests =
       firstOperation
       secondOperation
       firstOperation
+    it
+      "should not collide names when reusing the same variable name across splices in the same session" $ do
+      session <- startJSSession defJSSessionOpts
+      forM_ [1 :: Int .. 10] $
+        const $ do
+          let word = String "Bananas"
+          result <- [js| $word |] session
+          result `shouldBe` word
