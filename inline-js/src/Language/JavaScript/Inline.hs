@@ -1,8 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Language.JavaScript.Inline
-  ( js
+  ( expr
+  , block
   ) where
 
 import Data.List (nub)
@@ -15,23 +17,33 @@ import Language.JavaScript.Inline.JSCode (codeFromString, codeToString)
 import Language.JavaScript.Inline.JSON (encodeText)
 import Language.JavaScript.Parser.Lexer (Token(..), alexTestTokeniser)
 
-js :: QuasiQuoter
-js =
+qq :: (String -> Q TH.Exp) -> QuasiQuoter
+qq myQQ =
   QuasiQuoter
-    { quoteExp = expQuasiQuoter
+    { quoteExp = myQQ
     , quotePat = error "Language.JavaScript.Inline: quotePat"
     , quoteType = error "Language.JavaScript.Inline: quoteType"
     , quoteDec = error "Language.JavaScript.Inline: quoteDec"
     }
 
--- produces splice with type `JSSession -> IO JSCode`
-expQuasiQuoter :: String -> Q TH.Exp
-expQuasiQuoter input =
+expr :: QuasiQuoter
+expr = qq expressionQuasiQuoter
+
+block :: QuasiQuoter
+block = qq blockQuasiQuoter
+
+--- produces splice with type `JSSession -> IO JSCode`
+expressionQuasiQuoter :: String -> Q TH.Exp
+expressionQuasiQuoter input = blockQuasiQuoter $ "return " ++ input ++ ";"
+
+--- produces splice with type `JSSession -> IO JSCode`
+blockQuasiQuoter :: String -> Q TH.Exp
+blockQuasiQuoter input =
   let tokens = either error id $ alexTestTokeniser input
       antiquotedParameterNames =
         nub [name | IdentifierToken {tokenLiteral = ('$':name)} <- tokens]
       wrappedCode = wrapCode input antiquotedParameterNames
-   in do [|\session -> do eval session $ codeFromString $(wrappedCode)|]
+   in [|\session -> do eval session $ codeFromString $(wrappedCode)|]
 
 --
 -- This fits the quasiquoted content into following format:
@@ -49,9 +61,9 @@ wrapCode code antiquotedNames =
   [|mconcat
       [ "(function( "
       , $(argumentList antiquotedNames)
-      , " ) { return "
+      , " ) { "
       , codeToString code
-      , "; })( "
+      , " })( "
       , $(argumentValues $ antiquotedNames)
       , " );"
       ]|]

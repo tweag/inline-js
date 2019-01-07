@@ -19,22 +19,22 @@ tests :: IO TestTree
 tests =
   testSpec "Inline JavaScript QuasiQuoter" $ do
     it "should add two numbers and return a Number" $ do
-      result <- withJSSession defJSSessionOpts [js| 1 + 3 |]
+      result <- withJSSession defJSSessionOpts [expr| 1 + 3 |]
       result `shouldBe` Number 4
     it "should concatenate two Strings" $ do
-      result <- withJSSession defJSSessionOpts [js| "hello" + " goodbye" |]
+      result <- withJSSession defJSSessionOpts [expr| "hello" + " goodbye" |]
       result `shouldBe` String "hello goodbye"
     it "should take in a Haskell String and return it" $ do
       let sentence = String "This is a String"
-      result <- withJSSession defJSSessionOpts [js| $sentence |]
+      result <- withJSSession defJSSessionOpts [expr| $sentence |]
       result `shouldBe` sentence
     it "should append a Haskell-inserted String to a JavaScript String" $ do
       let sentence = String "Pineapple"
-      result <- withJSSession defJSSessionOpts [js| $sentence + " on pizza" |]
+      result <- withJSSession defJSSessionOpts [expr| $sentence + " on pizza" |]
       result `shouldBe` String "Pineapple on pizza"
     it "should work when reusing the same variable in the same splice" $ do
       let myNumber = Number 4
-      result <- withJSSession defJSSessionOpts [js| $myNumber + $myNumber |]
+      result <- withJSSession defJSSessionOpts [expr| $myNumber + $myNumber |]
       result `shouldBe` Number 8
     it "should compute the result of three separate variables" $ do
       let firstName = Number 1
@@ -43,23 +43,23 @@ tests =
       result <-
         withJSSession
           defJSSessionOpts
-          [js| $firstName + $secondName + $thirdName |]
+          [expr| $firstName + $secondName + $thirdName |]
       result `shouldBe` Number 12
     it "should not share state when reusing the same variable across splices" $ do
       let myNumber = Number 3
-      result1 <- withJSSession defJSSessionOpts [js| $myNumber + 3 |]
-      result2 <- withJSSession defJSSessionOpts [js| $myNumber + 4 |]
+      result1 <- withJSSession defJSSessionOpts [expr| $myNumber + 3 |]
+      result2 <- withJSSession defJSSessionOpts [expr| $myNumber + 4 |]
       result1 `shouldBe` Number 6
       result2 `shouldBe` Number 7
     it
       "should not share state when resuing the same variable name across splices" $ do
       let firstOperation =
             let word = String "Bananas"
-             in do result <- withJSSession defJSSessionOpts [js| $word |]
+             in do result <- withJSSession defJSSessionOpts [expr| $word |]
                    result `shouldBe` word
       let secondOperation =
             let word = String "Pears"
-             in do result <- withJSSession defJSSessionOpts [js| $word |]
+             in do result <- withJSSession defJSSessionOpts [expr| $word |]
                    result `shouldBe` word
       firstOperation
       secondOperation
@@ -70,5 +70,5 @@ tests =
       forM_ [1 :: Int .. 10] $
         const $ do
           let word = String "Bananas"
-          result <- [js| $word |] session
+          result <- [expr| $word |] session
           result `shouldBe` word
