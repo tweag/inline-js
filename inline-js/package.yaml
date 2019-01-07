@@ -40,6 +40,7 @@ tests:
       - -Wredundant-constraints
       - -Wnoncanonical-monad-instances
     dependencies:
+      - containers
       - inline-js-core
       - inline-js
       - tasty

@@ -8,6 +8,7 @@ module Tests.Quotation
   ) where
 
 import Control.Monad (forM_)
+import qualified Data.Map.Strict as Map
 import Language.JavaScript.Inline
 import Language.JavaScript.Inline.JSON
 import Language.JavaScript.Inline.Session
@@ -72,3 +73,41 @@ tests =
           let word = String "Bananas"
           result <- [expr| $word |] session
           result `shouldBe` word
+    it "should process a simple block expression" $ do
+      let myNumber = Number 3
+      result <-
+        withJSSession
+          defJSSessionOpts
+          [block|
+            const myNumber = $myNumber;
+            return "Your number was: " + myNumber;
+          |]
+      result `shouldBe` String "Your number was: 3"
+    it "should process a complex block expression" $ do
+      let myObject =
+            Object $
+            Map.fromList
+              [ ( "playerCharacter"
+                , Object $
+                  Map.fromList
+                    [ ("hp", Number 10)
+                    , ("maxHp", Number 30)
+                    , ("isDead", Bool False)
+                    ])
+              ]
+      result <-
+        withJSSession
+          defJSSessionOpts
+          [block|
+          const gameWorld = $myObject;
+          const player = gameWorld.playerCharacter;
+
+          const renderHp = somePlayer => somePlayer.hp + "/" + somePlayer.maxHp;
+
+          if (player.hp <= 0 || player.isDead) {
+            return "Game Over";
+          } else {
+            return "Your HP: " + renderHp(player);
+          }
+        |]
+      result `shouldBe` String "Your HP: 10/30"
