@@ -1,7 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
@@ -12,7 +11,7 @@ module Tests.Quotation
 import Control.Monad (forM_)
 
 import Data.Aeson (FromJSON(..), ToJSON(..))
-import Data.Text (Text)
+import Data.Text (pack)
 import GHC.Generics (Generic)
 import Language.JavaScript.Inline
 import Language.JavaScript.Inline.Session
@@ -39,15 +38,15 @@ tests =
       result `shouldBe` (4 :: Int)
     it "should concatenate two Strings" $ do
       result <- withJSSession defJSSessionOpts [expr| "hello" + " goodbye" |]
-      result `shouldBe` ("hello goodbye" :: String)
+      result `shouldBe` "hello goodbye"
     it "should take in a Haskell String and return it" $ do
-      let sentence = "This is a String" :: String
+      let sentence = "This is a String"
       result <- withJSSession defJSSessionOpts [expr| $sentence |]
       result `shouldBe` sentence
     it "should append a Haskell-inserted String to a JavaScript String" $ do
-      let sentence = "Pineapple" :: String
+      let sentence = "Pineapple"
       result <- withJSSession defJSSessionOpts [expr| $sentence + " on pizza" |]
-      result `shouldBe` ("Pineapple on pizza" :: String)
+      result `shouldBe` "Pineapple on pizza"
     it "should work when reusing the same variable in the same splice" $ do
       let myNumber = (4 :: Int)
       result <- withJSSession defJSSessionOpts [expr| $myNumber + $myNumber |]
@@ -70,11 +69,11 @@ tests =
     it
       "should not share state when resuing the same variable name across splices" $ do
       let firstOperation =
-            let word = "Bananas" :: Text
+            let word = pack "Bananas"
              in do result <- withJSSession defJSSessionOpts [expr| $word |]
                    result `shouldBe` word
       let secondOperation =
-            let word = "Pears" :: Text
+            let word = pack "Pears"
              in do result <- withJSSession defJSSessionOpts [expr| $word |]
                    result `shouldBe` word
       firstOperation
@@ -85,7 +84,7 @@ tests =
       session <- startJSSession defJSSessionOpts
       forM_ [1 :: Int .. 10] $
         const $ do
-          let word = "Bananas" :: Text
+          let word = pack "Bananas"
           result <- [expr| $word |] session
           result `shouldBe` word
     it "should process a simple block expression" $ do
@@ -97,7 +96,7 @@ tests =
             const myNumber = $myNumber;
             return "Your number was: " + myNumber;
           |]
-      result `shouldBe` ("Your number was: 3" :: Text)
+      result `shouldBe` pack "Your number was: 3"
     it "should process a complex block expression" $ do
       let gameWorld =
             GameWorld
@@ -108,13 +107,13 @@ tests =
         withJSSession
           defJSSessionOpts
           [block|
-          const gameWorld = $gameWorld;
-          const player = gameWorld.playerCharacter;
-          const renderHp = somePlayer => somePlayer.hp + "/" + somePlayer.maxHp;
-          if (player.hp <= 0 || player.isDead) {
-            return "Game Over";
-          } else {
-            return "Your HP: " + renderHp(player);
-          }
-        |]
-      result `shouldBe` ("Your HP: 10/30" :: String)
+            const gameWorld = $gameWorld;
+            const player = gameWorld.playerCharacter;
+            const renderHp = somePlayer => somePlayer.hp + "/" + somePlayer.maxHp;
+            if (player.hp <= 0 || player.isDead) {
+              return "Game Over";
+            } else {
+              return "Your HP: " + renderHp(player);
+            }
+          |]
+      result `shouldBe` "Your HP: 10/30"
