@@ -19,7 +19,9 @@ ghc-options:
   - -Wnoncanonical-monad-instances
 
 dependencies:
+  - aeson
   - base
+  - bytestring
   - inline-js-core
   - language-javascript
   - template-haskell

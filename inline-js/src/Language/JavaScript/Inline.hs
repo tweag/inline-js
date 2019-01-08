@@ -15,6 +15,7 @@ import Language.Haskell.TH.Quote (QuasiQuoter(..))
 import Language.JavaScript.Inline.Command (eval)
 import Language.JavaScript.Inline.JSCode (codeFromString, codeToString)
 import Language.JavaScript.Inline.JSON (encodeText)
+import qualified Language.JavaScript.Inline.JsonConvertible as JsonConvertible
 import Language.JavaScript.Parser.Lexer (Token(..), alexTestTokeniser)
 
 qq :: (String -> Q TH.Exp) -> QuasiQuoter
@@ -43,7 +44,9 @@ blockQuasiQuoter input =
       antiquotedParameterNames =
         nub [name | IdentifierToken {tokenLiteral = ('$':name)} <- tokens]
       wrappedCode = wrapCode input antiquotedParameterNames
-   in [|\session -> do eval session $ codeFromString $(wrappedCode)|]
+   in [|\session -> do
+          result <- eval session $ codeFromString $(wrappedCode)
+          return . JsonConvertible.parse $ encodeText result|]
 
 --
 -- This fits the quasiquoted content into following format:
@@ -85,6 +88,7 @@ argumentValues rawNames =
     (firstName:names) ->
       foldr
         (\name acc ->
-           [|$(acc) <> ", " <> encodeText $(TH.varE $ TH.mkName name)|])
-        [|encodeText $(TH.varE $ TH.mkName firstName)|]
+           [|$(acc) <> ", " <>
+             JsonConvertible.stringify $(TH.varE $ TH.mkName name)|])
+        [|JsonConvertible.stringify $(TH.varE $ TH.mkName firstName)|]
         names
