@@ -3,6 +3,7 @@
 module Language.JavaScript.Inline.JSCode
   ( JSCode
   , codeToString
+  , codeFromString
   , codeFromValue
   , JSRefRegion
   , parseJSRefRegion
@@ -27,6 +28,9 @@ newtype JSCode =
 
 unwrap :: JSCode -> Builder
 unwrap (JSCode builder) = builder
+
+codeFromString :: Text -> JSCode
+codeFromString = JSCode . fromText
 
 codeToString :: JSCode -> Text
 codeToString = LText.toStrict . toLazyText . unwrap

@@ -28,7 +28,7 @@ import qualified Data.Text.Lazy.IO as LText
 import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.MessageCounter
-import qualified Paths_inline_js
+import qualified Paths_inline_js_core
 import System.Environment.Blank
 import System.FilePath
 import System.IO
@@ -64,7 +64,7 @@ data JSSession = JSSession
 
 startJSSession :: JSSessionOpts -> IO JSSession
 startJSSession JSSessionOpts {..} = do
-  _datadir <- Paths_inline_js.getDataDir
+  _datadir <- Paths_inline_js_core.getDataDir
   _env <- getEnvironment
   (Just _stdin, Just _stdout, _m_stderr, _h) <-
     createProcess
