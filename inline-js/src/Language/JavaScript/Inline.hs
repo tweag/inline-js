@@ -4,6 +4,11 @@
 module Language.JavaScript.Inline
   ( expr
   , block
+  , startJSSession
+  , withJSSession
+  , killJSSession
+  , defJSSessionOpts
+  , JSSessionOpts(..)
   ) where
 
 import Data.List (nub)
@@ -15,6 +20,13 @@ import Language.JavaScript.Inline.Command (eval)
 import Language.JavaScript.Inline.JSCode (codeFromString)
 import Language.JavaScript.Inline.JSON (encodeText)
 import qualified Language.JavaScript.Inline.JsonConvertible as JsonConvertible
+import Language.JavaScript.Inline.Session
+  ( JSSessionOpts(..)
+  , defJSSessionOpts
+  , killJSSession
+  , startJSSession
+  , withJSSession
+  )
 import Language.JavaScript.Parser.Lexer (Token(..), alexTestTokeniser)
 
 qq :: (String -> Q TH.Exp) -> QuasiQuoter
