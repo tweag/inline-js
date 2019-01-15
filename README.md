@@ -71,6 +71,28 @@ Here, you can see the Haskell value `gameWorld` (which has both `ToJSON` and `Fr
 
 Important note: `withJSSession` wraps the session with cleanup logic, but when you create a session with `startJSSession`, you will need to clean up with `killJSSesssion`.
 
+## Progress Checklist
+
+* [x] Phase 0: Bare bones RPC
+    * [x] Lightweight JSON library, including AST/encoder/decoder
+    * [x] Lightweight RPC supporting concurrent non-order-preserving requests/responses in a cross platform manner, without relying on HTTP
+    * [x] Proper error handling
+    * [x] Basic ping/pong unit test powered by QuickCheck generated JSON values
+* [x] Phase 1: Eval server
+    * [x] Eval server for synchronous code, supporting eval timeouts
+    * [x] Eval server for asynchronous code, supporting eval/resolve timeouts
+* [ ] Phase 2: Marshaling arbitrary Haskell/Node.js values, including functions
+    * [x] Modeling arbitrary Node.js values as `JSRef`s
+        * [x] Mapping from `JSRef`s to JavaScript values in the eval server
+        * [x] Explicit construction of `JSRef`s based on Haskell eval commands
+        * [x] Assembling a Haskell `JSRef` into an eval command
+        * [x] Regional destruction of `JSRef`s in Haskell
+    * [ ] Modeling arbitrary Haskell values
+        * [ ] `Dynamic`-based? More strongly typed? Yet to be explored.
+* [ ] Phase 3: Haskell syntactic sugar, e.g. `foreign import javascript`
+    * [ ] Monad transformer to thread a session around
+    * [ ] Template Haskell splices to convert from syntactic sugar to actual logic
+
 ## Sponsors
 
 [![Tweag I/O](https://www.tweag.io/img/tweag-small.png)](https://www.tweag.io)
