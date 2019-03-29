@@ -8,13 +8,18 @@ module Language.JavaScript.Inline.Internals.IPC
   , newIPCSession
   , killIPCSession
   , ipcSend
-  , ipcRecvAll
+  , ipcRecv
   ) where
 
 import Control.DeepSeq
 import Control.Exception
+import qualified Data.ByteString as BS
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Unsafe as BS
+import Data.Word
+import Foreign.Ptr
+import Foreign.Storable
 import qualified Paths_inline_js_core
 import System.FilePath
 import System.IO
@@ -70,7 +75,11 @@ ipcSend IPCSession {..} buf = do
     word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
   hFlush nodeStdIn
 
-ipcRecvAll :: IPCSession -> IO LBS.ByteString
-ipcRecvAll IPCSession {..} = do
-  buf <- LBS.hGetContents nodeStdOut
+ipcRecv :: IPCSession -> IO LBS.ByteString
+ipcRecv IPCSession {..} = do
+  lbuf <- BS.hGet nodeStdOut 4
+  len <-
+    BS.unsafeUseAsCStringLen lbuf $ \(lptr, _) ->
+      fromIntegral <$> peek (castPtr lptr :: Ptr Word32)
+  buf <- LBS.hGet nodeStdOut len
   evaluate $ force buf
