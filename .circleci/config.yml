@@ -4,6 +4,7 @@ jobs:
   build:
     docker:
       - image: terrorjack/pixie:latest
+    resource_class: xlarge
     steps:
       - run:
           name: Install dependencies
