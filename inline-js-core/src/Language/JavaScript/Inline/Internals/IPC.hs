@@ -4,13 +4,14 @@
 module Language.JavaScript.Inline.Internals.IPC
   ( IPCOpts(..)
   , defIPCOpts
-  , IPCSession(..)
+  , IPCSession
   , newIPCSession
   , killIPCSession
   , ipcSend
   , ipcRecv
   ) where
 
+import Control.Concurrent.MVar
 import Control.DeepSeq
 import Control.Exception
 import qualified Data.ByteString as BS
@@ -37,6 +38,7 @@ data IPCSession = IPCSession
   { nodeProc :: ProcessHandle
   , nodeStdIn, nodeStdOut :: Handle
   , nodeStdErr :: Maybe Handle
+  , nodeStdInLock, nodeStdOutLock :: MVar ()
   }
 
 newIPCSession :: IPCOpts -> IO IPCSession
@@ -58,28 +60,34 @@ newIPCSession IPCOpts {..} = do
   hSetBuffering _stdin $ BlockBuffering Nothing
   hSetBinaryMode _stdout True
   hSetBuffering _stdout $ BlockBuffering Nothing
+  _stdin_lock <- newMVar ()
+  _stdout_lock <- newMVar ()
   pure
     IPCSession
       { nodeProc = _ph
       , nodeStdIn = _stdin
       , nodeStdOut = _stdout
       , nodeStdErr = _m_stderr
+      , nodeStdInLock = _stdin_lock
+      , nodeStdOutLock = _stdout_lock
       }
 
 killIPCSession :: IPCSession -> IO ()
 killIPCSession IPCSession {..} = terminateProcess nodeProc
 
 ipcSend :: IPCSession -> LBS.ByteString -> IO ()
-ipcSend IPCSession {..} buf = do
-  hPutBuilder nodeStdIn $
-    word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
-  hFlush nodeStdIn
+ipcSend IPCSession {..} buf =
+  withMVar nodeStdInLock $ \_ -> do
+    hPutBuilder nodeStdIn $
+      word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
+    hFlush nodeStdIn
 
 ipcRecv :: IPCSession -> IO LBS.ByteString
-ipcRecv IPCSession {..} = do
-  lbuf <- BS.hGet nodeStdOut 4
-  len <-
-    BS.unsafeUseAsCStringLen lbuf $ \(lptr, _) ->
-      fromIntegral <$> peek (castPtr lptr :: Ptr Word32)
-  buf <- LBS.hGet nodeStdOut len
-  evaluate $ force buf
+ipcRecv IPCSession {..} =
+  withMVar nodeStdOutLock $ \_ -> do
+    lbuf <- BS.hGet nodeStdOut 4
+    len <-
+      BS.unsafeUseAsCStringLen lbuf $ \(lptr, _) ->
+        fromIntegral <$> peek (castPtr lptr :: Ptr Word32)
+    buf <- LBS.hGet nodeStdOut len
+    evaluate $ force buf
