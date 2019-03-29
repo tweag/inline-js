@@ -1,26 +1,77 @@
-# `inline-js-ng`
+# `inline-js`
 
 [![CircleCI](https://circleci.com/gh/tweag/inline-js/tree/master.svg?style=shield)](https://circleci.com/gh/tweag/inline-js/tree/master)
 
-Evolved [`inline-js`](https://github.com/tweag/inline-js). Don't interpret `ng` as "no good"; it's "new generation" :D
+## Note
 
-Note: The "old generation" of `inline-js` is archived at the [`legacy`](https://github.com/tweag/inline-js/tree/legacy) branch.
+This repository contains two packages, `inline-js` and `inline-js-core`. Chances are, you won't be interested in working with `inline-js-core` directly, and will want to use the QuasiQuoter interface found in `inline-js`.
 
-## Motivation
+Currently, this repository is an active laboratory. The API is subject to radical changes based on feedback from the development of `asterius`.
 
-Previously, `inline-js` was started as a companion project of [`asterius`](https://github.com/tweag/asterius). Since `asterius` generates code which can be executed in Node.js, we thought it'd be nice to implement some Haskell/Node.js bridge so it could be useful to `asterius` as well as a lot of other projects involved with web stuff. Eventually, `inline-js` didn't graduate from a proof-of-concept, and `asterius` didn't integrate `inline-js`.
+Still, we are interested in how `inline-js` may be useful to your projects. If you have any questions, suggestions or criticisms, please don't hesitate to file an issue!
 
-The core of the original `inline-js` was essentially an RPC server over HTTP, receiving eval commands from Haskell and returning results. Data exchanging relies on `FromJSON`/`ToJSON` instances of `aeson`. There are certain flaws and also delicate mismatches between what `inline-js` offered and what `asterius` needed:
+## How it Works
 
-* `inline-js` doesn't properly perform error handling, especially on the Node.js side. Comprehensive error handling is inherently hard, especially combined with Node.js callbacks, Haskell threads and asynchronous exceptions, but `inline-js` was, esentially, lazy on this one.
-* `inline-js` comes with `aeson`, `http-client` and their friends, therefore introduces a huge dependency overhead. For routine web projects it's not a problem at all, but `asterius` seeks to be upstreamed back to GHC, therefore the `asterius` family of packages mustn't rely on anything out of ghc boot libs.
-* `inline-js` doesn't have concurrency in mind; it assumes eval commands are dispatched in sequence in a single Haskell thread, and no eval command must be emitted before the previous one returns. This is a serious limitation; we really want to be able to share a session between multiple Haskell threads, and perform evaluations in a thread-safe manner without resorting to using a mutex.
-* `inline-js` could only transmit simple JSON-encoded data between Haskell/Node.js. We really want to be able to transmit arbitrary Haskell/Node.js objects.
-* `inline-js` required a custom `Setup.hs` for anything depending on it. It's not good. We don't need that degree of compile-time magic.
+`inline-js` follows in the tradition of [inline-c](http://hackage.haskell.org/package/inline-c) and [inline-java](http://hackage.haskell.org/package/inline-java) in enabling developers to bridge the gap between Haskell and another programming language. It comes with two QuasiQuoters, `expr` and `block`. Also included is an instance for data-types which are instances of the `aeson` `ToJSON` and `FromJSON` typeclasses, to allow their use across the Haskell-JS boundary.
 
-Several months later, after accumulating enough experience in the development of `asterius` (particularly its JavaScript FFI feature), it looks like a good timing for `inline-js-ng`.
+### A sample use of `expr`:
 
-## Features
+``` haskell
+sumInJS :: Int -> Int -> IO Int
+sumInJS v1 v2 =
+    withJSSession defJSSessionOpts [expr| $v1 + $v2 |]
+```
+
+To antiquote a Haskell variable into the JavaScript context, just precede its name with the dollar symbol. The two `Int` values can be inserted without any typeclass derivation as `Int` is already an instance of `ToJSON` and `FromJSON`.
+
+Note that there is an implicit `return` inserted when using `expr`, so don't add one yourself. If you need to do more complex work, you'll want to use `block`.
+
+### A sample use of `block`:
+``` haskell
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
+
+data GameWorld = GameWorld
+  { playerCharacter :: PlayerCharacter
+  } deriving (Generic, ToJSON, FromJSON)
+
+data PlayerCharacter = PlayerCharacter
+  { hp :: Int
+  , maxHp :: Int
+  , isDead :: Bool
+  } deriving (Generic, ToJSON, FromJSON)
+
+getCharacterStatus :: IO String
+getCharacterStatus =
+    let gameWorld =
+            GameWorld
+              { playerCharacter =
+                  PlayerCharacter {hp = 10, maxHp = 30, isDead = False}
+              }
+    in
+        withJSSession defJSSessionOpts [block|
+            const gameWorld = $gameWorld;
+            const player = gameWorld.playerCharacter;
+            const renderHp = somePlayer => somePlayer.hp + "/" + somePlayer.maxHp;
+            if (player.hp <= 0 || player.isDead) {
+                return "Game Over";
+            } else {
+                return "Your HP: " + renderHp(player);
+            }
+        |]
+```
+
+Here, you can see the Haskell value `gameWorld` (which has both `ToJSON` and `FromJSON` derived) serialized into the JavaScript quotation with the antiquotation `$gameWorld`. Explicit use of `return` is required to extract a value out from the quotation.
+
+### Session Management
+
+`inline-js` also exposes the `withJSSession`, `startJSSession` and `killJSSession` functions, with options for configuring the session. `inline-js` works by communicating with a Node.js script which evaluates the quoted JavaScript code. Within a session, global variables are maintained across splices. `let`, `var` and `const` variable declarations are not shared even within the same session.
+
+Important note: `withJSSession` wraps the session with cleanup logic, but when you create a session with `startJSSession`, you will need to clean up with `killJSSesssion`.
+
+## Progress Checklist
 
 * [x] Phase 0: Bare bones RPC
     * [x] Lightweight JSON library, including AST/encoder/decoder
@@ -42,16 +93,8 @@ Several months later, after accumulating enough experience in the development of
     * [ ] Monad transformer to thread a session around
     * [ ] Template Haskell splices to convert from syntactic sugar to actual logic
 
-For the use case of `asterius`, proceeding to the middle of Phase 2 shall be mostly enough. By then `inline-js-ng` becomes a reliable lightweight Haskell/Node.js bridge which allows `asterius` to run its compiled code and inspect structured debugging data in its test suites.
-
-## Feedback
-
-Currently, this repository is an active laboratory. The API is subject to radical changes based on feedback from the development of `asterius`.
-
-Still, we are interested in how `inline-js-ng` may be useful to your projects. Shall you have any question, suggestion or criticism, please don't hesitate to file an issue!
-
 ## Sponsors
 
 [![Tweag I/O](https://www.tweag.io/img/tweag-small.png)](https://www.tweag.io)
 
-`inline-js-ng` is developed by [Tweag I/O](https://tweag.io/).
+`inline-js` and `inline-js-core` are developed by [Tweag I/O](https://tweag.io/).

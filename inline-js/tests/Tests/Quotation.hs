@@ -14,7 +14,13 @@ import Data.Aeson (FromJSON(..), ToJSON(..))
 import Data.Text (pack)
 import GHC.Generics (Generic)
 import Language.JavaScript.Inline
-import Language.JavaScript.Inline.Session
+  ( block
+  , defJSSessionOpts
+  , expr
+  , killJSSession
+  , startJSSession
+  , withJSSession
+  )
 import Test.Tasty (TestTree)
 import Test.Tasty.Hspec (it, shouldBe, testSpec)
 
@@ -87,6 +93,7 @@ tests =
           let word = pack "Bananas"
           result <- [expr| $word |] session
           result `shouldBe` word
+      killJSSession session
     it "should process a simple block expression" $ do
       let myNumber = 3 :: Int
       result <-
