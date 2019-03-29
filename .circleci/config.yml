@@ -4,11 +4,12 @@ jobs:
   build:
     docker:
       - image: terrorjack/pixie:latest
+    resource_class: xlarge
     steps:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.03pre157897.c9e13806267 nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre173445.796a8764ab8 nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
@@ -18,17 +19,8 @@ jobs:
               nixpkgs.openssh \
               nixpkgs.stack
       - checkout
-      - restore_cache:
-          key: lts-12-17-
       - run:
           name: Test inline-js and inline-js-core
           command: |
-            stack --no-terminal build inline-js --test --no-run-tests
-            stack --no-terminal build inline-js-core --test --no-run-tests
+            stack --no-terminal build inline-js-core inline-js --test --no-run-tests
             stack --no-terminal test
-      - save_cache:
-          paths:
-            - /root/.stack/snapshots
-            - .stack-work
-            - inline-js-core/.stack-work
-          key: lts-12-17-{{ .BuildNum }}

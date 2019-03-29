@@ -10,7 +10,6 @@ github: tweag/inline-js
 extra-source-files:
   - CHANGELOG.md
   - LICENSE
-  - README.md
 
 data-files:
   - jsbits/server.js
