@@ -12,7 +12,7 @@ extra-source-files:
   - LICENSE
 
 data-files:
-  - jsbits/server.js
+  - jsbits/*
 
 ghc-options:
   - -Wall
@@ -27,6 +27,7 @@ dependencies:
   - binary
   - bytestring
   - containers
+  - deepseq
   - filepath
   - ghc-prim
   - process
