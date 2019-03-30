@@ -24,13 +24,21 @@ export class IPC extends EventEmitter {
         this.iMsgLen = 0;
       }
     });
+    this.i.on("error", err => this.emit("error", err));
+    this.o.on("error", err => this.emit("error", err));
   }
 
   send(buf) {
-    const nbuf = Buffer.allocUnsafe(buf.length + 4);
-    nbuf.writeUInt32LE(buf.length);
-    buf.copy(nbuf, 4);
-    this.o.write(nbuf);
-    this.emit("send", buf);
+    return new Promise((resolve, reject) => {
+      const nbuf = Buffer.allocUnsafe(buf.length + 4);
+      nbuf.writeUInt32LE(buf.length);
+      buf.copy(nbuf, 4);
+      this.o.write(nbuf, err => {
+        if (typeof err === "undefined") {
+          this.emit("send", buf);
+          resolve();
+        } else reject(err);
+      });
+    });
   }
 }
