@@ -28,7 +28,7 @@ tests =
               { procPath = "node"
               , procArgs =
                   [ "--experimental-modules"
-                  , _datadir </> "jsbits" </> "main.mjs"
+                  , _datadir </> "jsbits" </> "echo.mjs"
                   ]
               , procStdErrInherit = True
               }
