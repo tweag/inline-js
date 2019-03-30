@@ -36,4 +36,5 @@ dependencies:
 
 library:
   source-dirs: src
-  other-modules: Paths_inline_js_core
+  generated-exposed-modules:
+    - Paths_inline_js_core

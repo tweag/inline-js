@@ -1,7 +1,7 @@
 import assert from "assert";
 import { EventEmitter } from "events";
 
-export class IPC extends EventEmitter {
+export class Transport extends EventEmitter {
   constructor(i, o) {
     super();
     this.i = i;
