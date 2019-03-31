@@ -57,7 +57,7 @@ tests =
             fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
 
 setup :: IO JSSession
-setup = startJSSession defJSSessionOpts
+setup = newJSSession defJSSessionOpts
 
 teardown :: JSSession -> IO ()
-teardown = killJSSession
+teardown = closeJSSession

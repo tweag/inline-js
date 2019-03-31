@@ -1,7 +1,8 @@
 import process from "process";
-import readline from "readline";
-import { Transport } from "./transport.mjs";
+import { StringDecoder } from "string_decoder";
 import vm from "vm";
+
+import { Transport } from "./transport.mjs";
 
 process.on("uncaughtException", err => {
   process.stderr.write(err.stack);
@@ -29,20 +30,16 @@ function extendObject(obj, cond, ext) {
   return cond !== false ? Object.assign(obj, ext) : obj;
 }
 
+const ipc = new Transport(process.stdin, process.stdout);
+
 function sendMsg(msg) {
-  const s = JSON.stringify(msg) + "\n";
-  process.stdout.write(s, "utf8");
+  ipc.send(Buffer.from(JSON.stringify(msg)));
 }
 
-process.stdin.setEncoding("utf8");
-const rl = readline.createInterface({
-  input: process.stdin,
-  terminal: false,
-  historySize: 0,
-  prompt: "",
-  crlfDelay: Infinity
-});
-rl.on("line", async raw_msg => {
+const decoder = new StringDecoder();
+
+ipc.on("recv", async buf => {
+  const raw_msg = decoder.write(buf);
   const [
     msg_id,
     msg_tag,
