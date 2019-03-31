@@ -1,5 +1,4 @@
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
@@ -17,8 +16,8 @@ import Language.JavaScript.Inline
   ( block
   , defJSSessionOpts
   , expr
-  , killJSSession
-  , startJSSession
+  , closeJSSession
+  , newJSSession
   , withJSSession
   )
 import Test.Tasty (TestTree)
@@ -87,13 +86,13 @@ tests =
       firstOperation
     it
       "should not collide names when reusing the same variable name across splices in the same session" $ do
-      session <- startJSSession defJSSessionOpts
+      session <- newJSSession defJSSessionOpts
       forM_ [1 :: Int .. 10] $
         const $ do
           let word = pack "Bananas"
           result <- [expr| $word |] session
           result `shouldBe` word
-      killJSSession session
+      closeJSSession session
     it "should process a simple block expression" $ do
       let myNumber = 3 :: Int
       result <-

@@ -23,4 +23,4 @@ jobs:
           name: Test inline-js and inline-js-core
           command: |
             stack --no-terminal build inline-js-core inline-js --test --no-run-tests
-            stack --no-terminal test
+            stack --no-terminal test inline-js

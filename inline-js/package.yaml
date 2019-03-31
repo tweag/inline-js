@@ -22,6 +22,7 @@ dependencies:
   - aeson
   - base
   - bytestring
+  - filepath
   - inline-js-core
   - language-javascript
   - template-haskell
@@ -34,16 +35,11 @@ tests:
   inline-js-test-suite:
     source-dirs: tests
     main: Main.hs
-    ghc-options:
-      - -Wall
-      - -Wcompat
-      - -Wincomplete-record-updates
-      - -Wincomplete-uni-patterns
-      - -Wredundant-constraints
-      - -Wnoncanonical-monad-instances
     dependencies:
       - containers
       - inline-js-core
       - inline-js
+      - QuickCheck
       - tasty
       - tasty-hspec
+      - tasty-quickcheck

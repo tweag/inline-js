@@ -42,25 +42,22 @@ genValue =
     ]
 
 tests :: IO TestTree
-tests = do
+tests =
   pure $
-    withResource setup teardown $ \getSetup ->
-      testProperty "Ping-Pong Matching" $
-      withMaxSuccess 65536 $
-      monadicIO $ do
-        (s, r) <- liftIO getSetup
-        forAllM genValue $ \v ->
-          run $ do
-            p <- evalTo parseJSRef s $ newJSRef r $ codeFromValue v
-            _recv_v <- eval s $ deRefJSRef r p
-            unless (v == _recv_v) $
-              fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
+  withResource setup teardown $ \getSetup ->
+    testProperty "Ping-Pong Matching" $
+    withMaxSuccess 65536 $
+    monadicIO $ do
+      s <- liftIO getSetup
+      forAllM genValue $ \v ->
+        run $ do
+          p <- evalTo parseJSRef s $ newJSRef $ codeFromValue v
+          _recv_v <- eval s $ deRefJSRef p
+          unless (v == _recv_v) $
+            fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
 
-setup :: IO (JSSession, JSRefRegion)
-setup = do
-  session <- startJSSession defJSSessionOpts
-  region <- evalTo parseJSRefRegion session newJSRefRegion
-  pure (session, region)
+setup :: IO JSSession
+setup = newJSSession defJSSessionOpts
 
-teardown :: (JSSession, JSRefRegion) -> IO ()
-teardown (s, _) = killJSSession s
+teardown :: JSSession -> IO ()
+teardown = closeJSSession

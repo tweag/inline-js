@@ -4,9 +4,9 @@
 module Language.JavaScript.Inline
   ( expr
   , block
-  , startJSSession
+  , newJSSession
   , withJSSession
-  , killJSSession
+  , closeJSSession
   , defJSSessionOpts
   , JSSessionOpts(..)
   ) where
@@ -23,8 +23,8 @@ import qualified Language.JavaScript.Inline.JsonConvertible as JsonConvertible
 import Language.JavaScript.Inline.Session
   ( JSSessionOpts(..)
   , defJSSessionOpts
-  , killJSSession
-  , startJSSession
+  , closeJSSession
+  , newJSSession
   , withJSSession
   )
 import Language.JavaScript.Parser.Lexer (Token(..), alexTestTokeniser)
