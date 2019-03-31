@@ -21,20 +21,14 @@
     sendMsg([0, 0, true, err], true, "server.js: uncaughtException: ");
   });
 
-  const __jsref_regions = [undefined];
+  const __jsrefs = [];
 
   global.JSRef = class {
-    static newJSRefRegion() {
-      return __jsref_regions.push([undefined]) - 1;
+    static newJSRef(v) {
+      return __jsrefs.push(v) - 1;
     }
-    static freeJSRefRegion(r) {
-      delete __jsref_regions[r];
-    }
-    static newJSRef(r, v) {
-      return __jsref_regions[r].push(v) - 1;
-    }
-    static deRefJSRef(r, p) {
-      return __jsref_regions[r][p];
+    static deRefJSRef(p) {
+      return __jsrefs[p];
     }
   };
 

@@ -5,12 +5,8 @@ module Language.JavaScript.Inline.JSCode
   , codeToString
   , codeFromString
   , codeFromValue
-  , JSRefRegion
-  , parseJSRefRegion
   , JSRef
   , parseJSRef
-  , newJSRefRegion
-  , freeJSRefRegion
   , newJSRef
   , deRefJSRef
   ) where
@@ -44,16 +40,6 @@ codeFromValue v =
     , singleton ')'
     ]
 
-newtype JSRefRegion =
-  JSRefRegion Int
-  deriving (Eq, Ord, Show)
-
-parseJSRefRegion :: JSON.Value -> Either String JSRefRegion
-parseJSRefRegion v =
-  case v of
-    JSON.Number r -> Right $ JSRefRegion $ truncate r
-    _ -> Left "Language.JavaScript.Inline.JSCode.parseJSRefRegion"
-
 newtype JSRef =
   JSRef Int
   deriving (Eq, Ord, Show)
@@ -64,32 +50,11 @@ parseJSRef v =
     JSON.Number r -> Right $ JSRef $ truncate r
     _ -> Left "Language.JavaScript.Inline.JSCode.parseJSRef"
 
-newJSRefRegion :: JSCode
-newJSRefRegion = JSCode $ fromString "JSRef.newJSRefRegion()"
+newJSRef :: JSCode -> JSCode
+newJSRef expr =
+  JSCode $ mconcat [fromString "JSRef.newJSRef((", unwrap expr, fromString "))"]
 
-freeJSRefRegion :: JSRefRegion -> JSCode
-freeJSRefRegion (JSRefRegion r) =
+deRefJSRef :: JSRef -> JSCode
+deRefJSRef (JSRef p) =
   JSCode $
-  mconcat [fromString "JSRef.freeJSRefRegion(0x", hexadecimal r, singleton ')']
-
-newJSRef :: JSRefRegion -> JSCode -> JSCode
-newJSRef (JSRefRegion r) expr =
-  JSCode $
-  mconcat
-    [ fromString "JSRef.newJSRef(0x"
-    , hexadecimal r
-    , fromString ",("
-    , unwrap expr
-    , fromString "))"
-    ]
-
-deRefJSRef :: JSRefRegion -> JSRef -> JSCode
-deRefJSRef (JSRefRegion r) (JSRef p) =
-  JSCode $
-  mconcat
-    [ fromString "JSRef.deRefJSRef(0x"
-    , hexadecimal r
-    , fromString ",0x"
-    , hexadecimal p
-    , fromString ")"
-    ]
+  mconcat [fromString "JSRef.deRefJSRef(0x", hexadecimal p, fromString ")"]
