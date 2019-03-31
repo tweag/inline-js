@@ -27,9 +27,9 @@ tests =
     testPairs <-
       traverse
         requestTest
-        [ {-( asyncEvaluation "import('fs')"
+        [ ( asyncEvaluation "import('fs')"
           , \Result {isError} -> isError `shouldBe` False)
-        ,-} (syncEvaluation "while(true){}" `withEvalTimeout` 1000, failsToReturn)
+        , (syncEvaluation "while(true){}" `withEvalTimeout` 1000, failsToReturn)
         , (syncEvaluation "BOOM", failsToReturn)
         , (syncEvaluation "undefined", successfullyReturns Null)
         , (syncEvaluation "let x = 6*7", successfullyReturns Null)

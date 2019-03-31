@@ -55,9 +55,14 @@ ipc.on("recv", async buf => {
           const promise = vm.runInContext(
             msg_content,
             ctx,
-            extendObject({ displayErrors: true }, eval_timeout, {
-              timeout: eval_timeout
-            })
+            extendObject(
+              {
+                displayErrors: true,
+                importModuleDynamically: spec => import(spec)
+              },
+              eval_timeout,
+              { timeout: eval_timeout }
+            )
           );
           sendMsg([
             msg_id,
@@ -83,9 +88,14 @@ ipc.on("recv", async buf => {
               vm.runInContext(
                 msg_content,
                 ctx,
-                extendObject({ displayErrors: true }, eval_timeout, {
-                  timeout: eval_timeout
-                })
+                extendObject(
+                  {
+                    displayErrors: true,
+                    importModuleDynamically: spec => import(spec)
+                  },
+                  eval_timeout,
+                  { timeout: eval_timeout }
+                )
               )
             )
           ]);
