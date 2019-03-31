@@ -68,7 +68,10 @@ startJSSession JSSessionOpts {..} = do
   _env <- getEnvironment
   (Just _stdin, Just _stdout, _m_stderr, _h) <-
     createProcess
-      (proc nodePath (nodeExtraArgs <> [_datadir </> "jsbits" </> "server.js"]))
+      (proc
+         nodePath
+         (nodeExtraArgs <>
+          ["--experimental-modules", _datadir </> "jsbits" </> "eval.mjs"]))
         { cwd = nodePwd
         , env = Just (nodeExtraEnv <> _env)
         , std_in = CreatePipe
