@@ -32,7 +32,8 @@
     }
   };
 
-  const vm = require("vm");
+  const vm = require("vm"),
+    ctx = vm.createContext(Object.assign({ require: require }, global));
 
   process.stdin.setEncoding("utf8");
 
@@ -60,8 +61,9 @@
         switch (msg_tag) {
           case 0: {
             if (is_async) {
-              const promise = vm.runInThisContext(
+              const promise = vm.runInContext(
                 msg_content,
+                ctx,
                 extendObject({ displayErrors: true }, eval_timeout, {
                   timeout: eval_timeout
                 })
@@ -87,8 +89,9 @@
                 0,
                 false,
                 noUndefined(
-                  vm.runInThisContext(
+                  vm.runInContext(
                     msg_content,
+                    ctx,
                     extendObject({ displayErrors: true }, eval_timeout, {
                       timeout: eval_timeout
                     })

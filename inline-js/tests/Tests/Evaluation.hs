@@ -5,7 +5,7 @@ module Tests.Evaluation
   ( tests
   ) where
 
-import Control.Monad (void)
+import Data.Foldable
 import Language.JavaScript.Inline.JSON
 import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.Session
@@ -27,7 +27,9 @@ tests =
     testPairs <-
       traverse
         requestTest
-        [ (syncEvaluation "while(true){}" `withEvalTimeout` 1000, failsToReturn)
+        [ ( syncEvaluation "require('fs')"
+          , \Result {isError} -> isError `shouldBe` False)
+        , (syncEvaluation "while(true){}" `withEvalTimeout` 1000, failsToReturn)
         , (syncEvaluation "BOOM", failsToReturn)
         , (syncEvaluation "undefined", successfullyReturns Null)
         , (syncEvaluation "let x = 6*7", successfullyReturns Null)
@@ -42,7 +44,7 @@ tests =
             1000
           , failsToReturn)
         ]
-    void $ traverse recvAndRunTest testPairs
+    traverse_ recvAndRunTest testPairs
 
 failsToReturn :: RecvMsg -> IO ()
 failsToReturn Result {isError} = isError `shouldBe` True
