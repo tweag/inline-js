@@ -43,7 +43,7 @@ data RecvMsg = Result
 decodeRecvMsg :: JSON.Value -> Either String (MsgId, RecvMsg)
 decodeRecvMsg v =
   case v of
-    JSON.Array [JSON.Number _msg_id, JSON.Number 0, JSON.Bool is_err, JSON.String r] ->
+    JSON.Array [JSON.Number _msg_id, JSON.Bool is_err, JSON.String r] ->
       Right (truncate _msg_id, Result {isError = is_err, result = r})
     _ -> _err
   where

@@ -66,7 +66,6 @@ ipc.on("recv", async buf => {
           );
           sendMsg([
             msg_id,
-            0,
             false,
             JSON.stringify(
               noUndefined(
@@ -84,7 +83,6 @@ ipc.on("recv", async buf => {
         } else {
           sendMsg([
             msg_id,
-            0,
             false,
             JSON.stringify(
               noUndefined(
@@ -111,8 +109,8 @@ ipc.on("recv", async buf => {
       }
     }
   } catch (err) {
-    sendMsg([msg_id, 0, true, JSON.stringify(err.toString())]);
+    sendMsg([msg_id, true, JSON.stringify(err.toString())]);
   }
 });
 
-sendMsg([0, 0, false, JSON.stringify(null)]);
+sendMsg([0, false, JSON.stringify(null)]);
