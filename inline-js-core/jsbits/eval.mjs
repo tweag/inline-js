@@ -111,7 +111,7 @@ ipc.on("recv", async buf => {
       }
     }
   } catch (err) {
-    sendMsg([msg_id, 0, true, JSON.stringify(err.stack)]);
+    sendMsg([msg_id, 0, true, JSON.stringify(err.toString())]);
   }
 });
 
