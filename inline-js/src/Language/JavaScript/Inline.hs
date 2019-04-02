@@ -18,12 +18,11 @@ import Language.Haskell.TH (Q)
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
 import Language.JavaScript.Inline.Command (eval)
 import Language.JavaScript.Inline.JSCode (codeFromString)
-import Language.JavaScript.Inline.JSON (encodeText)
 import qualified Language.JavaScript.Inline.JsonConvertible as JsonConvertible
 import Language.JavaScript.Inline.Session
   ( JSSessionOpts(..)
-  , defJSSessionOpts
   , closeJSSession
+  , defJSSessionOpts
   , newJSSession
   , withJSSession
   )
@@ -57,7 +56,7 @@ blockQuasiQuoter input =
       wrappedCode = wrapCode input antiquotedParameterNames
    in [|\session -> do
           result <- eval session $ codeFromString $(wrappedCode)
-          return . JsonConvertible.parse $ encodeText result|]
+          pure $ JsonConvertible.parse result|]
 
 --
 -- This fits the quasiquoted content into following format:
@@ -78,7 +77,7 @@ wrapCode code antiquotedNames =
       , pack " ) { "
       , pack code
       , pack " })( "
-      , $(argumentValues $ antiquotedNames)
+      , $(argumentValues antiquotedNames)
       , pack " );"
       ]|]
 

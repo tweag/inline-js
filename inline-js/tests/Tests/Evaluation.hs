@@ -5,8 +5,9 @@ module Tests.Evaluation
   ( tests
   ) where
 
+import Data.Aeson
 import Data.Foldable
-import Language.JavaScript.Inline.JSON
+import qualified Data.Text.Encoding as Text
 import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.Session
 import Test.Tasty (TestTree)
@@ -52,4 +53,4 @@ failsToReturn Result {isError} = isError `shouldBe` True
 successfullyReturns :: Value -> RecvMsg -> IO ()
 successfullyReturns expected Result {isError, result} = do
   isError `shouldBe` False
-  result `shouldBe` expected
+  decodeStrict' (Text.encodeUtf8 result) `shouldBe` Just expected

@@ -68,15 +68,17 @@ ipc.on("recv", async buf => {
             msg_id,
             0,
             false,
-            noUndefined(
-              await (resolve_timeout !== false
-                ? Promise.race([
-                    promise,
-                    new Promise((_, reject) =>
-                      setTimeout(reject, resolve_timeout, "")
-                    )
-                  ])
-                : promise)
+            JSON.stringify(
+              noUndefined(
+                await (resolve_timeout !== false
+                  ? Promise.race([
+                      promise,
+                      new Promise((_, reject) =>
+                        setTimeout(reject, resolve_timeout, "")
+                      )
+                    ])
+                  : promise)
+              )
             )
           ]);
         } else {
@@ -84,17 +86,19 @@ ipc.on("recv", async buf => {
             msg_id,
             0,
             false,
-            noUndefined(
-              vm.runInContext(
-                msg_content,
-                ctx,
-                extendObject(
-                  {
-                    displayErrors: true,
-                    importModuleDynamically: spec => import(spec)
-                  },
-                  eval_timeout,
-                  { timeout: eval_timeout }
+            JSON.stringify(
+              noUndefined(
+                vm.runInContext(
+                  msg_content,
+                  ctx,
+                  extendObject(
+                    {
+                      displayErrors: true,
+                      importModuleDynamically: spec => import(spec)
+                    },
+                    eval_timeout,
+                    { timeout: eval_timeout }
+                  )
                 )
               )
             )
@@ -107,8 +111,8 @@ ipc.on("recv", async buf => {
       }
     }
   } catch (err) {
-    sendMsg([msg_id, 0, true, err.stack]);
+    sendMsg([msg_id, 0, true, JSON.stringify(err.stack)]);
   }
 });
 
-sendMsg([0, 0, false, null]);
+sendMsg([0, 0, false, JSON.stringify(null)]);

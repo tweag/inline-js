@@ -5,15 +5,16 @@ module Tests.PingPong
   ) where
 
 import Control.Monad hiding (fail)
-
 import Control.Monad.Fail
 import Control.Monad.IO.Class (liftIO)
+import Data.Aeson
 import Data.Int
-import qualified Data.Map.Strict as Map
+import Data.Maybe
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import GHC.Exts
 import Language.JavaScript.Inline.Command
 import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.JSON
 import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 import Test.QuickCheck.Gen
@@ -29,8 +30,8 @@ genValue =
   frequency
     [ ( 1
       , oneof
-          [ Object . Map.fromList <$> listOf ((,) <$> genString <*> genValue)
-          , Array <$> listOf genValue
+          [ Object . fromList <$> listOf ((,) <$> genString <*> genValue)
+          , Array . fromList <$> listOf genValue
           ])
     , ( 64
       , oneof
@@ -51,8 +52,10 @@ tests =
       s <- liftIO getSetup
       forAllM genValue $ \v ->
         run $ do
-          p <- evalTo parseJSRef s $ newJSRef $ codeFromValue v
-          _recv_v <- eval s $ deRefJSRef p
+          p <- evalTo parseJSRef s $ newJSRef $ codeFromValueLBS $ encode v
+          _recv_v <-
+            fmap (fromJust . decodeStrict' . Text.encodeUtf8) $
+            eval s $ deRefJSRef p
           unless (v == _recv_v) $
             fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
 

@@ -8,13 +8,13 @@ module Language.JavaScript.Inline.Command
   ) where
 
 import Control.Monad.Fail
+import Data.Text (Text)
 import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.JSON
 import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 
-checkRecvMsg :: RecvMsg -> IO Value
+checkRecvMsg :: RecvMsg -> IO Text
 checkRecvMsg Result {..} =
   if isError
     then fail $
@@ -22,7 +22,7 @@ checkRecvMsg Result {..} =
          show result
     else pure result
 
-eval :: JSSession -> JSCode -> IO Value
+eval :: JSSession -> JSCode -> IO Text
 eval s c =
   sendRecv
     s
@@ -34,14 +34,14 @@ eval s c =
       } >>=
   checkRecvMsg
 
-evalTo :: (Value -> Either String a) -> JSSession -> JSCode -> IO a
+evalTo :: (Text -> Either String a) -> JSSession -> JSCode -> IO a
 evalTo p s c = do
   v <- eval s c
   case p v of
     Left err -> fail err
     Right r -> pure r
 
-evalAsync :: JSSession -> JSCode -> IO Value
+evalAsync :: JSSession -> JSCode -> IO Text
 evalAsync s c =
   sendRecv
     s
@@ -53,7 +53,7 @@ evalAsync s c =
       } >>=
   checkRecvMsg
 
-evalAsyncTo :: (Value -> Either String a) -> JSSession -> JSCode -> IO a
+evalAsyncTo :: (Text -> Either String a) -> JSSession -> JSCode -> IO a
 evalAsyncTo p s c = do
   v <- evalAsync s c
   case p v of
