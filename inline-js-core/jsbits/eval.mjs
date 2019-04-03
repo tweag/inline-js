@@ -21,21 +21,10 @@ global.JSRef = class {
 
 const ctx = vm.createContext(Object.assign({}, global));
 
-function noUndefined(x) {
-  return x === undefined ? null : x;
-}
-
-function noInfinite(x) {
-  return Number.isFinite(x) ? x : false;
-}
-
-function extendObject(obj, cond, ext) {
-  return cond !== false ? Object.assign(obj, ext) : obj;
-}
-
 const ipc = new Transport(process.stdin, process.stdout);
 
 function sendMsg(msg_id, is_err, result) {
+  if (result === undefined) result = null;
   const result_buf = Buffer.from(JSON.stringify(result)),
     msg_buf = Buffer.allocUnsafe(8 + result_buf.length);
   msg_buf.writeUInt32LE(msg_id, 0);
@@ -50,55 +39,28 @@ ipc.on("recv", async buf => {
   const msg_id = buf.readUInt32LE(0);
   try {
     const is_async = Boolean(buf.readUInt32LE(4)),
-      eval_timeout = noInfinite(buf.readDoubleLE(8)),
-      resolve_timeout = noInfinite(buf.readDoubleLE(16)),
-      msg_content = decoder.decode(buf.slice(24));
+      eval_timeout = buf.readUInt32LE(8),
+      resolve_timeout = buf.readUInt32LE(12),
+      msg_content = decoder.decode(buf.slice(16)),
+      eval_options = {
+        displayErrors: true,
+        importModuleDynamically: spec => import(spec)
+      };
+    if (eval_timeout) eval_options.timeout = eval_timeout;
+    const eval_result = vm.runInContext(msg_content, ctx, eval_options);
     if (is_async) {
-      const promise = vm.runInContext(
-        msg_content,
-        ctx,
-        extendObject(
-          {
-            displayErrors: true,
-            importModuleDynamically: spec => import(spec)
-          },
-          eval_timeout,
-          { timeout: eval_timeout }
-        )
-      );
-      sendMsg(
-        msg_id,
-        false,
-        noUndefined(
-          await (resolve_timeout !== false
-            ? Promise.race([
-                promise,
-                new Promise((_, reject) =>
-                  setTimeout(reject, resolve_timeout, "")
-                )
-              ])
-            : promise)
-        )
-      );
+      const promise = resolve_timeout
+          ? Promise.race([
+              eval_result,
+              new Promise((_, reject) =>
+                setTimeout(reject, resolve_timeout, "")
+              )
+            ])
+          : eval_result,
+        promise_result = await promise;
+      sendMsg(msg_id, false, promise_result);
     } else {
-      sendMsg(
-        msg_id,
-        false,
-        noUndefined(
-          vm.runInContext(
-            msg_content,
-            ctx,
-            extendObject(
-              {
-                displayErrors: true,
-                importModuleDynamically: spec => import(spec)
-              },
-              eval_timeout,
-              { timeout: eval_timeout }
-            )
-          )
-        )
-      );
+      sendMsg(msg_id, false, eval_result);
     }
   } catch (err) {
     sendMsg(msg_id, true, err.toString());

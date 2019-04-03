@@ -14,9 +14,9 @@ syncEvaluation = Eval False Nothing Nothing
 asyncEvaluation :: JSCode -> SendMsg
 asyncEvaluation = Eval True Nothing Nothing
 
-withEvalTimeout :: SendMsg -> Double -> SendMsg
+withEvalTimeout :: SendMsg -> Int -> SendMsg
 withEvalTimeout request milliseconds = request {evalTimeout = pure milliseconds}
 
-withResolveTimeout :: SendMsg -> Double -> SendMsg
+withResolveTimeout :: SendMsg -> Int -> SendMsg
 withResolveTimeout request milliseconds =
   request {resolveTimeout = pure milliseconds}

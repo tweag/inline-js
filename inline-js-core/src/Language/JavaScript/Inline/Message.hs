@@ -17,7 +17,7 @@ import Language.JavaScript.Inline.MessageCounter
 
 data SendMsg = Eval
   { isAsync :: Bool
-  , evalTimeout, resolveTimeout :: Maybe Double
+  , evalTimeout, resolveTimeout :: Maybe Int
   , evalCode :: JSCode.JSCode
   }
 
@@ -42,14 +42,16 @@ putSendMsg msg_id Eval {..} = do
     if isAsync
       then 1
       else 0
-  putDoublele $
+  putWord32le $
+    fromIntegral $
     case evalTimeout of
       Just t -> t
-      _ -> 1 / 0
-  putDoublele $
+      _ -> 0
+  putWord32le $
+    fromIntegral $
     case resolveTimeout of
       Just t -> t
-      _ -> 1 / 0
+      _ -> 0
   putBuilder $ coerce evalCode
 
 getRecvMsg :: Get (MsgId, RecvMsg)
