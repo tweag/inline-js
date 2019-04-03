@@ -20,8 +20,6 @@ import Data.Coerce
 import Data.IORef
 import qualified Data.IntMap.Strict as IntMap
 import Data.IntMap.Strict (IntMap)
-import qualified Data.Text.Lazy.Encoding as LText
-import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.MessageCounter
 import Language.JavaScript.Inline.Transport.Process
@@ -81,8 +79,7 @@ withJSSession opts = bracket (newJSSession opts) closeJSSession
 sendMsg :: JSSession -> SendMsg -> IO MsgId
 sendMsg JSSession {..} msg = do
   msg_id <- newMsgId msgCounter
-  sendData nodeTransport $
-    LText.encodeUtf8 $ JSON.encodeLazyText (encodeSendMsg msg_id msg)
+  sendData nodeTransport $ encodeSendMsg msg_id msg
   pure msg_id
 
 recvMsg :: JSSession -> MsgId -> IO RecvMsg

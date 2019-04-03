@@ -8,11 +8,11 @@ module Language.JavaScript.Inline.Message
   , decodeRecvMsg
   ) where
 
-import Data.Binary
 import Data.Binary.Get
+import Data.Binary.Put
 import qualified Data.ByteString.Lazy as LBS
+import Data.Coerce
 import qualified Language.JavaScript.Inline.JSCode as JSCode
-import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.MessageCounter
 
 data SendMsg = Eval
@@ -21,20 +21,8 @@ data SendMsg = Eval
   , evalCode :: JSCode.JSCode
   }
 
-encodeSendMsg :: MsgId -> SendMsg -> JSON.Value
-encodeSendMsg msg_id msg =
-  case msg of
-    Eval {..} ->
-      JSON.Array
-        [ _head
-        , JSON.Bool isAsync
-        , _maybe_number evalTimeout
-        , _maybe_number resolveTimeout
-        , JSON.String $ JSCode.codeToString evalCode
-        ]
-  where
-    _head = JSON.Number $ fromIntegral msg_id
-    _maybe_number = maybe (JSON.Bool False) JSON.Number
+encodeSendMsg :: MsgId -> SendMsg -> LBS.ByteString
+encodeSendMsg msg_id msg = runPut $ putSendMsg msg_id msg
 
 data RecvMsg = Result
   { isError :: Bool
@@ -46,6 +34,23 @@ decodeRecvMsg buf =
   case runGetOrFail getRecvMsg buf of
     Left err -> Left $ show err
     Right (_, _, r) -> Right r
+
+putSendMsg :: MsgId -> SendMsg -> Put
+putSendMsg msg_id Eval {..} = do
+  putWord32le $ fromIntegral msg_id
+  putWord32le $
+    if isAsync
+      then 1
+      else 0
+  putDoublele $
+    case evalTimeout of
+      Just t -> t
+      _ -> 1 / 0
+  putDoublele $
+    case resolveTimeout of
+      Just t -> t
+      _ -> 1 / 0
+  putBuilder $ coerce evalCode
 
 getRecvMsg :: Get (MsgId, RecvMsg)
 getRecvMsg = do

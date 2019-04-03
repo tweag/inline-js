@@ -1,5 +1,4 @@
 import process from "process";
-import { StringDecoder } from "string_decoder";
 import vm from "vm";
 
 import { Transport } from "./transport.mjs";
@@ -26,6 +25,10 @@ function noUndefined(x) {
   return x === undefined ? null : x;
 }
 
+function noInfinite(x) {
+  return Number.isFinite(x) ? x : false;
+}
+
 function extendObject(obj, cond, ext) {
   return cond !== false ? Object.assign(obj, ext) : obj;
 }
@@ -41,18 +44,15 @@ function sendMsg(msg_id, is_err, result) {
   ipc.send(msg_buf);
 }
 
-const decoder = new StringDecoder();
+const decoder = new TextDecoder("utf-8", { fatal: true });
 
 ipc.on("recv", async buf => {
-  const raw_msg = decoder.write(buf);
-  const [
-    msg_id,
-    is_async,
-    eval_timeout,
-    resolve_timeout,
-    msg_content
-  ] = JSON.parse(raw_msg);
+  const msg_id = buf.readUInt32LE(0);
   try {
+    const is_async = Boolean(buf.readUInt32LE(4)),
+      eval_timeout = noInfinite(buf.readDoubleLE(8)),
+      resolve_timeout = noInfinite(buf.readDoubleLE(16)),
+      msg_content = decoder.decode(buf.slice(24));
     if (is_async) {
       const promise = vm.runInContext(
         msg_content,
