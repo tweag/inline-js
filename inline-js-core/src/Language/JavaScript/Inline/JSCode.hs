@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.JavaScript.Inline.JSCode
-  ( JSCode
+  ( JSCode(..)
   , codeToString
   , codeFromString
   , codeFromValueLBS
@@ -11,37 +11,30 @@ module Language.JavaScript.Inline.JSCode
   , deRefJSRef
   ) where
 
+import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
-import Data.String (IsString)
+import Data.String (IsString(..))
 import Data.Text (Text)
 import qualified Data.Text.Encoding as Text
-import qualified Data.Text.Lazy as LText
-import Data.Text.Lazy.Builder
-import Data.Text.Lazy.Builder.Int
 import qualified Data.Text.Read as Text
-import qualified Language.JavaScript.Inline.JSON as JSON
 
 newtype JSCode =
   JSCode Builder
-  deriving (Show, IsString)
+  deriving (IsString)
 
 unwrap :: JSCode -> Builder
 unwrap (JSCode builder) = builder
 
 codeFromString :: Text -> JSCode
-codeFromString = JSCode . fromText
+codeFromString = JSCode . byteString . Text.encodeUtf8
 
 codeToString :: JSCode -> Text
-codeToString = LText.toStrict . toLazyText . unwrap
+codeToString = Text.decodeUtf8 . LBS.toStrict . toLazyByteString . unwrap
 
 codeFromValueLBS :: LBS.ByteString -> JSCode
 codeFromValueLBS buf =
   JSCode $
-  mconcat
-    [ fromString "JSON.parse("
-    , JSON.encode $ JSON.String $ Text.decodeUtf8 $ LBS.toStrict buf
-    , singleton ')'
-    ]
+  mconcat [fromString "JSON.parse(", lazyByteString buf, fromString ")"]
 
 newtype JSRef =
   JSRef Int
@@ -59,5 +52,4 @@ newJSRef expr =
 
 deRefJSRef :: JSRef -> JSCode
 deRefJSRef (JSRef p) =
-  JSCode $
-  mconcat [fromString "JSRef.deRefJSRef(0x", hexadecimal p, fromString ")"]
+  JSCode $ mconcat [fromString "JSRef.deRefJSRef(", intDec p, fromString ")"]

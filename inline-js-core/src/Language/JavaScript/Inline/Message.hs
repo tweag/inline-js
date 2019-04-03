@@ -9,7 +9,6 @@ module Language.JavaScript.Inline.Message
   ) where
 
 import qualified Data.ByteString.Lazy as LBS
-import Data.Text (Text)
 import qualified Data.Text.Encoding as Text
 import qualified Language.JavaScript.Inline.JSCode as JSCode
 import qualified Language.JavaScript.Inline.JSON as JSON
@@ -19,7 +18,7 @@ data SendMsg = Eval
   { isAsync :: Bool
   , evalTimeout, resolveTimeout :: Maybe Double
   , evalCode :: JSCode.JSCode
-  } deriving (Show)
+  }
 
 encodeSendMsg :: MsgId -> SendMsg -> JSON.Value
 encodeSendMsg msg_id msg =
@@ -39,7 +38,7 @@ encodeSendMsg msg_id msg =
 data RecvMsg = Result
   { isError :: Bool
   , result :: LBS.ByteString
-  } deriving (Show)
+  }
 
 decodeRecvMsg :: JSON.Value -> Either String (MsgId, RecvMsg)
 decodeRecvMsg v =
