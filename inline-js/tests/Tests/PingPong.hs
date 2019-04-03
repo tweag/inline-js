@@ -11,7 +11,6 @@ import Data.Aeson
 import Data.Int
 import Data.Maybe
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
 import GHC.Exts
 import Language.JavaScript.Inline.Command
 import Language.JavaScript.Inline.JSCode
@@ -53,9 +52,7 @@ tests =
       forAllM genValue $ \v ->
         run $ do
           p <- evalTo parseJSRef s $ newJSRef $ codeFromValueLBS $ encode v
-          _recv_v <-
-            fmap (fromJust . decodeStrict' . Text.encodeUtf8) $
-            eval s $ deRefJSRef p
+          _recv_v <- fmap (fromJust . decode') $ eval s $ deRefJSRef p
           unless (v == _recv_v) $
             fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
 

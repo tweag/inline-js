@@ -8,13 +8,14 @@ module Language.JavaScript.Inline.Command
   ) where
 
 import Control.Monad.Fail
+import qualified Data.ByteString.Lazy as LBS
 import Data.Text (Text)
 import Language.JavaScript.Inline.JSCode
 import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 
-checkRecvMsg :: RecvMsg -> IO Text
+checkRecvMsg :: RecvMsg -> IO LBS.ByteString
 checkRecvMsg Result {..} =
   if isError
     then fail $
@@ -22,7 +23,7 @@ checkRecvMsg Result {..} =
          show result
     else pure result
 
-eval :: JSSession -> JSCode -> IO Text
+eval :: JSSession -> JSCode -> IO LBS.ByteString
 eval s c =
   sendRecv
     s
@@ -34,14 +35,14 @@ eval s c =
       } >>=
   checkRecvMsg
 
-evalTo :: (Text -> Either String a) -> JSSession -> JSCode -> IO a
+evalTo :: (LBS.ByteString -> Either String a) -> JSSession -> JSCode -> IO a
 evalTo p s c = do
   v <- eval s c
   case p v of
     Left err -> fail err
     Right r -> pure r
 
-evalAsync :: JSSession -> JSCode -> IO Text
+evalAsync :: JSSession -> JSCode -> IO LBS.ByteString
 evalAsync s c =
   sendRecv
     s
@@ -53,7 +54,8 @@ evalAsync s c =
       } >>=
   checkRecvMsg
 
-evalAsyncTo :: (Text -> Either String a) -> JSSession -> JSCode -> IO a
+evalAsyncTo ::
+     (LBS.ByteString -> Either String a) -> JSSession -> JSCode -> IO a
 evalAsyncTo p s c = do
   v <- evalAsync s c
   case p v of

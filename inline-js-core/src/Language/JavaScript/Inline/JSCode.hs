@@ -47,9 +47,9 @@ newtype JSRef =
   JSRef Int
   deriving (Eq, Ord, Show)
 
-parseJSRef :: Text -> Either String JSRef
-parseJSRef v =
-  case Text.decimal v of
+parseJSRef :: LBS.ByteString -> Either String JSRef
+parseJSRef buf =
+  case Text.decimal $ Text.decodeUtf8 $ LBS.toStrict buf of
     Right (r, _) -> Right $ JSRef r
     _ -> Left "Language.JavaScript.Inline.JSCode.parseJSRef"
 

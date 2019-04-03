@@ -8,7 +8,9 @@ module Language.JavaScript.Inline.Message
   , decodeRecvMsg
   ) where
 
+import qualified Data.ByteString.Lazy as LBS
 import Data.Text (Text)
+import qualified Data.Text.Encoding as Text
 import qualified Language.JavaScript.Inline.JSCode as JSCode
 import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.MessageCounter
@@ -36,14 +38,16 @@ encodeSendMsg msg_id msg =
 
 data RecvMsg = Result
   { isError :: Bool
-  , result :: Text
+  , result :: LBS.ByteString
   } deriving (Show)
 
 decodeRecvMsg :: JSON.Value -> Either String (MsgId, RecvMsg)
 decodeRecvMsg v =
   case v of
     JSON.Array [JSON.Number _msg_id, JSON.Bool is_err, JSON.String r] ->
-      Right (truncate _msg_id, Result {isError = is_err, result = r})
+      Right
+        ( truncate _msg_id
+        , Result {isError = is_err, result = LBS.fromStrict $ Text.encodeUtf8 r})
     _ -> _err
   where
     _err =
