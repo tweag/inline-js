@@ -14,9 +14,9 @@ import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.MessageCounter
 
 data SendMsg = Eval
-  { evalCode :: JSCode.JSCode
+  { isAsync :: Bool
   , evalTimeout, resolveTimeout :: Maybe Double
-  , isAsync :: Bool
+  , evalCode :: JSCode.JSCode
   } deriving (Show)
 
 encodeSendMsg :: MsgId -> SendMsg -> JSON.Value
@@ -25,11 +25,10 @@ encodeSendMsg msg_id msg =
     Eval {..} ->
       JSON.Array
         [ _head
-        , JSON.Number 0
-        , JSON.String $ JSCode.codeToString evalCode
+        , JSON.Bool isAsync
         , _maybe_number evalTimeout
         , _maybe_number resolveTimeout
-        , JSON.Bool isAsync
+        , JSON.String $ JSCode.codeToString evalCode
         ]
   where
     _head = JSON.Number $ fromIntegral msg_id

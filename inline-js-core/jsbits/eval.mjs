@@ -42,71 +42,62 @@ ipc.on("recv", async buf => {
   const raw_msg = decoder.write(buf);
   const [
     msg_id,
-    msg_tag,
-    msg_content,
+    is_async,
     eval_timeout,
     resolve_timeout,
-    is_async
+    msg_content
   ] = JSON.parse(raw_msg);
   try {
-    switch (msg_tag) {
-      case 0: {
-        if (is_async) {
-          const promise = vm.runInContext(
-            msg_content,
-            ctx,
-            extendObject(
-              {
-                displayErrors: true,
-                importModuleDynamically: spec => import(spec)
-              },
-              eval_timeout,
-              { timeout: eval_timeout }
-            )
-          );
-          sendMsg([
-            msg_id,
-            false,
-            JSON.stringify(
-              noUndefined(
-                await (resolve_timeout !== false
-                  ? Promise.race([
-                      promise,
-                      new Promise((_, reject) =>
-                        setTimeout(reject, resolve_timeout, "")
-                      )
-                    ])
-                  : promise)
-              )
-            )
-          ]);
-        } else {
-          sendMsg([
-            msg_id,
-            false,
-            JSON.stringify(
-              noUndefined(
-                vm.runInContext(
-                  msg_content,
-                  ctx,
-                  extendObject(
-                    {
-                      displayErrors: true,
-                      importModuleDynamically: spec => import(spec)
-                    },
-                    eval_timeout,
-                    { timeout: eval_timeout }
+    if (is_async) {
+      const promise = vm.runInContext(
+        msg_content,
+        ctx,
+        extendObject(
+          {
+            displayErrors: true,
+            importModuleDynamically: spec => import(spec)
+          },
+          eval_timeout,
+          { timeout: eval_timeout }
+        )
+      );
+      sendMsg([
+        msg_id,
+        false,
+        JSON.stringify(
+          noUndefined(
+            await (resolve_timeout !== false
+              ? Promise.race([
+                  promise,
+                  new Promise((_, reject) =>
+                    setTimeout(reject, resolve_timeout, "")
                   )
-                )
+                ])
+              : promise)
+          )
+        )
+      ]);
+    } else {
+      sendMsg([
+        msg_id,
+        false,
+        JSON.stringify(
+          noUndefined(
+            vm.runInContext(
+              msg_content,
+              ctx,
+              extendObject(
+                {
+                  displayErrors: true,
+                  importModuleDynamically: spec => import(spec)
+                },
+                eval_timeout,
+                { timeout: eval_timeout }
               )
             )
-          ]);
-        }
-        break;
-      }
-      default: {
-        throw ["parsing SendMsg failed: ", raw_msg];
-      }
+          )
+        )
+      ]);
     }
   } catch (err) {
     sendMsg([msg_id, true, JSON.stringify(err.toString())]);
