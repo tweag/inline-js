@@ -33,9 +33,12 @@ function extendObject(obj, cond, ext) {
 const ipc = new Transport(process.stdin, process.stdout);
 
 function sendMsg(msg_id, is_err, result) {
-  ipc.send(
-    Buffer.from(JSON.stringify([msg_id, is_err, JSON.stringify(result)]))
-  );
+  const result_buf = Buffer.from(JSON.stringify(result)),
+    msg_buf = Buffer.allocUnsafe(8 + result_buf.length);
+  msg_buf.writeUInt32LE(msg_id, 0);
+  msg_buf.writeUInt32LE(Number(is_err), 4);
+  result_buf.copy(msg_buf, 8);
+  ipc.send(msg_buf);
 }
 
 const decoder = new StringDecoder();

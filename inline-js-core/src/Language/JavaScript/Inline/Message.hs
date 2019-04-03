@@ -8,8 +8,9 @@ module Language.JavaScript.Inline.Message
   , decodeRecvMsg
   ) where
 
+import Data.Binary
+import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Text.Encoding as Text
 import qualified Language.JavaScript.Inline.JSCode as JSCode
 import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.MessageCounter
@@ -40,16 +41,15 @@ data RecvMsg = Result
   , result :: LBS.ByteString
   }
 
-decodeRecvMsg :: JSON.Value -> Either String (MsgId, RecvMsg)
-decodeRecvMsg v =
-  case v of
-    JSON.Array [JSON.Number _msg_id, JSON.Bool is_err, JSON.String r] ->
-      Right
-        ( truncate _msg_id
-        , Result {isError = is_err, result = LBS.fromStrict $ Text.encodeUtf8 r})
-    _ -> _err
-  where
-    _err =
-      Left $
-      "Language.JavaScript.Inline.Message.decodeRecvMsg: failed to decode " <>
-      show v
+decodeRecvMsg :: LBS.ByteString -> Either String (MsgId, RecvMsg)
+decodeRecvMsg buf =
+  case runGetOrFail getRecvMsg buf of
+    Left err -> Left $ show err
+    Right (_, _, r) -> Right r
+
+getRecvMsg :: Get (MsgId, RecvMsg)
+getRecvMsg = do
+  msg_id <- getWord32le
+  is_err <- getWord32le
+  r <- getRemainingLazyByteString
+  pure (fromIntegral msg_id, Result {isError = is_err /= 0, result = r})

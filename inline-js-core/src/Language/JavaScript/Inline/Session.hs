@@ -99,18 +99,12 @@ recvMsg JSSession {..} msg_id = w
         _ -> do
           buf <- recvData nodeTransport
           (msg_id', msg') <-
-            case JSON.decode buf of
+            case decodeRecvMsg buf of
               Left err ->
                 fail $
-                "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing Value failed with " <>
+                "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing RecvMsg failed with " <>
                 err
-              Right v ->
-                case decodeRecvMsg v of
-                  Left err ->
-                    fail $
-                    "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing RecvMsg failed with " <>
-                    err
-                  Right msg -> pure msg
+              Right msg -> pure msg
           atomicModifyIORef' recvMap $ \m ->
             (IntMap.insert (coerce msg_id') msg' m, ())
           w
