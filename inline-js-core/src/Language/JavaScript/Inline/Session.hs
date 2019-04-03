@@ -99,7 +99,7 @@ recvMsg JSSession {..} msg_id = w
             case decodeRecvMsg buf of
               Left err ->
                 fail $
-                "Language.JavaScript.Inline.JSON.unsafeRecvMsg: parsing RecvMsg failed with " <>
+                "Language.JavaScript.Inline.Session.recvMsg: parsing RecvMsg failed with " <>
                 err
               Right msg -> pure msg
           atomicModifyIORef' recvMap $ \m ->
