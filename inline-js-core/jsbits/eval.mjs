@@ -1,5 +1,4 @@
 import process from "process";
-import { StringDecoder } from "string_decoder";
 import vm from "vm";
 
 import { Transport } from "./transport.mjs";
@@ -22,93 +21,50 @@ global.JSRef = class {
 
 const ctx = vm.createContext(Object.assign({}, global));
 
-function noUndefined(x) {
-  return x === undefined ? null : x;
-}
-
-function extendObject(obj, cond, ext) {
-  return cond !== false ? Object.assign(obj, ext) : obj;
-}
-
 const ipc = new Transport(process.stdin, process.stdout);
 
-function sendMsg(msg) {
-  ipc.send(Buffer.from(JSON.stringify(msg)));
+function sendMsg(msg_id, is_err, result) {
+  if (result === undefined) result = null;
+  const result_buf = Buffer.from(JSON.stringify(result)),
+    msg_buf = Buffer.allocUnsafe(8 + result_buf.length);
+  msg_buf.writeUInt32LE(msg_id, 0);
+  msg_buf.writeUInt32LE(Number(is_err), 4);
+  result_buf.copy(msg_buf, 8);
+  ipc.send(msg_buf);
 }
 
-const decoder = new StringDecoder();
+const decoder = new TextDecoder("utf-8", { fatal: true });
 
 ipc.on("recv", async buf => {
-  const raw_msg = decoder.write(buf);
-  const [
-    msg_id,
-    msg_tag,
-    msg_content,
-    eval_timeout,
-    resolve_timeout,
-    is_async
-  ] = JSON.parse(raw_msg);
+  const msg_id = buf.readUInt32LE(0);
   try {
-    switch (msg_tag) {
-      case 0: {
-        if (is_async) {
-          const promise = vm.runInContext(
-            msg_content,
-            ctx,
-            extendObject(
-              {
-                displayErrors: true,
-                importModuleDynamically: spec => import(spec)
-              },
-              eval_timeout,
-              { timeout: eval_timeout }
-            )
-          );
-          sendMsg([
-            msg_id,
-            0,
-            false,
-            noUndefined(
-              await (resolve_timeout !== false
-                ? Promise.race([
-                    promise,
-                    new Promise((_, reject) =>
-                      setTimeout(reject, resolve_timeout, "")
-                    )
-                  ])
-                : promise)
-            )
-          ]);
-        } else {
-          sendMsg([
-            msg_id,
-            0,
-            false,
-            noUndefined(
-              vm.runInContext(
-                msg_content,
-                ctx,
-                extendObject(
-                  {
-                    displayErrors: true,
-                    importModuleDynamically: spec => import(spec)
-                  },
-                  eval_timeout,
-                  { timeout: eval_timeout }
-                )
+    const is_async = Boolean(buf.readUInt32LE(4)),
+      eval_timeout = buf.readUInt32LE(8),
+      resolve_timeout = buf.readUInt32LE(12),
+      msg_content = decoder.decode(buf.slice(16)),
+      eval_options = {
+        displayErrors: true,
+        importModuleDynamically: spec => import(spec)
+      };
+    if (eval_timeout) eval_options.timeout = eval_timeout;
+    const eval_result = vm.runInContext(msg_content, ctx, eval_options);
+    if (is_async) {
+      const promise = resolve_timeout
+          ? Promise.race([
+              eval_result,
+              new Promise((_, reject) =>
+                setTimeout(reject, resolve_timeout, "")
               )
-            )
-          ]);
-        }
-        break;
-      }
-      default: {
-        throw ["parsing SendMsg failed: ", raw_msg];
-      }
+            ])
+          : eval_result,
+        promise_result = await promise;
+      sendMsg(msg_id, false, promise_result);
+    } else {
+      sendMsg(msg_id, false, eval_result);
     }
   } catch (err) {
-    sendMsg([msg_id, 0, true, err.stack]);
+    sendMsg(msg_id, true, err.toString());
   }
 });
 
-sendMsg([0, 0, false, null]);
+sendMsg(0, false, null);

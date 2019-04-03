@@ -8,15 +8,14 @@ module Tests.Quotation
   ) where
 
 import Control.Monad (forM_)
-
 import Data.Aeson (FromJSON(..), ToJSON(..))
 import Data.Text (pack)
 import GHC.Generics (Generic)
 import Language.JavaScript.Inline
   ( block
+  , closeJSSession
   , defJSSessionOpts
   , expr
-  , closeJSSession
   , newJSSession
   , withJSSession
   )
@@ -24,7 +23,7 @@ import Test.Tasty (TestTree)
 import Test.Tasty.Hspec (it, shouldBe, testSpec)
 
 -- Datatypes used by tests
-data GameWorld = GameWorld
+newtype GameWorld = GameWorld
   { playerCharacter :: PlayerCharacter
   } deriving (Generic, ToJSON, FromJSON)
 
@@ -53,7 +52,7 @@ tests =
       result <- withJSSession defJSSessionOpts [expr| $sentence + " on pizza" |]
       result `shouldBe` "Pineapple on pizza"
     it "should work when reusing the same variable in the same splice" $ do
-      let myNumber = (4 :: Int)
+      let myNumber = 4 :: Int
       result <- withJSSession defJSSessionOpts [expr| $myNumber + $myNumber |]
       result `shouldBe` (8 :: Int)
     it "should compute the result of three separate variables" $ do

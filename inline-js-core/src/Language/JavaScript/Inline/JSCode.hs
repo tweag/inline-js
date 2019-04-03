@@ -1,53 +1,49 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.JavaScript.Inline.JSCode
-  ( JSCode
+  ( JSCode(..)
   , codeToString
   , codeFromString
-  , codeFromValue
+  , codeFromValueLBS
   , JSRef
   , parseJSRef
   , newJSRef
   , deRefJSRef
   ) where
 
-import Data.String (IsString)
+import Data.ByteString.Builder
+import qualified Data.ByteString.Lazy as LBS
+import Data.String (IsString(..))
 import Data.Text (Text)
-import qualified Data.Text.Lazy as LText
-import Data.Text.Lazy.Builder
-import Data.Text.Lazy.Builder.Int
-import qualified Language.JavaScript.Inline.JSON as JSON
+import qualified Data.Text.Encoding as Text
+import qualified Data.Text.Read as Text
 
 newtype JSCode =
   JSCode Builder
-  deriving (Show, IsString)
+  deriving (IsString)
 
 unwrap :: JSCode -> Builder
 unwrap (JSCode builder) = builder
 
 codeFromString :: Text -> JSCode
-codeFromString = JSCode . fromText
+codeFromString = JSCode . byteString . Text.encodeUtf8
 
 codeToString :: JSCode -> Text
-codeToString = LText.toStrict . toLazyText . unwrap
+codeToString = Text.decodeUtf8 . LBS.toStrict . toLazyByteString . unwrap
 
-codeFromValue :: JSON.Value -> JSCode
-codeFromValue v =
+codeFromValueLBS :: LBS.ByteString -> JSCode
+codeFromValueLBS buf =
   JSCode $
-  mconcat
-    [ fromString "JSON.parse("
-    , JSON.encode $ JSON.String $ JSON.encodeText v
-    , singleton ')'
-    ]
+  mconcat [fromString "JSON.parse(", lazyByteString buf, fromString ")"]
 
 newtype JSRef =
   JSRef Int
   deriving (Eq, Ord, Show)
 
-parseJSRef :: JSON.Value -> Either String JSRef
-parseJSRef v =
-  case v of
-    JSON.Number r -> Right $ JSRef $ truncate r
+parseJSRef :: LBS.ByteString -> Either String JSRef
+parseJSRef buf =
+  case Text.decimal $ Text.decodeUtf8 $ LBS.toStrict buf of
+    Right (r, _) -> Right $ JSRef r
     _ -> Left "Language.JavaScript.Inline.JSCode.parseJSRef"
 
 newJSRef :: JSCode -> JSCode
@@ -56,5 +52,4 @@ newJSRef expr =
 
 deRefJSRef :: JSRef -> JSCode
 deRefJSRef (JSRef p) =
-  JSCode $
-  mconcat [fromString "JSRef.deRefJSRef(0x", hexadecimal p, fromString ")"]
+  JSCode $ mconcat [fromString "JSRef.deRefJSRef(", intDec p, fromString ")"]

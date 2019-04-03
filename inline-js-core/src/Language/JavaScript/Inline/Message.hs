@@ -8,45 +8,55 @@ module Language.JavaScript.Inline.Message
   , decodeRecvMsg
   ) where
 
+import Data.Binary.Get
+import Data.Binary.Put
+import qualified Data.ByteString.Lazy as LBS
+import Data.Coerce
 import qualified Language.JavaScript.Inline.JSCode as JSCode
-import qualified Language.JavaScript.Inline.JSON as JSON
 import Language.JavaScript.Inline.MessageCounter
 
 data SendMsg = Eval
-  { evalCode :: JSCode.JSCode
-  , evalTimeout, resolveTimeout :: Maybe Double
-  , isAsync :: Bool
-  } deriving (Show)
+  { isAsync :: Bool
+  , evalTimeout, resolveTimeout :: Maybe Int
+  , evalCode :: JSCode.JSCode
+  }
 
-encodeSendMsg :: MsgId -> SendMsg -> JSON.Value
-encodeSendMsg msg_id msg =
-  case msg of
-    Eval {..} ->
-      JSON.Array
-        [ _head
-        , JSON.Number 0
-        , JSON.String $ JSCode.codeToString evalCode
-        , _maybe_number evalTimeout
-        , _maybe_number resolveTimeout
-        , JSON.Bool isAsync
-        ]
-  where
-    _head = JSON.Number $ fromIntegral msg_id
-    _maybe_number = maybe (JSON.Bool False) JSON.Number
+encodeSendMsg :: MsgId -> SendMsg -> LBS.ByteString
+encodeSendMsg msg_id msg = runPut $ putSendMsg msg_id msg
 
 data RecvMsg = Result
   { isError :: Bool
-  , result :: JSON.Value
-  } deriving (Show)
+  , result :: LBS.ByteString
+  }
 
-decodeRecvMsg :: JSON.Value -> Either String (MsgId, RecvMsg)
-decodeRecvMsg v =
-  case v of
-    JSON.Array [JSON.Number _msg_id, JSON.Number 0, JSON.Bool is_err, r] ->
-      Right (truncate _msg_id, Result {isError = is_err, result = r})
-    _ -> _err
-  where
-    _err =
-      Left $
-      "Language.JavaScript.Inline.Message.decodeRecvMsg: failed to decode " <>
-      show v
+decodeRecvMsg :: LBS.ByteString -> Either String (MsgId, RecvMsg)
+decodeRecvMsg buf =
+  case runGetOrFail getRecvMsg buf of
+    Left err -> Left $ show err
+    Right (_, _, r) -> Right r
+
+putSendMsg :: MsgId -> SendMsg -> Put
+putSendMsg msg_id Eval {..} = do
+  putWord32le $ fromIntegral msg_id
+  putWord32le $
+    if isAsync
+      then 1
+      else 0
+  putWord32le $
+    fromIntegral $
+    case evalTimeout of
+      Just t -> t
+      _ -> 0
+  putWord32le $
+    fromIntegral $
+    case resolveTimeout of
+      Just t -> t
+      _ -> 0
+  putBuilder $ coerce evalCode
+
+getRecvMsg :: Get (MsgId, RecvMsg)
+getRecvMsg = do
+  msg_id <- getWord32le
+  is_err <- getWord32le
+  r <- getRemainingLazyByteString
+  pure (fromIntegral msg_id, Result {isError = is_err /= 0, result = r})
