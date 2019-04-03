@@ -32,8 +32,10 @@ function extendObject(obj, cond, ext) {
 
 const ipc = new Transport(process.stdin, process.stdout);
 
-function sendMsg(msg) {
-  ipc.send(Buffer.from(JSON.stringify(msg)));
+function sendMsg(msg_id, is_err, result) {
+  ipc.send(
+    Buffer.from(JSON.stringify([msg_id, is_err, JSON.stringify(result)]))
+  );
 }
 
 const decoder = new StringDecoder();
@@ -61,47 +63,43 @@ ipc.on("recv", async buf => {
           { timeout: eval_timeout }
         )
       );
-      sendMsg([
+      sendMsg(
         msg_id,
         false,
-        JSON.stringify(
-          noUndefined(
-            await (resolve_timeout !== false
-              ? Promise.race([
-                  promise,
-                  new Promise((_, reject) =>
-                    setTimeout(reject, resolve_timeout, "")
-                  )
-                ])
-              : promise)
-          )
+        noUndefined(
+          await (resolve_timeout !== false
+            ? Promise.race([
+                promise,
+                new Promise((_, reject) =>
+                  setTimeout(reject, resolve_timeout, "")
+                )
+              ])
+            : promise)
         )
-      ]);
+      );
     } else {
-      sendMsg([
+      sendMsg(
         msg_id,
         false,
-        JSON.stringify(
-          noUndefined(
-            vm.runInContext(
-              msg_content,
-              ctx,
-              extendObject(
-                {
-                  displayErrors: true,
-                  importModuleDynamically: spec => import(spec)
-                },
-                eval_timeout,
-                { timeout: eval_timeout }
-              )
+        noUndefined(
+          vm.runInContext(
+            msg_content,
+            ctx,
+            extendObject(
+              {
+                displayErrors: true,
+                importModuleDynamically: spec => import(spec)
+              },
+              eval_timeout,
+              { timeout: eval_timeout }
             )
           )
         )
-      ]);
+      );
     }
   } catch (err) {
-    sendMsg([msg_id, true, JSON.stringify(err.toString())]);
+    sendMsg(msg_id, true, err.toString());
   }
 });
 
-sendMsg([0, false, JSON.stringify(null)]);
+sendMsg(0, false, null);
