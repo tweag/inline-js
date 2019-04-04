@@ -1,21 +1,34 @@
 module Language.JavaScript.Inline.Transport.Utils
-  ( lockTransport
+  ( lockSend
   , strictTransport
   ) where
 
-import Control.Concurrent.MVar
+import Control.Concurrent
+import Control.Concurrent.STM
 import Control.DeepSeq
 import Control.Exception
+import Data.Functor
 import Language.JavaScript.Inline.Transport.Type
 
-lockTransport :: Transport -> IO Transport
-lockTransport t = do
-  _send_lock <- newMVar ()
-  _recv_lock <- newMVar ()
+lockSend :: Transport -> IO Transport
+lockSend t = do
+  q <- newTQueueIO
+  void $
+    forkIO $
+    let w = do
+          mbuf <- atomically $ readTQueue q
+          case mbuf of
+            Just buf -> do
+              sendData t buf
+              w
+            _ -> pure ()
+     in w
   pure
     t
-      { sendData = \buf -> withMVar _send_lock $ \_ -> sendData t buf
-      , recvData = withMVar _recv_lock $ \_ -> recvData t
+      { closeTransport =
+          do closeTransport t
+             atomically $ writeTQueue q Nothing
+      , sendData = atomically . writeTQueue q . Just
       }
 
 strictTransport :: Transport -> Transport

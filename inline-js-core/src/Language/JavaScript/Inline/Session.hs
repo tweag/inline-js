@@ -60,7 +60,7 @@ data JSSession = JSSession
 newJSSession :: JSSessionOpts -> IO JSSession
 newJSSession JSSessionOpts {..} = do
   t <- newProcessTransport nodeProcessTransportOpts
-  t' <- lockTransport t
+  t' <- lockSend t
   _msg_counter <- newMsgCounter
   _recv_map <- newIORef IntMap.empty
   pure
