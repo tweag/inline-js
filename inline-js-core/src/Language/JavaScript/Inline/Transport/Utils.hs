@@ -37,7 +37,7 @@ lockSend t = do
       }
 
 uniqueRecv ::
-     (LBS.ByteString -> Maybe Int)
+     (LBS.ByteString -> Int)
   -> Transport
   -> IO (Int -> IO LBS.ByteString, Transport)
 uniqueRecv mk t = do
@@ -47,12 +47,9 @@ uniqueRecv mk t = do
     let w = do
           ebuf <- try @SomeException $ recvData t
           case ebuf of
-            Right buf ->
-              case mk buf of
-                Just k -> do
-                  atomically $ modifyTVar' mv $ IMap.insert k buf
-                  w
-                _ -> pure ()
+            Right buf -> do
+              atomically $ modifyTVar' mv $ IMap.insert (mk buf) buf
+              w
             _ -> pure ()
      in w
   pure
