@@ -32,7 +32,7 @@ tests =
                   ]
               , procStdErrInherit = True
               }
-        lockTransport $ strictTransport t)
+        lockSend $ strictTransport t)
     closeTransport
     (\gt ->
        testProperty "Echo via process transport" $
