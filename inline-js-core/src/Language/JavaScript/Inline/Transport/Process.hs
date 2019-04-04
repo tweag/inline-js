@@ -6,13 +6,13 @@ module Language.JavaScript.Inline.Transport.Process
   , newProcessTransport
   ) where
 
-import qualified Data.ByteString as BS
 import Data.ByteString.Builder
+import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString.Unsafe as BS
 import Data.Word
-import Foreign.Ptr
+import Foreign.ForeignPtr
 import Foreign.Storable
+import GHC.ForeignPtr
 import Language.JavaScript.Inline.Transport.Type
 import System.IO
 import System.Process
@@ -48,9 +48,18 @@ newProcessTransport ProcessTransportOpts {..} = do
               word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
             hFlush _stdin
       , recvData =
-          do lbuf <- BS.hGet _stdout 4
-             len <-
-               BS.unsafeUseAsCStringLen lbuf $ \(lptr, _) ->
-                 fromIntegral <$> peek (castPtr lptr :: Ptr Word32)
-             LBS.hGet _stdout len
+          do lp <- hGetForeignPtr _stdout 4
+             len <- withForeignPtr lp peek
+             bp <- hGetForeignPtr _stdout $ fromIntegral (len :: Word32)
+             pure $ LBS.fromStrict $ BS.fromForeignPtr bp 0 $ fromIntegral len
       }
+
+hGetForeignPtr :: Handle -> Int -> IO (ForeignPtr a)
+hGetForeignPtr h l = do
+  fp <- mallocPlainForeignPtrBytes l
+  withForeignPtr fp $ \p -> do
+    l' <- hGetBuf h p l
+    if l' == l
+      then pure fp
+      else fail $
+           "hGetForeignPtr: expected " <> show l <> " bytes, got " <> show l'
