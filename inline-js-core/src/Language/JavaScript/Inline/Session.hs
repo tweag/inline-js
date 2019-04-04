@@ -16,10 +16,9 @@ module Language.JavaScript.Inline.Session
 
 import Control.Exception
 import Control.Monad
+import Data.Binary.Get
+import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce
-import Data.IORef
-import qualified Data.IntMap.Strict as IntMap
-import Data.IntMap.Strict (IntMap)
 import Language.JavaScript.Inline.Message
 import Language.JavaScript.Inline.MessageCounter
 import Language.JavaScript.Inline.Transport.Process
@@ -54,20 +53,26 @@ defJSSessionOpts =
 data JSSession = JSSession
   { nodeTransport :: Transport
   , msgCounter :: MsgCounter
-  , recvMap :: IORef (IntMap RecvMsg)
+  , msgRecv :: MsgId -> IO LBS.ByteString
   }
 
 newJSSession :: JSSessionOpts -> IO JSSession
 newJSSession JSSessionOpts {..} = do
-  t <- newProcessTransport nodeProcessTransportOpts
-  t' <- lockSend t
+  t0 <- newProcessTransport nodeProcessTransportOpts
+  t1 <- lockSend $ strictTransport t0
+  (_uniq_recv, t2) <-
+    uniqueRecv
+      (\buf ->
+         case runGetOrFail (fromIntegral <$> getWord32le) buf of
+           Right (_, _, r) -> Just r
+           _ -> Nothing)
+      t1
   _msg_counter <- newMsgCounter
-  _recv_map <- newIORef IntMap.empty
   pure
     JSSession
-      { nodeTransport = strictTransport t'
+      { nodeTransport = t2
       , msgCounter = _msg_counter
-      , recvMap = _recv_map
+      , msgRecv = coerce _uniq_recv
       }
 
 closeJSSession :: JSSession -> IO ()
@@ -83,28 +88,14 @@ sendMsg JSSession {..} msg = do
   pure msg_id
 
 recvMsg :: JSSession -> MsgId -> IO RecvMsg
-recvMsg JSSession {..} msg_id = w
-  where
-    w = do
-      r <-
-        atomicModifyIORef' recvMap $ \m ->
-          let (r, m') =
-                IntMap.updateLookupWithKey (\_ _ -> Nothing) (coerce msg_id) m
-           in (m', r)
-      case r of
-        Just msg -> pure msg
-        _ -> do
-          buf <- recvData nodeTransport
-          (msg_id', msg') <-
-            case decodeRecvMsg buf of
-              Left err ->
-                fail $
-                "Language.JavaScript.Inline.Session.recvMsg: parsing RecvMsg failed with " <>
-                err
-              Right msg -> pure msg
-          atomicModifyIORef' recvMap $ \m ->
-            (IntMap.insert (coerce msg_id') msg' m, ())
-          w
+recvMsg JSSession {..} msg_id = do
+  buf <- msgRecv msg_id
+  case decodeRecvMsg buf of
+    Left err ->
+      fail $
+      "Language.JavaScript.Inline.Session.recvMsg: parsing RecvMsg failed with " <>
+      err
+    Right (_, msg) -> pure msg
 
 sendRecv :: JSSession -> SendMsg -> IO RecvMsg
 sendRecv s = recvMsg s <=< sendMsg s
