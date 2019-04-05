@@ -2,10 +2,10 @@
 {-# LANGUAGE StrictData #-}
 
 module Language.JavaScript.Inline.Message.Eval
-  ( SendMsg(..)
-  , encodeSendMsg
-  , RecvMsg(..)
-  , decodeRecvMsg
+  ( EvalRequest(..)
+  , encodeEvalRequest
+  , EvalResponse(..)
+  , decodeEvalResponse
   ) where
 
 import Data.Binary.Get
@@ -15,28 +15,28 @@ import Data.Coerce
 import qualified Language.JavaScript.Inline.JSCode as JSCode
 import Language.JavaScript.Inline.MessageCounter
 
-data SendMsg = Eval
+data EvalRequest = EvalRequest
   { isAsync :: Bool
   , evalTimeout, resolveTimeout :: Maybe Int
   , evalCode :: JSCode.JSCode
   }
 
-encodeSendMsg :: MsgId -> SendMsg -> LBS.ByteString
-encodeSendMsg msg_id msg = runPut $ putSendMsg msg_id msg
+encodeEvalRequest :: MsgId -> EvalRequest -> LBS.ByteString
+encodeEvalRequest msg_id msg = runPut $ putEvalRequest msg_id msg
 
-data RecvMsg = Result
+data EvalResponse = EvalResponse
   { isError :: Bool
   , result :: LBS.ByteString
   }
 
-decodeRecvMsg :: LBS.ByteString -> Either String (MsgId, RecvMsg)
-decodeRecvMsg buf =
-  case runGetOrFail getRecvMsg buf of
+decodeEvalResponse :: LBS.ByteString -> Either String (MsgId, EvalResponse)
+decodeEvalResponse buf =
+  case runGetOrFail getEvalResponse buf of
     Left err -> Left $ show err
     Right (_, _, r) -> Right r
 
-putSendMsg :: MsgId -> SendMsg -> Put
-putSendMsg msg_id Eval {..} = do
+putEvalRequest :: MsgId -> EvalRequest -> Put
+putEvalRequest msg_id EvalRequest {..} = do
   putWord32le $ fromIntegral msg_id
   putWord32le $
     if isAsync
@@ -54,9 +54,9 @@ putSendMsg msg_id Eval {..} = do
       _ -> 0
   putBuilder $ coerce evalCode
 
-getRecvMsg :: Get (MsgId, RecvMsg)
-getRecvMsg = do
+getEvalResponse :: Get (MsgId, EvalResponse)
+getEvalResponse = do
   msg_id <- getWord32le
   is_err <- getWord32le
   r <- getRemainingLazyByteString
-  pure (fromIntegral msg_id, Result {isError = is_err /= 0, result = r})
+  pure (fromIntegral msg_id, EvalResponse {isError = is_err /= 0, result = r})

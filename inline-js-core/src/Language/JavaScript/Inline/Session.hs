@@ -75,21 +75,21 @@ closeJSSession JSSession {..} = closeTransport nodeTransport
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (newJSSession opts) closeJSSession
 
-sendMsg :: JSSession -> SendMsg -> IO MsgId
+sendMsg :: JSSession -> EvalRequest -> IO MsgId
 sendMsg JSSession {..} msg = do
   msg_id <- newMsgId msgCounter
-  sendData nodeTransport $ encodeSendMsg msg_id msg
+  sendData nodeTransport $ encodeEvalRequest msg_id msg
   pure msg_id
 
-recvMsg :: JSSession -> MsgId -> IO RecvMsg
+recvMsg :: JSSession -> MsgId -> IO EvalResponse
 recvMsg JSSession {..} msg_id = do
   buf <- msgRecv msg_id
-  case decodeRecvMsg buf of
+  case decodeEvalResponse buf of
     Left err ->
       fail $
-      "Language.JavaScript.Inline.Session.recvMsg: parsing RecvMsg failed with " <>
+      "Language.JavaScript.Inline.Session.recvMsg: parsing EvalResponse failed with " <>
       err
     Right (_, msg) -> pure msg
 
-sendRecv :: JSSession -> SendMsg -> IO RecvMsg
+sendRecv :: JSSession -> EvalRequest -> IO EvalResponse
 sendRecv s = recvMsg s <=< sendMsg s

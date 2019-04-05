@@ -28,7 +28,7 @@ tests =
       traverse
         requestTest
         [ ( asyncEvaluation "import('fs')"
-          , \Result {isError} -> isError `shouldBe` False)
+          , \EvalResponse {isError} -> isError `shouldBe` False)
         , (syncEvaluation "while(true){}" `withEvalTimeout` 1000, failsToReturn)
         , (syncEvaluation "BOOM", failsToReturn)
         , (syncEvaluation "undefined", successfullyReturns Null)
@@ -46,10 +46,10 @@ tests =
         ]
     traverse_ recvAndRunTest testPairs
 
-failsToReturn :: RecvMsg -> IO ()
-failsToReturn Result {isError} = isError `shouldBe` True
+failsToReturn :: EvalResponse -> IO ()
+failsToReturn EvalResponse {isError} = isError `shouldBe` True
 
-successfullyReturns :: Value -> RecvMsg -> IO ()
-successfullyReturns expected Result {isError, result} = do
+successfullyReturns :: Value -> EvalResponse -> IO ()
+successfullyReturns expected EvalResponse {isError, result} = do
   isError `shouldBe` False
   decode' result `shouldBe` Just expected
