@@ -19,7 +19,7 @@ import Control.Monad
 import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce
-import Language.JavaScript.Inline.Message
+import Language.JavaScript.Inline.Message.Class
 import Language.JavaScript.Inline.MessageCounter
 import Language.JavaScript.Inline.Transport.Process
 import Language.JavaScript.Inline.Transport.Type
@@ -75,21 +75,16 @@ closeJSSession JSSession {..} = closeTransport nodeTransport
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (newJSSession opts) closeJSSession
 
-sendMsg :: JSSession -> SendMsg -> IO MsgId
+sendMsg :: Message i o => JSSession -> i -> IO MsgId
 sendMsg JSSession {..} msg = do
   msg_id <- newMsgId msgCounter
-  sendData nodeTransport $ encodeSendMsg msg_id msg
+  sendData nodeTransport $ encodeRequest msg_id msg
   pure msg_id
 
-recvMsg :: JSSession -> MsgId -> IO RecvMsg
+recvMsg :: Message i o => JSSession -> MsgId -> IO o
 recvMsg JSSession {..} msg_id = do
   buf <- msgRecv msg_id
-  case decodeRecvMsg buf of
-    Left err ->
-      fail $
-      "Language.JavaScript.Inline.Session.recvMsg: parsing RecvMsg failed with " <>
-      err
-    Right (_, msg) -> pure msg
+  decodeResponse msg_id buf
 
-sendRecv :: JSSession -> SendMsg -> IO RecvMsg
+sendRecv :: Message i o => JSSession -> i -> IO o
 sendRecv s = recvMsg s <=< sendMsg s

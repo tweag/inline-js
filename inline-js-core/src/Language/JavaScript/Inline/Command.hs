@@ -10,15 +10,15 @@ module Language.JavaScript.Inline.Command
 import Control.Monad.Fail
 import qualified Data.ByteString.Lazy as LBS
 import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Message
+import Language.JavaScript.Inline.Message.Eval
 import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 
-checkRecvMsg :: RecvMsg -> IO LBS.ByteString
-checkRecvMsg Result {..} =
+checkEvalResponse :: EvalResponse -> IO LBS.ByteString
+checkEvalResponse EvalResponse {..} =
   if isError
     then fail $
-         "Language.JavaScript.Inline.Commands.checkRecvMsg: evaluation failed with " <>
+         "Language.JavaScript.Inline.Commands.checkEvalResponse: evaluation failed with " <>
          show result
     else pure result
 
@@ -26,13 +26,13 @@ eval :: JSSession -> JSCode -> IO LBS.ByteString
 eval s c =
   sendRecv
     s
-    Eval
+    EvalRequest
       { evalCode = c
       , evalTimeout = Nothing
       , resolveTimeout = Nothing
       , isAsync = False
       } >>=
-  checkRecvMsg
+  checkEvalResponse
 
 evalTo :: (LBS.ByteString -> Either String a) -> JSSession -> JSCode -> IO a
 evalTo p s c = do
@@ -45,13 +45,13 @@ evalAsync :: JSSession -> JSCode -> IO LBS.ByteString
 evalAsync s c =
   sendRecv
     s
-    Eval
+    EvalRequest
       { evalCode = c
       , evalTimeout = Nothing
       , resolveTimeout = Nothing
       , isAsync = True
       } >>=
-  checkRecvMsg
+  checkEvalResponse
 
 evalAsyncTo ::
      (LBS.ByteString -> Either String a) -> JSSession -> JSCode -> IO a

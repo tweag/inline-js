@@ -6,17 +6,17 @@ module Tests.Helpers.Message
   ) where
 
 import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Message
+import Language.JavaScript.Inline.Message.Eval
 
-syncEvaluation :: JSCode -> SendMsg
-syncEvaluation = Eval False Nothing Nothing
+syncEvaluation :: JSCode -> EvalRequest
+syncEvaluation = EvalRequest False Nothing Nothing
 
-asyncEvaluation :: JSCode -> SendMsg
-asyncEvaluation = Eval True Nothing Nothing
+asyncEvaluation :: JSCode -> EvalRequest
+asyncEvaluation = EvalRequest True Nothing Nothing
 
-withEvalTimeout :: SendMsg -> Int -> SendMsg
+withEvalTimeout :: EvalRequest -> Int -> EvalRequest
 withEvalTimeout request milliseconds = request {evalTimeout = pure milliseconds}
 
-withResolveTimeout :: SendMsg -> Int -> SendMsg
+withResolveTimeout :: EvalRequest -> Int -> EvalRequest
 withResolveTimeout request milliseconds =
   request {resolveTimeout = pure milliseconds}
