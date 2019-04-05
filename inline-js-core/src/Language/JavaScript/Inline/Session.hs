@@ -19,7 +19,7 @@ import Control.Monad
 import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce
-import Language.JavaScript.Inline.Message
+import Language.JavaScript.Inline.Message.Eval
 import Language.JavaScript.Inline.MessageCounter
 import Language.JavaScript.Inline.Transport.Process
 import Language.JavaScript.Inline.Transport.Type

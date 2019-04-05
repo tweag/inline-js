@@ -7,7 +7,7 @@ module Tests.Evaluation
 
 import Data.Aeson
 import Data.Foldable
-import Language.JavaScript.Inline.Message
+import Language.JavaScript.Inline.Message.Eval
 import Language.JavaScript.Inline.Session
 import Test.Tasty (TestTree)
 import Test.Tasty.Hspec (it, shouldBe, testSpec)

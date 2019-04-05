@@ -10,7 +10,7 @@ module Language.JavaScript.Inline.Command
 import Control.Monad.Fail
 import qualified Data.ByteString.Lazy as LBS
 import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Message
+import Language.JavaScript.Inline.Message.Eval
 import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 

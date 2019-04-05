@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
 
-module Language.JavaScript.Inline.Message
+module Language.JavaScript.Inline.Message.Eval
   ( SendMsg(..)
   , encodeSendMsg
   , RecvMsg(..)
