@@ -5,10 +5,10 @@ module Language.JavaScript.Inline.JSCode
   , codeToString
   , codeFromString
   , codeFromValueLBS
-  , JSRef
-  , parseJSRef
-  , newJSRef
-  , deRefJSRef
+  , JSVal
+  , parseJSVal
+  , newJSVal
+  , deRefJSVal
   ) where
 
 import Data.ByteString.Builder
@@ -36,20 +36,20 @@ codeFromValueLBS buf =
   JSCode $
   mconcat [fromString "JSON.parse(", lazyByteString buf, fromString ")"]
 
-newtype JSRef =
-  JSRef Int
+newtype JSVal =
+  JSVal Int
   deriving (Eq, Ord, Show)
 
-parseJSRef :: LBS.ByteString -> Either String JSRef
-parseJSRef buf =
+parseJSVal :: LBS.ByteString -> Either String JSVal
+parseJSVal buf =
   case Text.decimal $ Text.decodeUtf8 $ LBS.toStrict buf of
-    Right (r, _) -> Right $ JSRef r
-    _ -> Left "Language.JavaScript.Inline.JSCode.parseJSRef"
+    Right (r, _) -> Right $ JSVal r
+    _ -> Left "Language.JavaScript.Inline.JSCode.parseJSVal"
 
-newJSRef :: JSCode -> JSCode
-newJSRef expr =
-  JSCode $ mconcat [fromString "JSRef.newJSRef((", unwrap expr, fromString "))"]
+newJSVal :: JSCode -> JSCode
+newJSVal expr =
+  JSCode $ mconcat [fromString "JSVal.newJSVal((", unwrap expr, fromString "))"]
 
-deRefJSRef :: JSRef -> JSCode
-deRefJSRef (JSRef p) =
-  JSCode $ mconcat [fromString "JSRef.deRefJSRef(", intDec p, fromString ")"]
+deRefJSVal :: JSVal -> JSCode
+deRefJSVal (JSVal p) =
+  JSCode $ mconcat [fromString "JSVal.deRefJSVal(", intDec p, fromString ")"]

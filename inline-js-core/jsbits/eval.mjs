@@ -10,11 +10,11 @@ process.on("uncaughtException", err => {
 
 const __jsrefs = [];
 
-global.JSRef = class {
-  static newJSRef(v) {
+global.JSVal = class {
+  static newJSVal(v) {
     return __jsrefs.push(v) - 1;
   }
-  static deRefJSRef(p) {
+  static deRefJSVal(p) {
     return __jsrefs[p];
   }
 };

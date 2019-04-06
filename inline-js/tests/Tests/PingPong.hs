@@ -54,11 +54,11 @@ tests =
       forAllM genValue $ \v ->
         run $ do
           p <-
-            evalTo parseJSRef s $
-            newJSRef $
+            evalTo parseJSVal s $
+            newJSVal $
             codeFromValueLBS $
             encode $ String $ Text.decodeUtf8 $ LBS.toStrict $ encode v
-          _recv_v <- fmap (fromJust . decode') $ eval s $ deRefJSRef p
+          _recv_v <- fmap (fromJust . decode') $ eval s $ deRefJSVal p
           unless (v == _recv_v) $
             fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
 
