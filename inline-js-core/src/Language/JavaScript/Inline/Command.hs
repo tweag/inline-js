@@ -15,12 +15,13 @@ import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 
 checkEvalResponse :: EvalResponse -> IO LBS.ByteString
-checkEvalResponse EvalResponse {..} =
-  if isError
-    then fail $
-         "Language.JavaScript.Inline.Commands.checkEvalResponse: evaluation failed with " <>
-         show result
-    else pure result
+checkEvalResponse r =
+  case r of
+    EvalError {..} ->
+      fail $
+      "Language.JavaScript.Inline.Commands.checkEvalResponse: evaluation failed with " <>
+      show evalError
+    EvalResult {..} -> pure evalResult
 
 eval :: JSSession -> JSCode -> IO LBS.ByteString
 eval s c =

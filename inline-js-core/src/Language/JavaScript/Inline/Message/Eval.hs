@@ -20,10 +20,9 @@ data EvalRequest = EvalRequest
   , evalCode :: JSCode.JSCode
   }
 
-data EvalResponse = EvalResponse
-  { isError :: Bool
-  , result :: LBS.ByteString
-  }
+data EvalResponse
+  = EvalError { evalError :: LBS.ByteString }
+  | EvalResult { evalResult :: LBS.ByteString }
 
 instance Message EvalRequest EvalResponse where
   putRequest EvalRequest {..} = do
@@ -46,4 +45,7 @@ instance Message EvalRequest EvalResponse where
   getResponse = do
     is_err <- getWord32host
     r <- getRemainingLazyByteString
-    pure EvalResponse {isError = is_err /= 0, result = r}
+    pure $
+      case is_err of
+        0 -> EvalResult {evalResult = r}
+        _ -> EvalError {evalError = r}
