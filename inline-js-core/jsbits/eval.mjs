@@ -38,29 +38,38 @@ const decoder = new TextDecoder("utf-8", { fatal: true });
 ipc.on("recv", async buf => {
   const msg_id = buf.readUInt32LE(0);
   try {
-    const is_async = Boolean(buf.readUInt32LE(4)),
-      eval_timeout = buf.readUInt32LE(8),
-      resolve_timeout = buf.readUInt32LE(12),
-      msg_content = decoder.decode(buf.slice(16)),
-      eval_options = {
-        displayErrors: true,
-        importModuleDynamically: spec => import(spec)
-      };
-    if (eval_timeout) eval_options.timeout = eval_timeout;
-    const eval_result = vm.runInContext(msg_content, ctx, eval_options);
-    if (is_async) {
-      const promise = resolve_timeout
-          ? Promise.race([
-              eval_result,
-              new Promise((_, reject) =>
-                setTimeout(reject, resolve_timeout, "")
-              )
-            ])
-          : eval_result,
-        promise_result = await promise;
-      sendMsg(msg_id, false, promise_result);
-    } else {
-      sendMsg(msg_id, false, eval_result);
+    const msg_tag = buf.readUInt32LE(4);
+    switch (msg_tag) {
+      case 0: {
+        const is_async = Boolean(buf.readUInt32LE(8)),
+          eval_timeout = buf.readUInt32LE(12),
+          resolve_timeout = buf.readUInt32LE(16),
+          msg_content = decoder.decode(buf.slice(20)),
+          eval_options = {
+            displayErrors: true,
+            importModuleDynamically: spec => import(spec)
+          };
+        if (eval_timeout) eval_options.timeout = eval_timeout;
+        const eval_result = vm.runInContext(msg_content, ctx, eval_options);
+        if (is_async) {
+          const promise = resolve_timeout
+              ? Promise.race([
+                  eval_result,
+                  new Promise((_, reject) =>
+                    setTimeout(reject, resolve_timeout, "")
+                  )
+                ])
+              : eval_result,
+            promise_result = await promise;
+          sendMsg(msg_id, false, promise_result);
+        } else {
+          sendMsg(msg_id, false, eval_result);
+        }
+        break;
+      }
+      default: {
+        throw new Error(`Unsupported tag ${msg_tag}`);
+      }
     }
   } catch (err) {
     sendMsg(msg_id, true, err.toString());

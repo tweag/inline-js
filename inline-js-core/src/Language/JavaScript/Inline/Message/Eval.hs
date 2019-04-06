@@ -27,6 +27,7 @@ data EvalResponse = EvalResponse
 
 instance Message EvalRequest EvalResponse where
   putRequest EvalRequest {..} = do
+    putWord32host 0
     putWord32host $
       if isAsync
         then 1
