@@ -75,16 +75,16 @@ closeJSSession JSSession {..} = closeTransport nodeTransport
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (newJSSession opts) closeJSSession
 
-sendMsg :: Message i o => JSSession -> i -> IO MsgId
+sendMsg :: Request r => JSSession -> r -> IO MsgId
 sendMsg JSSession {..} msg = do
   msg_id <- newMsgId msgCounter
   sendData nodeTransport $ encodeRequest msg_id msg
   pure msg_id
 
-recvMsg :: Message i o => JSSession -> MsgId -> IO o
+recvMsg :: Response r => JSSession -> MsgId -> IO r
 recvMsg JSSession {..} msg_id = do
   buf <- msgRecv msg_id
   decodeResponse msg_id buf
 
-sendRecv :: Message i o => JSSession -> i -> IO o
+sendRecv :: (Request req, Response resp) => JSSession -> req -> IO resp
 sendRecv s = recvMsg s <=< sendMsg s

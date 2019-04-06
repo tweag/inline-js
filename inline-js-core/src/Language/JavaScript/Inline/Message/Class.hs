@@ -1,8 +1,6 @@
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-
 module Language.JavaScript.Inline.Message.Class
-  ( Message(..)
+  ( Request(..)
+  , Response(..)
   , encodeRequest
   , decodeResponse
   ) where
@@ -12,17 +10,19 @@ import Data.Binary.Put
 import qualified Data.ByteString.Lazy as LBS
 import Language.JavaScript.Inline.MessageCounter
 
-class Message i o | i -> o, o -> i where
-  putRequest :: i -> Put
-  getResponse :: Get o
+class Request r where
+  putRequest :: r -> Put
 
-encodeRequest :: Message i o => MsgId -> i -> LBS.ByteString
+class Response r where
+  getResponse :: Get r
+
+encodeRequest :: Request r => MsgId -> r -> LBS.ByteString
 encodeRequest msg_id req =
   runPut $ do
     putWord32host $ fromIntegral msg_id
     putRequest req
 
-decodeResponse :: Message i o => MsgId -> LBS.ByteString -> IO o
+decodeResponse :: Response r => MsgId -> LBS.ByteString -> IO r
 decodeResponse msg_id buf =
   case runGetOrFail
          ((,) <$> (fromIntegral <$> getWord32host) <*> getResponse)

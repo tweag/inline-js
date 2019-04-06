@@ -24,7 +24,7 @@ data EvalResponse
   = EvalError { evalError :: LBS.ByteString }
   | EvalResult { evalResult :: LBS.ByteString }
 
-instance Message EvalRequest EvalResponse where
+instance Request EvalRequest where
   putRequest EvalRequest {..} = do
     putWord32host 0
     putWord32host $
@@ -42,6 +42,8 @@ instance Message EvalRequest EvalResponse where
         Just t -> t
         _ -> 0
     putBuilder $ coerce evalCode
+
+instance Response EvalResponse where
   getResponse = do
     is_err <- getWord32host
     r <- getRemainingLazyByteString
