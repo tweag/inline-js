@@ -8,7 +8,7 @@ process.on("uncaughtException", err => {
   throw err;
 });
 
-const __jsrefs = [];
+const __jsrefs = [undefined];
 
 global.JSVal = class {
   static newJSVal(v) {
