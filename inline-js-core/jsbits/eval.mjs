@@ -66,5 +66,3 @@ ipc.on("recv", async buf => {
     sendMsg(msg_id, true, err.toString());
   }
 });
-
-sendMsg(0, false, null);
