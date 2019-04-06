@@ -6,6 +6,7 @@ module Tests.Evaluation
   ) where
 
 import Data.Aeson
+import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
 import Language.JavaScript.Inline.Message.Eval
 import Language.JavaScript.Inline.Session
@@ -45,14 +46,14 @@ tests =
         ]
     traverse_ recvAndRunTest testPairs
 
-failsToReturn :: EvalResponse -> IO ()
+failsToReturn :: EvalResponse LBS.ByteString -> IO ()
 failsToReturn r = isError r `shouldBe` True
 
-successfullyReturns :: Value -> EvalResponse -> IO ()
+successfullyReturns :: Value -> EvalResponse LBS.ByteString -> IO ()
 successfullyReturns expected r = do
   isError r `shouldBe` False
   decode' (evalResult r) `shouldBe` Just expected
 
-isError :: EvalResponse -> Bool
+isError :: EvalResponse LBS.ByteString -> Bool
 isError EvalError {} = True
 isError _ = False

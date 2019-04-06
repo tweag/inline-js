@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
@@ -20,9 +21,9 @@ data EvalRequest = EvalRequest
   , evalCode :: JSCode.JSCode
   }
 
-data EvalResponse
+data EvalResponse a
   = EvalError { evalError :: LBS.ByteString }
-  | EvalResult { evalResult :: LBS.ByteString }
+  | EvalResult { evalResult :: a }
 
 instance Request EvalRequest where
   putRequest EvalRequest {..} = do
@@ -43,7 +44,7 @@ instance Request EvalRequest where
         _ -> 0
     putBuilder $ coerce evalCode
 
-instance Response EvalResponse where
+instance Response (EvalResponse LBS.ByteString) where
   getResponse = do
     is_err <- getWord32host
     r <- getRemainingLazyByteString

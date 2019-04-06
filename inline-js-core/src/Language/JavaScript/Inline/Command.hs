@@ -14,7 +14,7 @@ import Language.JavaScript.Inline.Message.Eval
 import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 
-checkEvalResponse :: EvalResponse -> IO LBS.ByteString
+checkEvalResponse :: EvalResponse LBS.ByteString -> IO LBS.ByteString
 checkEvalResponse r =
   case r of
     EvalError {..} ->
