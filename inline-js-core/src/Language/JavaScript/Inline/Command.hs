@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Language.JavaScript.Inline.Command
@@ -8,13 +9,13 @@ module Language.JavaScript.Inline.Command
   ) where
 
 import Control.Monad.Fail
-import qualified Data.ByteString.Lazy as LBS
 import Language.JavaScript.Inline.JSCode
+import Language.JavaScript.Inline.Message.Class
 import Language.JavaScript.Inline.Message.Eval
 import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
 
-checkEvalResponse :: EvalResponse LBS.ByteString -> IO LBS.ByteString
+checkEvalResponse :: EvalResponse r -> IO r
 checkEvalResponse r =
   case r of
     EvalError {..} ->
@@ -23,7 +24,7 @@ checkEvalResponse r =
       show evalError
     EvalResult {..} -> pure evalResult
 
-eval :: JSSession -> JSCode -> IO LBS.ByteString
+eval :: Response (EvalResponse r) => JSSession -> JSCode -> IO r
 eval s c =
   sendRecv
     s
@@ -35,14 +36,19 @@ eval s c =
       } >>=
   checkEvalResponse
 
-evalTo :: (LBS.ByteString -> Either String a) -> JSSession -> JSCode -> IO a
+evalTo ::
+     Response (EvalResponse r)
+  => (r -> Either String a)
+  -> JSSession
+  -> JSCode
+  -> IO a
 evalTo p s c = do
   v <- eval s c
   case p v of
     Left err -> fail err
     Right r -> pure r
 
-evalAsync :: JSSession -> JSCode -> IO LBS.ByteString
+evalAsync :: Response (EvalResponse r) => JSSession -> JSCode -> IO r
 evalAsync s c =
   sendRecv
     s
@@ -55,7 +61,11 @@ evalAsync s c =
   checkEvalResponse
 
 evalAsyncTo ::
-     (LBS.ByteString -> Either String a) -> JSSession -> JSCode -> IO a
+     Response (EvalResponse r)
+  => (r -> Either String a)
+  -> JSSession
+  -> JSCode
+  -> IO a
 evalAsyncTo p s c = do
   v <- evalAsync s c
   case p v of
