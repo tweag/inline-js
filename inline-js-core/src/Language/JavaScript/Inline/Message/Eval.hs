@@ -45,10 +45,14 @@ instance Request EvalRequest where
     putBuilder $ coerce evalCode
 
 instance Response (EvalResponse LBS.ByteString) where
-  getResponse = do
-    is_err <- getWord32host
-    r <- getRemainingLazyByteString
-    pure $
-      case is_err of
-        0 -> EvalResult {evalResult = r}
-        _ -> EvalError {evalError = r}
+  getResponse = getResponseWith getRemainingLazyByteString
+
+instance Response (EvalResponse JSCode.JSVal) where
+  getResponse = getResponseWith (JSCode.JSVal . fromIntegral <$> getWord32host)
+
+getResponseWith :: Get r -> Get (EvalResponse r)
+getResponseWith p = do
+  is_err <- getWord32host
+  case is_err of
+    0 -> EvalResult <$> p
+    _ -> EvalError <$> getRemainingLazyByteString

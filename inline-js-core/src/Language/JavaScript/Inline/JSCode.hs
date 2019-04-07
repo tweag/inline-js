@@ -5,7 +5,7 @@ module Language.JavaScript.Inline.JSCode
   , codeToString
   , codeFromString
   , codeFromValueLBS
-  , JSVal
+  , JSVal(..)
   , parseJSVal
   , newJSVal
   , deRefJSVal
