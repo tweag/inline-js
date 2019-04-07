@@ -58,7 +58,8 @@ tests =
             newJSVal $
             codeFromValueLBS $
             encode $ String $ Text.decodeUtf8 $ LBS.toStrict $ encode v
-          _recv_v <- fmap (fromJust . decode') $ eval s $ deRefJSVal p
+          _recv_v <-
+            fmap (fromJust . decode') $ eval s $ jsonStringify $ deRefJSVal p
           unless (v == _recv_v) $
             fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
 

@@ -1,10 +1,12 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Language.JavaScript.Inline.JSCode
   ( JSCode(..)
   , codeToString
   , codeFromString
   , codeFromValueLBS
+  , jsonStringify
   , JSVal(..)
   , newJSVal
   , deRefJSVal
@@ -18,7 +20,7 @@ import qualified Data.Text.Encoding as Text
 
 newtype JSCode =
   JSCode Builder
-  deriving (IsString)
+  deriving (IsString, Semigroup)
 
 unwrap :: JSCode -> Builder
 unwrap (JSCode builder) = builder
@@ -33,6 +35,9 @@ codeFromValueLBS :: LBS.ByteString -> JSCode
 codeFromValueLBS buf =
   JSCode $
   mconcat [fromString "JSON.parse(", lazyByteString buf, fromString ")"]
+
+jsonStringify :: JSCode -> JSCode
+jsonStringify expr = "JSON.stringify(" <> expr <> ")"
 
 newtype JSVal =
   JSVal Int

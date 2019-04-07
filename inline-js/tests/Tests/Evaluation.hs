@@ -35,16 +35,18 @@ tests =
     testPairs <-
       traverse
         requestTest
-        [ (asyncEvaluation "import('fs')", \r -> isError r `shouldBe` False)
+        [ ( asyncEvaluation
+              "import('fs').then(fs => fs.readFileSync.toString())"
+          , \r -> isError r `shouldBe` False)
         , (syncEvaluation "while(true){}" `withEvalTimeout` 1000, failsToReturn)
         , (syncEvaluation "BOOM", failsToReturn)
-        , (syncEvaluation "undefined", successfullyReturns Null)
-        , (syncEvaluation "let x = 6*7", successfullyReturns Null)
-        , (syncEvaluation "x", successfullyReturns $ Number 42)
-        , ( syncEvaluation "\"left\" + \"pad\""
+        , ( syncEvaluation "let x = 6*7; JSON.stringify(null)"
+          , successfullyReturns Null)
+        , (syncEvaluation "JSON.stringify(x)", successfullyReturns $ Number 42)
+        , ( syncEvaluation "JSON.stringify(\"left\" + \"pad\")"
           , successfullyReturns $ String "leftpad")
         , (asyncEvaluation "Promise.reject('BOOM')", failsToReturn)
-        , ( asyncEvaluation "Promise.resolve(x)"
+        , ( asyncEvaluation "Promise.resolve(JSON.stringify(x))"
           , successfullyReturns $ Number 42)
         , ( asyncEvaluation
               "new Promise((resolve, _) => setTimeout(resolve, 10000))" `withResolveTimeout`

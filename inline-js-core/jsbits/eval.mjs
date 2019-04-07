@@ -28,7 +28,7 @@ function sendMsg(msg_id, ret_tag, is_err, result) {
     if (result === undefined) result = null;
     switch (ret_tag) {
       case 0: {
-        const result_buf = Buffer.from(JSON.stringify(result)),
+        const result_buf = Buffer.from(result),
           msg_buf = Buffer.allocUnsafe(8 + result_buf.length);
         msg_buf.writeUInt32LE(msg_id, 0);
         msg_buf.writeUInt32LE(Number(is_err), 4);
