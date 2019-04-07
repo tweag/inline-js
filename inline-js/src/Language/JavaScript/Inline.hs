@@ -45,7 +45,7 @@ block = qq blockQuasiQuoter
 
 --- produces splice with type `JSSession -> IO JSCode`
 expressionQuasiQuoter :: String -> Q TH.Exp
-expressionQuasiQuoter input = blockQuasiQuoter $ "return " ++ input ++ ";"
+expressionQuasiQuoter input = blockQuasiQuoter $ "return " <> input <> ";"
 
 --- produces splice with type `JSSession -> IO JSCode`
 blockQuasiQuoter :: String -> Q TH.Exp
@@ -72,13 +72,13 @@ blockQuasiQuoter input =
 wrapCode :: String -> [String] -> Q TH.Exp
 wrapCode code antiquotedNames =
   [|mconcat
-      [ pack "(function( "
+      [ pack "JSON.stringify((function( "
       , $(argumentList antiquotedNames)
       , pack " ) { "
       , pack code
       , pack " })( "
       , $(argumentValues antiquotedNames)
-      , pack " );"
+      , pack " ))"
       ]|]
 
 argumentList :: [String] -> Q TH.Exp

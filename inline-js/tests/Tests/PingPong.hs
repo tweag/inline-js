@@ -8,11 +8,9 @@ import Control.Monad hiding (fail)
 import Control.Monad.Fail
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson
-import qualified Data.ByteString.Lazy as LBS
 import Data.Int
 import Data.Maybe
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
 import GHC.Exts
 import Language.JavaScript.Inline.Command
 import Language.JavaScript.Inline.JSCode
@@ -53,12 +51,11 @@ tests =
       s <- liftIO getSetup
       forAllM genValue $ \v ->
         run $ do
-          p <-
-            evalTo parseJSRef s $
-            newJSRef $
-            codeFromValueLBS $
-            encode $ String $ Text.decodeUtf8 $ LBS.toStrict $ encode v
-          _recv_v <- fmap (fromJust . decode') $ eval s $ deRefJSRef p
+          v_buf_ref <- alloc s $ encode v
+          _recv_v <-
+            fmap (fromJust . decode') $
+            eval s $
+            jsonStringify $ jsonParse $ bufferToString $ deRefJSVal v_buf_ref
           unless (v == _recv_v) $
             fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
 

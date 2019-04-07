@@ -9,7 +9,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre173445.796a8764ab8 nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre173720.d73f16d6767 nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
@@ -20,7 +20,7 @@ jobs:
               nixpkgs.stack
       - checkout
       - run:
-          name: Test inline-js and inline-js-core
+          name: Test inline-js
           command: |
-            stack --no-terminal build inline-js-core inline-js --test --no-run-tests
-            stack --no-terminal test inline-js
+            stack --nix --no-terminal build --test --no-run-tests
+            stack --nix --no-terminal test inline-js

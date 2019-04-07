@@ -1,8 +1,7 @@
-resolver: lts-13.14
+resolver: lts-13.15
 packages:
   - inline-js
   - inline-js-core
 nix:
-  enable: true
   packages:
     - nodejs-11_x
