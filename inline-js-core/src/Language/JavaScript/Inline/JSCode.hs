@@ -8,7 +8,6 @@ module Language.JavaScript.Inline.JSCode
   , codeFromValueLBS
   , jsonStringify
   , JSVal(..)
-  , newJSVal
   , deRefJSVal
   ) where
 
@@ -42,10 +41,6 @@ jsonStringify expr = "JSON.stringify(" <> expr <> ")"
 newtype JSVal =
   JSVal Int
   deriving (Eq, Ord, Show)
-
-newJSVal :: JSCode -> JSCode
-newJSVal expr =
-  JSCode $ mconcat [fromString "JSVal.newJSVal((", unwrap expr, fromString "))"]
 
 deRefJSVal :: JSVal -> JSCode
 deRefJSVal (JSVal p) =

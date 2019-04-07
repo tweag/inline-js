@@ -12,10 +12,10 @@ const __jsrefs = [undefined];
 
 global.JSVal = class {
   static newJSVal(v) {
-    return __jsrefs.push(v) - 1;
+    return v === undefined || v === null ? 0 : __jsrefs.push(v) - 1;
   }
   static deRefJSVal(p) {
-    return __jsrefs[p];
+    return p ? __jsrefs[p] : null;
   }
 };
 
@@ -25,7 +25,6 @@ const ipc = new Transport(process.stdin, process.stdout);
 
 function sendMsg(msg_id, ret_tag, is_err, result) {
   try {
-    if (result === undefined) result = null;
     switch (ret_tag) {
       case 0: {
         const result_buf = Buffer.from(result),
@@ -40,7 +39,7 @@ function sendMsg(msg_id, ret_tag, is_err, result) {
         const msg_buf = Buffer.allocUnsafe(12);
         msg_buf.writeUInt32LE(msg_id, 0);
         msg_buf.writeUInt32LE(0, 4);
-        msg_buf.writeUInt32LE(result, 8);
+        msg_buf.writeUInt32LE(JSVal.newJSVal(result), 8);
         ipc.send(msg_buf);
         break;
       }

@@ -55,7 +55,6 @@ tests =
         run $ do
           p <-
             eval s $
-            newJSVal $
             codeFromValueLBS $
             encode $ String $ Text.decodeUtf8 $ LBS.toStrict $ encode v
           _recv_v <-
