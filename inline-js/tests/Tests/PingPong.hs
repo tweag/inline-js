@@ -54,7 +54,7 @@ tests =
       forAllM genValue $ \v ->
         run $ do
           p <-
-            evalTo parseJSVal s $
+            eval s $
             newJSVal $
             codeFromValueLBS $
             encode $ String $ Text.decodeUtf8 $ LBS.toStrict $ encode v

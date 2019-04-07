@@ -1,11 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Language.JavaScript.Inline.Command
   ( eval
-  , evalTo
   , evalAsync
-  , evalAsyncTo
   ) where
 
 import Control.Monad.Fail
@@ -24,50 +23,34 @@ checkEvalResponse r =
       show evalError
     EvalResult {..} -> pure evalResult
 
-eval :: Response (EvalResponse r) => JSSession -> JSCode -> IO r
+eval ::
+     forall r. (Request (EvalRequest r), Response (EvalResponse r))
+  => JSSession
+  -> JSCode
+  -> IO r
 eval s c =
   sendRecv
     s
-    EvalRequest
-      { evalCode = c
-      , evalTimeout = Nothing
-      , resolveTimeout = Nothing
-      , isAsync = False
-      } >>=
+    (EvalRequest
+       { evalCode = c
+       , evalTimeout = Nothing
+       , resolveTimeout = Nothing
+       , isAsync = False
+       } :: EvalRequest r) >>=
   checkEvalResponse
 
-evalTo ::
-     Response (EvalResponse r)
-  => (r -> Either String a)
-  -> JSSession
+evalAsync ::
+     forall r. (Request (EvalRequest r), Response (EvalResponse r))
+  => JSSession
   -> JSCode
-  -> IO a
-evalTo p s c = do
-  v <- eval s c
-  case p v of
-    Left err -> fail err
-    Right r -> pure r
-
-evalAsync :: Response (EvalResponse r) => JSSession -> JSCode -> IO r
+  -> IO r
 evalAsync s c =
   sendRecv
     s
-    EvalRequest
-      { evalCode = c
-      , evalTimeout = Nothing
-      , resolveTimeout = Nothing
-      , isAsync = True
-      } >>=
+    (EvalRequest
+       { evalCode = c
+       , evalTimeout = Nothing
+       , resolveTimeout = Nothing
+       , isAsync = True
+       } :: EvalRequest r) >>=
   checkEvalResponse
-
-evalAsyncTo ::
-     Response (EvalResponse r)
-  => (r -> Either String a)
-  -> JSSession
-  -> JSCode
-  -> IO a
-evalAsyncTo p s c = do
-  v <- evalAsync s c
-  case p v of
-    Left err -> fail err
-    Right r -> pure r

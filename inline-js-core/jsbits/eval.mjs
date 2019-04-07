@@ -23,14 +23,34 @@ const ctx = vm.createContext(Object.assign({}, global));
 
 const ipc = new Transport(process.stdin, process.stdout);
 
-function sendMsg(msg_id, is_err, result) {
-  if (result === undefined) result = null;
-  const result_buf = Buffer.from(JSON.stringify(result)),
-    msg_buf = Buffer.allocUnsafe(8 + result_buf.length);
-  msg_buf.writeUInt32LE(msg_id, 0);
-  msg_buf.writeUInt32LE(Number(is_err), 4);
-  result_buf.copy(msg_buf, 8);
-  ipc.send(msg_buf);
+function sendMsg(msg_id, ret_tag, is_err, result) {
+  try {
+    if (result === undefined) result = null;
+    switch (ret_tag) {
+      case 0: {
+        const result_buf = Buffer.from(JSON.stringify(result)),
+          msg_buf = Buffer.allocUnsafe(8 + result_buf.length);
+        msg_buf.writeUInt32LE(msg_id, 0);
+        msg_buf.writeUInt32LE(Number(is_err), 4);
+        result_buf.copy(msg_buf, 8);
+        ipc.send(msg_buf);
+        break;
+      }
+      case 1: {
+        const msg_buf = Buffer.allocUnsafe(12);
+        msg_buf.writeUInt32LE(msg_id, 0);
+        msg_buf.writeUInt32LE(0, 4);
+        msg_buf.writeUInt32LE(result, 8);
+        ipc.send(msg_buf);
+        break;
+      }
+      default: {
+        throw new Error(`Unsupported ret_tag ${ret_tag}`);
+      }
+    }
+  } catch (err) {
+    sendMsg(msg_id, 0, true, err.toString());
+  }
 }
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -41,10 +61,11 @@ ipc.on("recv", async buf => {
     const msg_tag = buf.readUInt32LE(4);
     switch (msg_tag) {
       case 0: {
-        const is_async = Boolean(buf.readUInt32LE(8)),
-          eval_timeout = buf.readUInt32LE(12),
-          resolve_timeout = buf.readUInt32LE(16),
-          msg_content = decoder.decode(buf.slice(20)),
+        const ret_tag = buf.readUInt32LE(8),
+          is_async = Boolean(buf.readUInt32LE(12)),
+          eval_timeout = buf.readUInt32LE(16),
+          resolve_timeout = buf.readUInt32LE(20),
+          msg_content = decoder.decode(buf.slice(24)),
           eval_options = {
             displayErrors: true,
             importModuleDynamically: spec => import(spec)
@@ -61,9 +82,9 @@ ipc.on("recv", async buf => {
                 ])
               : eval_result,
             promise_result = await promise;
-          sendMsg(msg_id, false, promise_result);
+          sendMsg(msg_id, ret_tag, false, promise_result);
         } else {
-          sendMsg(msg_id, false, eval_result);
+          sendMsg(msg_id, ret_tag, false, eval_result);
         }
         break;
       }
@@ -72,6 +93,6 @@ ipc.on("recv", async buf => {
       }
     }
   } catch (err) {
-    sendMsg(msg_id, true, err.toString());
+    sendMsg(msg_id, 0, true, err.toString());
   }
 });

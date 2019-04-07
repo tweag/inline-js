@@ -6,7 +6,6 @@ module Language.JavaScript.Inline.JSCode
   , codeFromString
   , codeFromValueLBS
   , JSVal(..)
-  , parseJSVal
   , newJSVal
   , deRefJSVal
   ) where
@@ -16,7 +15,6 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.String (IsString(..))
 import Data.Text (Text)
 import qualified Data.Text.Encoding as Text
-import qualified Data.Text.Read as Text
 
 newtype JSCode =
   JSCode Builder
@@ -39,12 +37,6 @@ codeFromValueLBS buf =
 newtype JSVal =
   JSVal Int
   deriving (Eq, Ord, Show)
-
-parseJSVal :: LBS.ByteString -> Either String JSVal
-parseJSVal buf =
-  case Text.decimal $ Text.decodeUtf8 $ LBS.toStrict buf of
-    Right (r, _) -> Right $ JSVal r
-    _ -> Left "Language.JavaScript.Inline.JSCode.parseJSVal"
 
 newJSVal :: JSCode -> JSCode
 newJSVal expr =
