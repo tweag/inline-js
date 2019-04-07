@@ -15,7 +15,7 @@ import Data.Coerce
 import qualified Language.JavaScript.Inline.JSCode as JSCode
 import Language.JavaScript.Inline.Message.Class
 
-data EvalRequest = EvalRequest
+data EvalRequest a = EvalRequest
   { isAsync :: Bool
   , evalTimeout, resolveTimeout :: Maybe Int
   , evalCode :: JSCode.JSCode
@@ -25,7 +25,7 @@ data EvalResponse a
   = EvalError { evalError :: LBS.ByteString }
   | EvalResult { evalResult :: a }
 
-instance Request EvalRequest where
+instance Request (EvalRequest a) where
   putRequest EvalRequest {..} = do
     putWord32host 0
     putWord32host $
