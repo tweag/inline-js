@@ -5,6 +5,7 @@
 
 module Language.JavaScript.Inline.Message.Eval
   ( EvalRequest(..)
+  , AllocRequest(..)
   , EvalResponse(..)
   ) where
 
@@ -22,15 +23,24 @@ data EvalRequest a = EvalRequest
   , evalCode :: JSCode.JSCode
   }
 
+newtype AllocRequest = AllocRequest
+  { allocContent :: LBS.ByteString
+  }
+
 data EvalResponse a
   = EvalError { evalError :: LBS.ByteString }
   | EvalResult { evalResult :: a }
 
 instance Request (EvalRequest LBS.ByteString) where
-  putRequest = putRequestWith 0
+  putRequest = putEvalRequestWith 0
 
 instance Request (EvalRequest JSCode.JSVal) where
-  putRequest = putRequestWith 1
+  putRequest = putEvalRequestWith 1
+
+instance Request AllocRequest where
+  putRequest AllocRequest {..} = do
+    putWord32host 1
+    putLazyByteString allocContent
 
 instance Response (EvalResponse LBS.ByteString) where
   getResponse = getResponseWith getRemainingLazyByteString
@@ -38,8 +48,8 @@ instance Response (EvalResponse LBS.ByteString) where
 instance Response (EvalResponse JSCode.JSVal) where
   getResponse = getResponseWith (JSCode.JSVal . fromIntegral <$> getWord32host)
 
-putRequestWith :: Word32 -> EvalRequest a -> Put
-putRequestWith rt EvalRequest {..} = do
+putEvalRequestWith :: Word32 -> EvalRequest a -> Put
+putEvalRequestWith rt EvalRequest {..} = do
   putWord32host 0
   putWord32host rt
   putWord32host $

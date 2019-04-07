@@ -19,7 +19,7 @@ global.JSVal = class {
   }
 };
 
-const ctx = vm.createContext(Object.assign({}, global));
+const ctx = vm.createContext(global);
 
 const ipc = new Transport(process.stdin, process.stdout);
 
@@ -85,6 +85,10 @@ ipc.on("recv", async buf => {
         } else {
           sendMsg(msg_id, ret_tag, false, eval_result);
         }
+        break;
+      }
+      case 1: {
+        sendMsg(msg_id, 1, false, buf.slice(8));
         break;
       }
       default: {

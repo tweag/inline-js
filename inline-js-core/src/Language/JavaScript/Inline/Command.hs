@@ -5,9 +5,11 @@
 module Language.JavaScript.Inline.Command
   ( eval
   , evalAsync
+  , alloc
   ) where
 
 import Control.Monad.Fail
+import qualified Data.ByteString.Lazy as LBS
 import Language.JavaScript.Inline.JSCode
 import Language.JavaScript.Inline.Message.Class
 import Language.JavaScript.Inline.Message.Eval
@@ -54,3 +56,6 @@ evalAsync s c =
        , isAsync = True
        } :: EvalRequest r) >>=
   checkEvalResponse
+
+alloc :: JSSession -> LBS.ByteString -> IO JSVal
+alloc s buf = sendRecv s AllocRequest {allocContent = buf} >>= checkEvalResponse

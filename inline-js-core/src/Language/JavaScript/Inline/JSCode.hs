@@ -5,7 +5,8 @@ module Language.JavaScript.Inline.JSCode
   ( JSCode(..)
   , codeToString
   , codeFromString
-  , codeFromValueLBS
+  , bufferToString
+  , jsonParse
   , jsonStringify
   , JSVal(..)
   , deRefJSVal
@@ -30,12 +31,12 @@ codeFromString = JSCode . byteString . Text.encodeUtf8
 codeToString :: JSCode -> Text
 codeToString = Text.decodeUtf8 . LBS.toStrict . toLazyByteString . unwrap
 
-codeFromValueLBS :: LBS.ByteString -> JSCode
-codeFromValueLBS buf =
-  JSCode $
-  mconcat [fromString "JSON.parse(", lazyByteString buf, fromString ")"]
+bufferToString, jsonParse, jsonStringify :: JSCode -> JSCode
+bufferToString expr =
+  "(new TextDecoder('utf-8', {fatal: true})).decode(" <> expr <> ")"
 
-jsonStringify :: JSCode -> JSCode
+jsonParse expr = "JSON.parse(" <> expr <> ")"
+
 jsonStringify expr = "JSON.stringify(" <> expr <> ")"
 
 newtype JSVal =
