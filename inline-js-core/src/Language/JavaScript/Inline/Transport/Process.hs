@@ -9,10 +9,12 @@ module Language.JavaScript.Inline.Transport.Process
 import Data.ByteString.Builder
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy as LBS
+import Data.Foldable
 import Data.Word
 import Foreign.ForeignPtr
 import Foreign.Storable
 import GHC.ForeignPtr
+import GHC.IO.Handle.FD
 import Language.JavaScript.Inline.Transport.Type
 import System.IO
 import System.Process
@@ -20,37 +22,42 @@ import System.Process
 data ProcessTransportOpts = ProcessTransportOpts
   { procPath :: FilePath
   , procArgs :: [String]
-  , procStdErrInherit :: Bool
+  , procStdOutInherit, procStdErrInherit :: Bool
   }
 
 newProcessTransport :: ProcessTransportOpts -> IO Transport
 newProcessTransport ProcessTransportOpts {..} = do
-  (Just _stdin, Just _stdout, _m_stderr, _ph) <-
+  (rh0, wh0) <- createPipe
+  (rh1, wh1) <- createPipe
+  for_ [rh0, wh0, rh1, wh1] $ \h -> do
+    hSetBinaryMode h True
+    hSetBuffering h NoBuffering
+  wfd0 <- handleToFd wh0
+  rfd1 <- handleToFd rh1
+  (_, _, _, _ph) <-
     createProcess
-      (proc procPath procArgs)
+      (proc procPath $ procArgs <> [show wfd0, show rfd1])
         { std_in = CreatePipe
-        , std_out = CreatePipe
+        , std_out =
+            if procStdOutInherit
+              then Inherit
+              else CreatePipe
         , std_err =
             if procStdErrInherit
               then Inherit
               else CreatePipe
         }
-  hSetBinaryMode _stdin True
-  hSetBuffering _stdin $ BlockBuffering Nothing
-  hSetBinaryMode _stdout True
-  hSetBuffering _stdout $ BlockBuffering Nothing
   pure
     Transport
       { closeTransport = terminateProcess _ph
       , sendData =
-          \buf -> do
-            hPutBuilder _stdin $
-              word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
-            hFlush _stdin
+          \buf ->
+            hPutBuilder wh1 $
+            word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
       , recvData =
-          do lp <- hGetForeignPtr _stdout 4
+          do lp <- hGetForeignPtr rh0 4
              len <- withForeignPtr lp peek
-             bp <- hGetForeignPtr _stdout $ fromIntegral (len :: Word32)
+             bp <- hGetForeignPtr rh0 $ fromIntegral (len :: Word32)
              pure $ LBS.fromStrict $ BS.fromForeignPtr bp 0 $ fromIntegral len
       }
 

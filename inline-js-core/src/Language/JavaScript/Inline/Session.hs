@@ -46,6 +46,7 @@ defJSSessionOpts =
                   [ "--experimental-modules"
                   , _datadir </> "jsbits" </> "eval.mjs"
                   ]
+              , procStdOutInherit = False
               , procStdErrInherit = False
               }
         }
