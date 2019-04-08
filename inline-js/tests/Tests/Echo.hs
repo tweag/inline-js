@@ -30,6 +30,7 @@ tests =
                   [ "--experimental-modules"
                   , _datadir </> "jsbits" </> "echo.mjs"
                   ]
+              , procStdOutInherit = True
               , procStdErrInherit = True
               }
         lockSend $ strictTransport t)

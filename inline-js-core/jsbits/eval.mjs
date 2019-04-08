@@ -1,3 +1,4 @@
+import fs from "fs";
 import process from "process";
 import vm from "vm";
 
@@ -21,7 +22,18 @@ global.JSVal = class {
 
 const ctx = vm.createContext(global);
 
-const ipc = new Transport(process.stdin, process.stdout);
+const ipc = new Transport(
+  fs.createReadStream(null, {
+    encoding: null,
+    fd: Number.parseInt(process.argv[process.argv.length - 1]),
+    autoClose: false
+  }),
+  fs.createWriteStream(null, {
+    encoding: null,
+    fd: Number.parseInt(process.argv[process.argv.length - 2]),
+    autoClose: false
+  })
+);
 
 function sendMsg(msg_id, ret_tag, is_err, result) {
   try {
