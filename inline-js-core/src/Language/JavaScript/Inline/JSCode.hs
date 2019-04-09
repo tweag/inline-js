@@ -14,16 +14,20 @@ module Language.JavaScript.Inline.JSCode
 
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
+import Data.Coerce
 import Data.String (IsString(..))
 import Data.Text (Text)
 import qualified Data.Text.Encoding as Text
 
 newtype JSCode =
   JSCode Builder
-  deriving (IsString, Semigroup)
+  deriving (IsString, Semigroup, Monoid)
+
+instance Show JSCode where
+  showsPrec p = showsPrec p . toLazyByteString . unwrap
 
 unwrap :: JSCode -> Builder
-unwrap (JSCode builder) = builder
+unwrap = coerce
 
 codeFromString :: Text -> JSCode
 codeFromString = JSCode . byteString . Text.encodeUtf8
