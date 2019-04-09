@@ -9,14 +9,14 @@ process.on("uncaughtException", err => {
   throw err;
 });
 
-const __jsrefs = [undefined];
+const __jsrefs = [null];
 
 global.JSVal = class {
   static newJSVal(v) {
     return v === undefined || v === null ? 0 : __jsrefs.push(v) - 1;
   }
   static deRefJSVal(p) {
-    return p ? __jsrefs[p] : null;
+    return __jsrefs[p];
   }
 };
 
