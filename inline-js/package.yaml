@@ -35,6 +35,7 @@ tests:
   inline-js-test-suite:
     source-dirs: tests
     main: Main.hs
+    ghc-options: -threaded -rtsopts
     dependencies:
       - containers
       - inline-js-core

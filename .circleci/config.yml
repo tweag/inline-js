@@ -23,4 +23,4 @@ jobs:
           name: Test inline-js
           command: |
             stack --nix --no-terminal build --test --no-run-tests
-            stack --nix --no-terminal test inline-js
+            stack --nix --no-terminal test inline-js --test-arguments="-j8"
