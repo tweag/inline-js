@@ -6,14 +6,13 @@ module Language.JavaScript.Inline.Transport.Process
   , newProcessTransport
   ) where
 
+import Control.Monad
 import Data.ByteString.Builder
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
 import Data.Word
-import Foreign.ForeignPtr
-import Foreign.Storable
-import GHC.ForeignPtr
+import Foreign
 import GHC.IO.Handle.FD
 import Language.JavaScript.Inline.Transport.Type
 import System.IO
@@ -55,18 +54,16 @@ newProcessTransport ProcessTransportOpts {..} = do
             hPutBuilder wh1 $
             word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
       , recvData =
-          do lp <- hGetForeignPtr rh0 4
-             len <- withForeignPtr lp peek
-             bp <- hGetForeignPtr rh0 $ fromIntegral (len :: Word32)
-             pure $ LBS.fromStrict $ BS.fromForeignPtr bp 0 $ fromIntegral len
+          do len <-
+               alloca $ \p -> do
+                 hGet' rh0 p 4
+                 peek p
+             let len' = fromIntegral (len :: Word32)
+             fmap LBS.fromStrict $ BS.create len' $ \p -> hGet' rh0 p len'
       }
 
-hGetForeignPtr :: Handle -> Int -> IO (ForeignPtr a)
-hGetForeignPtr h l = do
-  fp <- mallocPlainForeignPtrBytes l
-  withForeignPtr fp $ \p -> do
-    l' <- hGetBuf h p l
-    if l' == l
-      then pure fp
-      else fail $
-           "hGetForeignPtr: expected " <> show l <> " bytes, got " <> show l'
+hGet' :: Handle -> Ptr a -> Int -> IO ()
+hGet' h p l = do
+  l' <- hGetBuf h p l
+  unless (l' == l) $
+    fail $ "hGet': expected " <> show l <> " bytes, got " <> show l'
