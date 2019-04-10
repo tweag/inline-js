@@ -50,6 +50,7 @@ defJSSessionOpts =
                   [ "--experimental-modules"
                   , _datadir </> "jsbits" </> "eval.mjs"
                   ]
+              , procWorkDir = Nothing
               , procStdInInherit = False
               , procStdOutInherit = False
               , procStdErrInherit = False

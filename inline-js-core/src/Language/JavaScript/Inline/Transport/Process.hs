@@ -21,6 +21,7 @@ import System.Process
 data ProcessTransportOpts = ProcessTransportOpts
   { procPath :: FilePath
   , procArgs :: [String]
+  , procWorkDir :: Maybe FilePath
   , procStdInInherit, procStdOutInherit, procStdErrInherit :: Bool
   }
 
@@ -38,7 +39,8 @@ newProcessTransport ProcessTransportOpts {..} = do
   (_m_stdin, _m_stdout, _m_stderr, _ph) <-
     createProcess
       (proc procPath $ procArgs <> [show wfd0, show rfd1])
-        { std_in =
+        { cwd = procWorkDir
+        , std_in =
             if procStdInInherit
               then Inherit
               else CreatePipe
