@@ -10,6 +10,7 @@ module Language.JavaScript.Inline.JSCode
   , jsonStringify
   , JSVal(..)
   , deRefJSVal
+  , freeJSVal
   ) where
 
 import Data.ByteString.Builder
@@ -47,6 +48,7 @@ newtype JSVal =
   JSVal Int
   deriving (Eq, Ord, Show)
 
-deRefJSVal :: JSVal -> JSCode
-deRefJSVal (JSVal p) =
-  JSCode $ mconcat [fromString "JSVal.deRefJSVal(", intDec p, fromString ")"]
+deRefJSVal, freeJSVal :: JSVal -> JSCode
+deRefJSVal (JSVal p) = JSCode $ mconcat ["JSVal.deRefJSVal(", intDec p, ")"]
+
+freeJSVal (JSVal p) = JSCode $ mconcat ["JSVal.freeJSVal(", intDec p, ")"]

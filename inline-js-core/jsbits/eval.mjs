@@ -2,6 +2,7 @@ import fs from "fs";
 import process from "process";
 import vm from "vm";
 
+import context_global from "./context.mjs";
 import { Transport } from "./transport.mjs";
 
 process.on("uncaughtException", err => {
@@ -9,18 +10,7 @@ process.on("uncaughtException", err => {
   throw err;
 });
 
-const __jsrefs = [null];
-
-global.JSVal = class {
-  static newJSVal(v) {
-    return v === undefined || v === null ? 0 : __jsrefs.push(v) - 1;
-  }
-  static deRefJSVal(p) {
-    return __jsrefs[p];
-  }
-};
-
-const ctx = vm.createContext(global);
+const ctx = vm.createContext(context_global);
 
 const ipc = new Transport(
   fs.createReadStream(null, {
@@ -51,7 +41,7 @@ function sendMsg(msg_id, ret_tag, is_err, result) {
         const msg_buf = Buffer.allocUnsafe(12);
         msg_buf.writeUInt32LE(msg_id, 0);
         msg_buf.writeUInt32LE(0, 4);
-        msg_buf.writeUInt32LE(JSVal.newJSVal(result), 8);
+        msg_buf.writeUInt32LE(ctx.JSVal.newJSVal(result), 8);
         ipc.send(msg_buf);
         break;
       }
