@@ -10,6 +10,9 @@ github: tweag/inline-js
 extra-source-files:
   - LICENSE
 
+data-files:
+  - testdata/**/**
+
 ghc-options:
   - -Wall
   - -Wcompat
@@ -35,11 +38,14 @@ tests:
   inline-js-test-suite:
     source-dirs: tests
     main: Main.hs
+    ghc-options: -threaded -rtsopts
     dependencies:
       - containers
       - inline-js-core
       - inline-js
       - QuickCheck
+      - smallcheck
       - tasty
       - tasty-hspec
       - tasty-quickcheck
+      - tasty-smallcheck

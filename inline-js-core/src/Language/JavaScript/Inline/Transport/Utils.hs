@@ -49,11 +49,15 @@ uniqueRecv mk t = do
           ebuf <- try @SomeException $ recvData t
           case ebuf of
             Right buf -> do
-              atomically $ modifyTVar' mv $ IMap.insert (mk buf) buf
-              w
-            Left err -> do
-              atomically $ putTMVar ev err
-              pure ()
+              ek <- try @SomeException $ evaluate $ mk buf
+              case ek of
+                Right k -> do
+                  atomically $ modifyTVar' mv $ IMap.insert k buf
+                  w
+                Left e -> err e
+            Left e -> err e
+        err :: SomeException -> IO ()
+        err = atomically . putTMVar ev
      in w
   pure
     ( \k -> do
