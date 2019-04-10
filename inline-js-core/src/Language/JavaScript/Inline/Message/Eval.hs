@@ -37,6 +37,9 @@ instance Request (EvalRequest LBS.ByteString) where
 instance Request (EvalRequest JSCode.JSVal) where
   putRequest = putEvalRequestWith 1
 
+instance Request (EvalRequest ()) where
+  putRequest = putEvalRequestWith 2
+
 instance Request AllocRequest where
   putRequest AllocRequest {..} = do
     putWord32host 1
@@ -47,6 +50,9 @@ instance Response (EvalResponse LBS.ByteString) where
 
 instance Response (EvalResponse JSCode.JSVal) where
   getResponse = getResponseWith (JSCode.JSVal . fromIntegral <$> getWord32host)
+
+instance Response (EvalResponse ()) where
+  getResponse = getResponseWith $ pure ()
 
 putEvalRequestWith :: Word32 -> EvalRequest a -> Put
 putEvalRequestWith rt EvalRequest {..} = do

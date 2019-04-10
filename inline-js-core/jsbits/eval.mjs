@@ -45,6 +45,13 @@ function sendMsg(msg_id, ret_tag, is_err, result) {
         ipc.send(msg_buf);
         break;
       }
+      case 2: {
+        const msg_buf = Buffer.allocUnsafe(8);
+        msg_buf.writeUInt32LE(msg_id, 0);
+        msg_buf.writeUInt32LE(0, 4);
+        ipc.send(msg_buf);
+        break;
+      }
       default: {
         throw new Error(`Unsupported ret_tag ${ret_tag}`);
       }

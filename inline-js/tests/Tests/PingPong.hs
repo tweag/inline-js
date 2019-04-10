@@ -58,8 +58,8 @@ tests =
             jsonStringify $ jsonParse $ bufferToString $ deRefJSVal v_buf_ref
           unless (v == _recv_v) $
             fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
-          z <- eval s $ freeJSVal v_buf_ref
-          unless (z == JSVal 0) $ fail "pingpong: freeJSVal failed"
+          () <- eval s $ freeJSVal v_buf_ref
+          pure ()
 
 setup :: IO JSSession
 setup = newJSSession defJSSessionOpts
