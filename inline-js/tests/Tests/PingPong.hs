@@ -46,7 +46,7 @@ tests =
   pure $
   withResource setup teardown $ \getSetup ->
     testProperty "Ping-Pong Matching" $
-    withMaxSuccess 65536 $
+    withMaxSuccess 1024 $
     monadicIO $ do
       s <- liftIO getSetup
       forAllM genValue $ \v ->

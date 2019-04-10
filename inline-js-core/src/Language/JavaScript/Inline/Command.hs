@@ -6,6 +6,7 @@ module Language.JavaScript.Inline.Command
   ( eval
   , evalAsync
   , alloc
+  , importMJS
   ) where
 
 import Control.Monad.Fail
@@ -59,3 +60,6 @@ evalAsync s c =
 
 alloc :: JSSession -> LBS.ByteString -> IO JSVal
 alloc s buf = sendRecv s AllocRequest {allocContent = buf} >>= checkEvalResponse
+
+importMJS :: JSSession -> FilePath -> IO JSVal
+importMJS s p = sendRecv s ImportRequest {importPath = p} >>= checkEvalResponse

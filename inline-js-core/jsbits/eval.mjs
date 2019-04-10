@@ -1,5 +1,6 @@
 import fs from "fs";
 import process from "process";
+import url from "url";
 import vm from "vm";
 
 import context_global from "./context.mjs";
@@ -98,6 +99,13 @@ ipc.on("recv", async buf => {
       }
       case 1: {
         sendMsg(msg_id, 1, false, buf.slice(8));
+        break;
+      }
+      case 2: {
+        const import_path = decoder.decode(buf.slice(8)),
+          import_url = url.pathToFileURL(import_path).href,
+          import_result = await import(import_url);
+        sendMsg(msg_id, 1, false, import_result);
         break;
       }
       default: {
