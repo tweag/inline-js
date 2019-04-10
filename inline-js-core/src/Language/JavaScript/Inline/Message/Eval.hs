@@ -6,6 +6,7 @@
 module Language.JavaScript.Inline.Message.Eval
   ( EvalRequest(..)
   , AllocRequest(..)
+  , ImportRequest(..)
   , EvalResponse(..)
   ) where
 
@@ -13,6 +14,8 @@ import Data.Binary.Get
 import Data.Binary.Put
 import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce
+import qualified Data.Text.Lazy as LText
+import qualified Data.Text.Lazy.Encoding as LText
 import Data.Word
 import qualified Language.JavaScript.Inline.JSCode as JSCode
 import Language.JavaScript.Inline.Message.Class
@@ -25,6 +28,10 @@ data EvalRequest a = EvalRequest
 
 newtype AllocRequest = AllocRequest
   { allocContent :: LBS.ByteString
+  }
+
+newtype ImportRequest = ImportRequest
+  { importPath :: FilePath
   }
 
 data EvalResponse a
@@ -44,6 +51,11 @@ instance Request AllocRequest where
   putRequest AllocRequest {..} = do
     putWord32host 1
     putLazyByteString allocContent
+
+instance Request ImportRequest where
+  putRequest ImportRequest {..} = do
+    putWord32host 2
+    putLazyByteString $ LText.encodeUtf8 $ LText.pack importPath
 
 instance Response (EvalResponse LBS.ByteString) where
   getResponse = getResponseWith getRemainingLazyByteString
