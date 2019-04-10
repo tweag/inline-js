@@ -21,10 +21,12 @@ import System.Process
 data ProcessTransportOpts = ProcessTransportOpts
   { procPath :: FilePath
   , procArgs :: [String]
-  , procStdOutInherit, procStdErrInherit :: Bool
+  , procStdInInherit, procStdOutInherit, procStdErrInherit :: Bool
   }
 
-newProcessTransport :: ProcessTransportOpts -> IO Transport
+newProcessTransport ::
+     ProcessTransportOpts
+  -> IO (Transport, Maybe Handle, Maybe Handle, Maybe Handle)
 newProcessTransport ProcessTransportOpts {..} = do
   (rh0, wh0) <- createPipe
   (rh1, wh1) <- createPipe
@@ -33,10 +35,13 @@ newProcessTransport ProcessTransportOpts {..} = do
     hSetBuffering h NoBuffering
   wfd0 <- handleToFd wh0
   rfd1 <- handleToFd rh1
-  (_, _, _, _ph) <-
+  (_m_stdin, _m_stdout, _m_stderr, _ph) <-
     createProcess
       (proc procPath $ procArgs <> [show wfd0, show rfd1])
-        { std_in = CreatePipe
+        { std_in =
+            if procStdInInherit
+              then Inherit
+              else CreatePipe
         , std_out =
             if procStdOutInherit
               then Inherit
@@ -47,20 +52,23 @@ newProcessTransport ProcessTransportOpts {..} = do
               else CreatePipe
         }
   pure
-    Transport
-      { closeTransport = terminateProcess _ph
-      , sendData =
-          \buf ->
-            hPutBuilder wh1 $
-            word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
-      , recvData =
-          do len <-
-               alloca $ \p -> do
-                 hGet' rh0 p 4
-                 peek p
-             let len' = fromIntegral (len :: Word32)
-             fmap LBS.fromStrict $ BS.create len' $ \p -> hGet' rh0 p len'
-      }
+    ( Transport
+        { closeTransport = terminateProcess _ph
+        , sendData =
+            \buf ->
+              hPutBuilder wh1 $
+              word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
+        , recvData =
+            do len <-
+                 alloca $ \p -> do
+                   hGet' rh0 p 4
+                   peek p
+               let len' = fromIntegral (len :: Word32)
+               fmap LBS.fromStrict $ BS.create len' $ \p -> hGet' rh0 p len'
+        }
+    , _m_stdin
+    , _m_stdout
+    , _m_stderr)
 
 hGet' :: Handle -> Ptr a -> Int -> IO ()
 hGet' h p l = do
