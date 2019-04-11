@@ -32,7 +32,7 @@ tests = do
       withJSSession defJSSessionOpts $ \s -> do
         buf_ref <- alloc s fib_buf
         result_ref <-
-          evalAsync s $ "WebAssembly.instantiate(" <> deRefJSVal buf_ref <> ")"
+          eval s $ "WebAssembly.instantiate(" <> deRefJSVal buf_ref <> ")"
         fib_result_buf <-
           eval s $
           jsonStringify $

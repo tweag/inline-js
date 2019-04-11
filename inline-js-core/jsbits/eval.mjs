@@ -71,30 +71,28 @@ ipc.on("recv", async buf => {
     switch (msg_tag) {
       case 0: {
         const ret_tag = buf.readUInt32LE(8),
-          is_async = Boolean(buf.readUInt32LE(12)),
-          eval_timeout = buf.readUInt32LE(16),
-          resolve_timeout = buf.readUInt32LE(20),
-          msg_content = decoder.decode(buf.slice(24)),
+          eval_timeout = buf.readUInt32LE(12),
+          resolve_timeout = buf.readUInt32LE(16),
+          msg_content = decoder.decode(buf.slice(20)),
           eval_options = {
             displayErrors: true,
             importModuleDynamically: spec => import(spec)
           };
         if (eval_timeout) eval_options.timeout = eval_timeout;
-        const eval_result = vm.runInContext(msg_content, ctx, eval_options);
-        if (is_async) {
-          const promise = resolve_timeout
-              ? Promise.race([
-                  eval_result,
-                  new Promise((_, reject) =>
-                    setTimeout(reject, resolve_timeout, "")
-                  )
-                ])
-              : eval_result,
-            promise_result = await promise;
-          sendMsg(msg_id, ret_tag, false, promise_result);
-        } else {
-          sendMsg(msg_id, ret_tag, false, eval_result);
-        }
+        const eval_result = vm.runInContext(msg_content, ctx, eval_options),
+          raw_promise = Promise.resolve(
+            eval_result === undefined ? null : eval_result
+          ),
+          promise = resolve_timeout
+            ? Promise.race([
+                raw_promise,
+                new Promise((_, reject) =>
+                  setTimeout(reject, resolve_timeout, "")
+                )
+              ])
+            : raw_promise,
+          promise_result = await promise;
+        sendMsg(msg_id, ret_tag, false, promise_result);
         break;
       }
       case 1: {

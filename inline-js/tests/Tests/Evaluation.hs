@@ -35,21 +35,19 @@ tests =
     testPairs <-
       traverse
         requestTest
-        [ ( asyncEvaluation
-              "import('fs').then(fs => fs.readFileSync.toString())"
+        [ ( evaluation "import('fs').then(fs => fs.readFileSync.toString())"
           , \r -> isError r `shouldBe` False)
-        , (syncEvaluation "while(true){}" `withEvalTimeout` 1000, failsToReturn)
-        , (syncEvaluation "BOOM", failsToReturn)
-        , ( syncEvaluation "let x = 6*7; JSON.stringify(null)"
+        , (evaluation "while(true){}" `withEvalTimeout` 1000, failsToReturn)
+        , (evaluation "BOOM", failsToReturn)
+        , ( evaluation "let x = 6*7; JSON.stringify(null)"
           , successfullyReturns Null)
-        , (syncEvaluation "JSON.stringify(x)", successfullyReturns $ Number 42)
-        , ( syncEvaluation "JSON.stringify(\"left\" + \"pad\")"
+        , (evaluation "JSON.stringify(x)", successfullyReturns $ Number 42)
+        , ( evaluation "JSON.stringify(\"left\" + \"pad\")"
           , successfullyReturns $ String "leftpad")
-        , (asyncEvaluation "Promise.reject('BOOM')", failsToReturn)
-        , ( asyncEvaluation "Promise.resolve(JSON.stringify(x))"
+        , (evaluation "Promise.reject('BOOM')", failsToReturn)
+        , ( evaluation "Promise.resolve(JSON.stringify(x))"
           , successfullyReturns $ Number 42)
-        , ( asyncEvaluation
-              "new Promise((resolve, _) => setTimeout(resolve, 10000))" `withResolveTimeout`
+        , ( evaluation "new Promise((resolve, _) => setTimeout(resolve, 10000))" `withResolveTimeout`
             1000
           , failsToReturn)
         ]

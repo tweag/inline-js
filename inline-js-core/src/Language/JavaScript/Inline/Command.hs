@@ -4,7 +4,6 @@
 
 module Language.JavaScript.Inline.Command
   ( eval
-  , evalAsync
   , alloc
   , importMJS
   ) where
@@ -35,28 +34,7 @@ eval ::
 eval s c =
   sendRecv
     s
-    (EvalRequest
-       { evalCode = c
-       , evalTimeout = Nothing
-       , resolveTimeout = Nothing
-       , isAsync = False
-       } :: EvalRequest r) >>=
-  checkEvalResponse
-
-evalAsync ::
-     forall r. (Request (EvalRequest r), Response (EvalResponse r))
-  => JSSession
-  -> JSCode
-  -> IO r
-evalAsync s c =
-  sendRecv
-    s
-    (EvalRequest
-       { evalCode = c
-       , evalTimeout = Nothing
-       , resolveTimeout = Nothing
-       , isAsync = True
-       } :: EvalRequest r) >>=
+    (EvalRequest {evalTimeout = Nothing, resolveTimeout = Nothing, evalCode = c} :: EvalRequest r) >>=
   checkEvalResponse
 
 alloc :: JSSession -> LBS.ByteString -> IO JSVal

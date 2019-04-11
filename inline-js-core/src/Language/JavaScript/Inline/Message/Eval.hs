@@ -21,8 +21,7 @@ import qualified Language.JavaScript.Inline.JSCode as JSCode
 import Language.JavaScript.Inline.Message.Class
 
 data EvalRequest a = EvalRequest
-  { isAsync :: Bool
-  , evalTimeout, resolveTimeout :: Maybe Int
+  { evalTimeout, resolveTimeout :: Maybe Int
   , evalCode :: JSCode.JSCode
   }
 
@@ -70,10 +69,6 @@ putEvalRequestWith :: Word32 -> EvalRequest a -> Put
 putEvalRequestWith rt EvalRequest {..} = do
   putWord32host 0
   putWord32host rt
-  putWord32host $
-    if isAsync
-      then 1
-      else 0
   putWord32host $
     fromIntegral $
     case evalTimeout of
