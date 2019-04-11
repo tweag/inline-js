@@ -16,6 +16,7 @@ import Language.JavaScript.Inline.Message.Class
 import Language.JavaScript.Inline.Message.Eval
 import Language.JavaScript.Inline.Session
 import Prelude hiding (fail)
+import System.Directory
 
 checkEvalResponse :: EvalResponse r -> IO r
 checkEvalResponse r =
@@ -62,4 +63,6 @@ alloc :: JSSession -> LBS.ByteString -> IO JSVal
 alloc s buf = sendRecv s AllocRequest {allocContent = buf} >>= checkEvalResponse
 
 importMJS :: JSSession -> FilePath -> IO JSVal
-importMJS s p = sendRecv s ImportRequest {importPath = p} >>= checkEvalResponse
+importMJS s p = do
+  p' <- canonicalizePath p
+  sendRecv s ImportRequest {importPath = p'} >>= checkEvalResponse

@@ -28,6 +28,7 @@ dependencies:
   - bytestring
   - containers
   - deepseq
+  - directory
   - filepath
   - ghc-prim
   - process
@@ -36,5 +37,3 @@ dependencies:
 
 library:
   source-dirs: src
-  generated-exposed-modules:
-    - Paths_inline_js_core
