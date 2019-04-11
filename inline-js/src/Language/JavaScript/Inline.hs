@@ -61,7 +61,7 @@ blockQuasiQuoter input =
 --
 -- This fits the quasiquoted content into following format:
 --
--- (function(a, b, c) {
+-- (async (a, b, c) => {
 --   return a + b + c;
 -- })(1, 2, 3)
 --
@@ -72,13 +72,13 @@ blockQuasiQuoter input =
 wrapCode :: String -> [String] -> Q TH.Exp
 wrapCode code antiquotedNames =
   [|mconcat
-      [ pack "JSON.stringify((function( "
+      [ pack "(async ( "
       , $(argumentList antiquotedNames)
-      , pack " ) { "
+      , pack " ) => { "
       , pack code
       , pack " })( "
       , $(argumentValues antiquotedNames)
-      , pack " ))"
+      , pack " ).then(r => JSON.stringify(r))"
       ]|]
 
 argumentList :: [String] -> Q TH.Exp
