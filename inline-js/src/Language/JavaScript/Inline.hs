@@ -11,6 +11,7 @@ module Language.JavaScript.Inline
   , JSSessionOpts(..)
   ) where
 
+import qualified Data.Aeson as Aeson
 import Data.List (nub)
 import Data.Text (pack)
 import qualified Language.Haskell.TH as TH
@@ -56,7 +57,7 @@ blockQuasiQuoter input =
       wrappedCode = wrapCode input antiquotedParameterNames
    in [|\session -> do
           result <- eval session $ codeFromString $(wrappedCode)
-          pure $ JsonConvertible.parse result|]
+          either fail pure $ Aeson.eitherDecode' result|]
 
 --
 -- This fits the quasiquoted content into following format:

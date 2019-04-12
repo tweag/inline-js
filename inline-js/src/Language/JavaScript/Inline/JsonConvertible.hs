@@ -12,8 +12,6 @@ import qualified Data.Text.Encoding as Text
 
 class JsonConvertible a where
   stringify :: a -> Text
-  parse :: LBS.ByteString -> a
 
-instance (Aeson.ToJSON a, Aeson.FromJSON a) => JsonConvertible a where
+instance Aeson.ToJSON a => JsonConvertible a where
   stringify = Text.decodeUtf8 . LBS.toStrict . Aeson.encode
-  parse = either error id . Aeson.eitherDecode
