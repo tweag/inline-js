@@ -40,9 +40,12 @@ tests:
     main: Main.hs
     ghc-options: -threaded -rtsopts
     dependencies:
+      - Cabal
       - containers
+      - directory
       - inline-js-core
       - inline-js
+      - process
       - QuickCheck
       - smallcheck
       - tasty

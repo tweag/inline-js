@@ -5,7 +5,8 @@
 module Language.JavaScript.Inline.Session
   ( JSSessionOpts(..)
   , defJSSessionOpts
-  , debugJSSessionOpts
+  , setJSSessionDebug
+  , setJSSessionWorkDir
   , JSSession
   , newJSSession
   , closeJSSession
@@ -29,7 +30,6 @@ import Language.JavaScript.Inline.Transport.Process
 import Language.JavaScript.Inline.Transport.Type
 import Language.JavaScript.Inline.Transport.Utils
 import qualified Paths_inline_js_core
-import System.FilePath
 import System.IO
 import System.IO.Unsafe
 
@@ -38,7 +38,7 @@ newtype JSSessionOpts = JSSessionOpts
   }
 
 {-# NOINLINE defJSSessionOpts #-}
-defJSSessionOpts, debugJSSessionOpts :: JSSessionOpts
+defJSSessionOpts :: JSSessionOpts
 defJSSessionOpts =
   unsafePerformIO $ do
     _datadir <- Paths_inline_js_core.getDataDir
@@ -47,10 +47,7 @@ defJSSessionOpts =
         { nodeProcessTransportOpts =
             ProcessTransportOpts
               { procPath = "node"
-              , procArgs =
-                  [ "--experimental-modules"
-                  , _datadir </> "jsbits" </> "eval.mjs"
-                  ]
+              , procExtraArgs = []
               , procWorkDir = Nothing
               , procStdInInherit = False
               , procStdOutInherit = False
@@ -58,10 +55,18 @@ defJSSessionOpts =
               }
         }
 
-debugJSSessionOpts =
-  defJSSessionOpts
+setJSSessionDebug :: JSSessionOpts -> JSSessionOpts
+setJSSessionDebug opts =
+  opts
     { nodeProcessTransportOpts =
-        (nodeProcessTransportOpts defJSSessionOpts) {procStdErrInherit = True}
+        (nodeProcessTransportOpts opts) {procStdErrInherit = True}
+    }
+
+setJSSessionWorkDir :: FilePath -> JSSessionOpts -> JSSessionOpts
+setJSSessionWorkDir p opts =
+  opts
+    { nodeProcessTransportOpts =
+        (nodeProcessTransportOpts opts) {procWorkDir = Just p}
     }
 
 data JSSession = JSSession

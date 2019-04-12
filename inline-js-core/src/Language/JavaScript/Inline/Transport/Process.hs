@@ -15,12 +15,15 @@ import Data.Word
 import Foreign
 import GHC.IO.Handle.FD
 import Language.JavaScript.Inline.Transport.Type
+import qualified Paths_inline_js_core
+import System.Directory
+import System.FilePath
 import System.IO
 import System.Process
 
 data ProcessTransportOpts = ProcessTransportOpts
   { procPath :: FilePath
-  , procArgs :: [String]
+  , procExtraArgs :: [String]
   , procWorkDir :: Maybe FilePath
   , procStdInInherit, procStdOutInherit, procStdErrInherit :: Bool
   }
@@ -29,6 +32,14 @@ newProcessTransport ::
      ProcessTransportOpts
   -> IO (Transport, Maybe Handle, Maybe Handle, Maybe Handle)
 newProcessTransport ProcessTransportOpts {..} = do
+  (mjss_dir, mjss) <-
+    do mjss_dir <- (</> "jsbits") <$> Paths_inline_js_core.getDataDir
+       case procWorkDir of
+         Just p -> do
+           mjss <- listDirectory mjss_dir
+           for_ mjss $ \mjs -> copyFile (mjss_dir </> mjs) (p </> mjs)
+           pure (p, mjss)
+         _ -> pure (mjss_dir, [])
   (rh0, wh0) <- createPipe
   (rh1, wh1) <- createPipe
   for_ [rh0, wh0, rh1, wh1] $ \h -> do
@@ -38,7 +49,9 @@ newProcessTransport ProcessTransportOpts {..} = do
   rfd1 <- handleToFd rh1
   (_m_stdin, _m_stdout, _m_stderr, _ph) <-
     createProcess
-      (proc procPath $ procArgs <> [show wfd0, show rfd1])
+      (proc procPath $
+       procExtraArgs <>
+       ["--experimental-modules", mjss_dir </> "eval.mjs", show wfd0, show rfd1])
         { cwd = procWorkDir
         , std_in =
             if procStdInInherit
@@ -55,7 +68,11 @@ newProcessTransport ProcessTransportOpts {..} = do
         }
   pure
     ( Transport
-        { closeTransport = terminateProcess _ph
+        { closeTransport =
+            do terminateProcess _ph
+               case procWorkDir of
+                 Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
+                 _ -> pure ()
         , sendData =
             \buf ->
               hPutBuilder wh1 $
