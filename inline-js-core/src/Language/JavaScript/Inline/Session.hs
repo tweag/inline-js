@@ -5,6 +5,7 @@
 module Language.JavaScript.Inline.Session
   ( JSSessionOpts(..)
   , defJSSessionOpts
+  , debugJSSessionOpts
   , JSSession
   , newJSSession
   , closeJSSession
@@ -37,7 +38,7 @@ newtype JSSessionOpts = JSSessionOpts
   }
 
 {-# NOINLINE defJSSessionOpts #-}
-defJSSessionOpts :: JSSessionOpts
+defJSSessionOpts, debugJSSessionOpts :: JSSessionOpts
 defJSSessionOpts =
   unsafePerformIO $ do
     _datadir <- Paths_inline_js_core.getDataDir
@@ -56,6 +57,12 @@ defJSSessionOpts =
               , procStdErrInherit = False
               }
         }
+
+debugJSSessionOpts =
+  defJSSessionOpts
+    { nodeProcessTransportOpts =
+        (nodeProcessTransportOpts defJSSessionOpts) {procStdErrInherit = True}
+    }
 
 data JSSession = JSSession
   { nodeTransport :: Transport
