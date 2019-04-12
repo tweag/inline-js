@@ -4,7 +4,6 @@
 module Language.JavaScript.Inline.JSCode
   ( JSCode(..)
   , codeToString
-  , codeFromString
   , bufferToString
   , jsonParse
   , jsonStringify
@@ -29,9 +28,6 @@ instance Show JSCode where
 
 unwrap :: JSCode -> Builder
 unwrap = coerce
-
-codeFromString :: Text -> JSCode
-codeFromString = JSCode . byteString . Text.encodeUtf8
 
 codeToString :: JSCode -> Text
 codeToString = Text.decodeUtf8 . LBS.toStrict . toLazyByteString . unwrap

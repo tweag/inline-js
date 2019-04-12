@@ -13,15 +13,13 @@ module Language.JavaScript.Inline
   ) where
 
 import qualified Data.Aeson as Aeson
-import qualified Data.ByteString.Lazy as LBS
+import Data.ByteString.Builder
 import Data.List (nub)
-import Data.Text (pack)
-import qualified Data.Text.Encoding as Text
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH (Q)
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
 import Language.JavaScript.Inline.Command (eval)
-import Language.JavaScript.Inline.JSCode (codeFromString)
+import Language.JavaScript.Inline.JSCode
 import Language.JavaScript.Inline.Session
   ( JSSession
   , JSSessionOpts(..)
@@ -59,7 +57,7 @@ blockQuasiQuoter input =
         nub [name | IdentifierToken {tokenLiteral = ('$':name)} <- tokens]
       wrappedCode = wrapCode input antiquotedParameterNames
    in [|\session -> do
-          result <- eval session $ codeFromString $(wrappedCode)
+          result <- eval session $ JSCode $(wrappedCode)
           either fail pure $ Aeson.eitherDecode' result|]
 
 -- |
@@ -76,35 +74,33 @@ blockQuasiQuoter input =
 wrapCode :: String -> [String] -> Q TH.Exp
 wrapCode code antiquotedNames =
   [|mconcat
-      [ pack "(async ( "
+      [ string7 "(async ( "
       , $(argumentList antiquotedNames)
-      , pack " ) => { "
-      , pack code
-      , pack " })( "
+      , string7 " ) => { "
+      , stringUtf8 code
+      , string7 " })( "
       , $(argumentValues antiquotedNames)
-      , pack " ).then(r => JSON.stringify(r))"
+      , string7 " ).then(r => JSON.stringify(r))"
       ]|]
 
 argumentList :: [String] -> Q TH.Exp
 argumentList rawNames =
   case rawNames of
-    [] -> [|pack ""|]
+    [] -> [|string7 ""|]
     (firstName:names) ->
       foldr
-        (\name acc -> [|$(acc) <> pack ", $" <> pack name|])
-        [|pack ('$' : firstName)|]
+        (\name acc -> [|$(acc) <> string7 ", $" <> string7 name|])
+        [|string7 ('$' : firstName)|]
         names
 
 argumentValues :: [String] -> Q TH.Exp
 argumentValues rawNames =
   case rawNames of
-    [] -> [|pack ""|]
+    [] -> [|string7 ""|]
     (firstName:names) ->
       foldr
         (\name acc ->
-           [|$(acc) <> pack ", " <>
-             Text.decodeUtf8
-               (LBS.toStrict $ Aeson.encode $(TH.varE $ TH.mkName name))|])
-        [|Text.decodeUtf8
-            (LBS.toStrict $ Aeson.encode $(TH.varE $ TH.mkName firstName))|]
+           [|$(acc) <> string7 ", " <>
+             lazyByteString (Aeson.encode $(TH.varE $ TH.mkName name))|])
+        [|lazyByteString (Aeson.encode $(TH.varE $ TH.mkName firstName))|]
         names
