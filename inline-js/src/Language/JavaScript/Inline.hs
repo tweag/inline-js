@@ -9,19 +9,22 @@ module Language.JavaScript.Inline
   , closeJSSession
   , defJSSessionOpts
   , JSSessionOpts(..)
+  , JSSession
   ) where
 
 import qualified Data.Aeson as Aeson
+import qualified Data.ByteString.Lazy as LBS
 import Data.List (nub)
 import Data.Text (pack)
+import qualified Data.Text.Encoding as Text
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH (Q)
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
 import Language.JavaScript.Inline.Command (eval)
 import Language.JavaScript.Inline.JSCode (codeFromString)
-import qualified Language.JavaScript.Inline.JsonConvertible as JsonConvertible
 import Language.JavaScript.Inline.Session
-  ( JSSessionOpts(..)
+  ( JSSession
+  , JSSessionOpts(..)
   , closeJSSession
   , defJSSessionOpts
   , newJSSession
@@ -38,17 +41,17 @@ qq myQQ =
     , quoteDec = error "Language.JavaScript.Inline: quoteDec"
     }
 
+-- | Produces splice with type @'Aeson.FromJSON' a => 'JSSession' -> 'IO' a@
 expr :: QuasiQuoter
 expr = qq expressionQuasiQuoter
 
+-- | Produces splice with the same type of 'expr'
 block :: QuasiQuoter
 block = qq blockQuasiQuoter
 
---- produces splice with type `JSSession -> IO JSCode`
 expressionQuasiQuoter :: String -> Q TH.Exp
 expressionQuasiQuoter input = blockQuasiQuoter $ "return " <> input <> ";"
 
---- produces splice with type `JSSession -> IO JSCode`
 blockQuasiQuoter :: String -> Q TH.Exp
 blockQuasiQuoter input =
   let tokens = either error id $ alexTestTokeniser input
@@ -59,7 +62,7 @@ blockQuasiQuoter input =
           result <- eval session $ codeFromString $(wrappedCode)
           either fail pure $ Aeson.eitherDecode' result|]
 
---
+-- |
 -- This fits the quasiquoted content into following format:
 --
 -- (async (a, b, c) => {
@@ -100,6 +103,8 @@ argumentValues rawNames =
       foldr
         (\name acc ->
            [|$(acc) <> pack ", " <>
-             JsonConvertible.stringify $(TH.varE $ TH.mkName name)|])
-        [|JsonConvertible.stringify $(TH.varE $ TH.mkName firstName)|]
+             Text.decodeUtf8
+               (LBS.toStrict $ Aeson.encode $(TH.varE $ TH.mkName name))|])
+        [|Text.decodeUtf8
+            (LBS.toStrict $ Aeson.encode $(TH.varE $ TH.mkName firstName))|]
         names
