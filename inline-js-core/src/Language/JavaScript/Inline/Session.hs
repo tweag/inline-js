@@ -46,12 +46,12 @@ defJSSessionOpts =
       JSSessionOpts
         { nodeProcessTransportOpts =
             ProcessTransportOpts
-              { procPath = "node"
-              , procExtraArgs = []
-              , procWorkDir = Nothing
-              , procStdInInherit = False
-              , procStdOutInherit = False
-              , procStdErrInherit = False
+              { nodePath = "node"
+              , nodeExtraArgs = []
+              , nodeWorkDir = Nothing
+              , nodeStdInInherit = False
+              , nodeStdOutInherit = False
+              , nodeStdErrInherit = False
               }
         }
 
@@ -59,14 +59,14 @@ setJSSessionDebug :: JSSessionOpts -> JSSessionOpts
 setJSSessionDebug opts =
   opts
     { nodeProcessTransportOpts =
-        (nodeProcessTransportOpts opts) {procStdErrInherit = True}
+        (nodeProcessTransportOpts opts) {nodeStdErrInherit = True}
     }
 
 setJSSessionWorkDir :: FilePath -> JSSessionOpts -> JSSessionOpts
 setJSSessionWorkDir p opts =
   opts
     { nodeProcessTransportOpts =
-        (nodeProcessTransportOpts opts) {procWorkDir = Just p}
+        (nodeProcessTransportOpts opts) {nodeWorkDir = Just p}
     }
 
 data JSSession = JSSession

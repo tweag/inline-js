@@ -22,10 +22,10 @@ import System.IO
 import System.Process
 
 data ProcessTransportOpts = ProcessTransportOpts
-  { procPath :: FilePath
-  , procExtraArgs :: [String]
-  , procWorkDir :: Maybe FilePath
-  , procStdInInherit, procStdOutInherit, procStdErrInherit :: Bool
+  { nodePath :: FilePath
+  , nodeExtraArgs :: [String]
+  , nodeWorkDir :: Maybe FilePath
+  , nodeStdInInherit, nodeStdOutInherit, nodeStdErrInherit :: Bool
   }
 
 newProcessTransport ::
@@ -34,7 +34,7 @@ newProcessTransport ::
 newProcessTransport ProcessTransportOpts {..} = do
   (mjss_dir, mjss) <-
     do mjss_dir <- (</> "jsbits") <$> Paths_inline_js_core.getDataDir
-       case procWorkDir of
+       case nodeWorkDir of
          Just p -> do
            mjss <- listDirectory mjss_dir
            for_ mjss $ \mjs -> copyFile (mjss_dir </> mjs) (p </> mjs)
@@ -49,20 +49,20 @@ newProcessTransport ProcessTransportOpts {..} = do
   rfd1 <- handleToFd rh1
   (_m_stdin, _m_stdout, _m_stderr, _ph) <-
     createProcess
-      (proc procPath $
-       procExtraArgs <>
+      (proc nodePath $
+       nodeExtraArgs <>
        ["--experimental-modules", mjss_dir </> "eval.mjs", show wfd0, show rfd1])
-        { cwd = procWorkDir
+        { cwd = nodeWorkDir
         , std_in =
-            if procStdInInherit
+            if nodeStdInInherit
               then Inherit
               else CreatePipe
         , std_out =
-            if procStdOutInherit
+            if nodeStdOutInherit
               then Inherit
               else CreatePipe
         , std_err =
-            if procStdErrInherit
+            if nodeStdErrInherit
               then Inherit
               else CreatePipe
         }
@@ -70,7 +70,7 @@ newProcessTransport ProcessTransportOpts {..} = do
     ( Transport
         { closeTransport =
             do terminateProcess _ph
-               case procWorkDir of
+               case nodeWorkDir of
                  Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
                  _ -> pure ()
         , sendData =
