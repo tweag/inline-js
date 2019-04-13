@@ -21,10 +21,10 @@ module Language.JavaScript.Inline.Session
 
 import Control.Exception
 import Control.Monad
+import qualified Data.ByteString.Lazy as LBS
 import Language.JavaScript.Inline.Message.Class
 import Language.JavaScript.Inline.MessageCounter
 import Language.JavaScript.Inline.Transport.Process
-import Language.JavaScript.Inline.Transport.Type
 import qualified Paths_inline_js_core
 import System.IO
 import System.IO.Unsafe
@@ -66,27 +66,28 @@ setJSSessionWorkDir p opts =
     }
 
 data JSSession = JSSession
-  { nodeTransport :: Transport
+  { closeJSSession :: IO ()
+  , sendData :: LBS.ByteString -> IO ()
+  , recvData :: MsgId -> IO LBS.ByteString
   , nodeStdIn, nodeStdOut, nodeStdErr :: Maybe Handle
   , msgCounter :: MsgCounter
   }
 
 newJSSession :: JSSessionOpts -> IO JSSession
 newJSSession JSSessionOpts {..} = do
-  (t, _m_stdin, _m_stdout, _m_stderr) <-
+  (_close, _send, _recv, _m_stdin, _m_stdout, _m_stderr) <-
     newProcessTransport nodeProcessTransportOpts
   _msg_counter <- newMsgCounter
   pure
     JSSession
-      { nodeTransport = t
+      { closeJSSession = _close
+      , sendData = _send
+      , recvData = _recv
       , nodeStdIn = _m_stdin
       , nodeStdOut = _m_stdout
       , nodeStdErr = _m_stderr
       , msgCounter = _msg_counter
       }
-
-closeJSSession :: JSSession -> IO ()
-closeJSSession JSSession {..} = closeTransport nodeTransport
 
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (newJSSession opts) closeJSSession
@@ -94,12 +95,12 @@ withJSSession opts = bracket (newJSSession opts) closeJSSession
 sendMsg :: Request r => JSSession -> r -> IO MsgId
 sendMsg JSSession {..} msg = do
   msg_id <- newMsgId msgCounter
-  sendData nodeTransport $ encodeRequest msg_id msg
+  sendData $ encodeRequest msg_id msg
   pure msg_id
 
 recvMsg :: Response r => JSSession -> MsgId -> IO r
 recvMsg JSSession {..} msg_id = do
-  buf <- recvData nodeTransport msg_id
+  buf <- recvData msg_id
   decodeResponse buf
 
 sendRecv :: (Request req, Response resp) => JSSession -> req -> IO resp

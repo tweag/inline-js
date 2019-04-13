@@ -21,7 +21,6 @@ import Data.Word
 import Foreign
 import GHC.IO.Handle.FD
 import Language.JavaScript.Inline.MessageCounter
-import Language.JavaScript.Inline.Transport.Type
 import qualified Paths_inline_js_core
 import System.Directory
 import System.FilePath
@@ -37,7 +36,12 @@ data ProcessTransportOpts = ProcessTransportOpts
 
 newProcessTransport ::
      ProcessTransportOpts
-  -> IO (Transport, Maybe Handle, Maybe Handle, Maybe Handle)
+  -> IO ( IO ()
+        , LBS.ByteString -> IO ()
+        , MsgId -> IO LBS.ByteString
+        , Maybe Handle
+        , Maybe Handle
+        , Maybe Handle)
 newProcessTransport ProcessTransportOpts {..} = do
   (mjss_dir, mjss) <-
     do mjss_dir <- (</> "jsbits") <$> Paths_inline_js_core.getDataDir
@@ -101,31 +105,23 @@ newProcessTransport ProcessTransportOpts {..} = do
           w
      in w
   pure
-    ( Transport
-        { closeTransport =
-            do killThread send_tid
-               killThread recv_tid
-               terminateProcess _ph
-               case nodeWorkDir of
-                 Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
-                 _ -> pure ()
-        , sendData =
-            \buf -> do
-              buf' <- evaluate $ force buf
-              atomically $ writeTQueue send_queue buf'
-        , recvData =
-            \msg_id ->
-              atomically $ do
-                m <- readTVar recv_map
-                case IntMap.updateLookupWithKey
-                       (\_ _ -> Nothing)
-                       (coerce msg_id)
-                       m of
-                  (Just buf, m') -> do
-                    writeTVar recv_map m'
-                    pure buf
-                  _ -> retry
-        }
+    ( do killThread send_tid
+         killThread recv_tid
+         terminateProcess _ph
+         case nodeWorkDir of
+           Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
+           _ -> pure ()
+    , \buf -> do
+        buf' <- evaluate $ force buf
+        atomically $ writeTQueue send_queue buf'
+    , \msg_id ->
+        atomically $ do
+          m <- readTVar recv_map
+          case IntMap.updateLookupWithKey (\_ _ -> Nothing) (coerce msg_id) m of
+            (Just buf, m') -> do
+              writeTVar recv_map m'
+              pure buf
+            _ -> retry
     , _m_stdin
     , _m_stdout
     , _m_stderr)
