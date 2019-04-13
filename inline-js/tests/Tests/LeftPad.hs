@@ -26,7 +26,7 @@ tests =
           readCreateProcess
             ((shell "npm install left-pad") {cwd = Just p, std_err = CreatePipe})
             ""
-        withJSSession (setJSSessionWorkDir p defJSSessionOpts) $ \s -> do
+        withJSSession defJSSessionOpts {nodeWorkDir = Just p} $ \s -> do
           mref <- eval s "import('left-pad').then(m => m.default)"
           eval s $ deRefJSVal mref <> "('foo', 5)"
     x `shouldBe` ("  foo" :: LBS.ByteString)

@@ -1,9 +1,6 @@
 module Language.JavaScript.Inline.Core
-  ( ProcessTransportOpts(..)
-  , JSSessionOpts(..)
+  ( JSSessionOpts(..)
   , defJSSessionOpts
-  , setJSSessionDebug
-  , setJSSessionWorkDir
   , JSSession
   , newJSSession
   , closeJSSession
@@ -36,4 +33,3 @@ import Language.JavaScript.Inline.Message.Class
 import Language.JavaScript.Inline.Message.Eval
 import Language.JavaScript.Inline.MessageCounter
 import Language.JavaScript.Inline.Session
-import Language.JavaScript.Inline.Transport.Process
