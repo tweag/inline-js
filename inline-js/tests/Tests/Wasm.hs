@@ -30,11 +30,11 @@ tests = do
       withJSSession defJSSessionOpts $ \s -> do
         buf_ref <- alloc s fib_buf
         result_ref <-
-          eval s $ "WebAssembly.instantiate(" <> deRefJSVal buf_ref <> ")"
+          eval s $ "WebAssembly.instantiate(" <> takeJSVal buf_ref <> ")"
         fib_result_buf <-
           eval s $
           jsonStringify $
-          deRefJSVal result_ref <> ".instance.exports.fib(" <>
+          takeJSVal result_ref <> ".instance.exports.fib(" <>
           fromString (show i) <>
           ")"
         pure $ eitherDecode' fib_result_buf == Right (fib i)

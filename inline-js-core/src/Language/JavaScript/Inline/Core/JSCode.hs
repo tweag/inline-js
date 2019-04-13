@@ -10,6 +10,7 @@ module Language.JavaScript.Inline.Core.JSCode
   , JSVal(..)
   , deRefJSVal
   , freeJSVal
+  , takeJSVal
   ) where
 
 import Data.ByteString.Builder
@@ -44,7 +45,9 @@ newtype JSVal =
   JSVal Int
   deriving (Eq, Ord, Show)
 
-deRefJSVal, freeJSVal :: JSVal -> JSCode
+deRefJSVal, freeJSVal, takeJSVal :: JSVal -> JSCode
 deRefJSVal (JSVal p) = JSCode $ mconcat ["JSVal.deRefJSVal(", intDec p, ")"]
 
 freeJSVal (JSVal p) = JSCode $ mconcat ["JSVal.freeJSVal(", intDec p, ")"]
+
+takeJSVal (JSVal p) = JSCode $ mconcat ["JSVal.takeJSVal(", intDec p, ")"]

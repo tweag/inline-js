@@ -18,6 +18,7 @@ module Language.JavaScript.Inline.Core
   , jsonStringify
   , deRefJSVal
   , freeJSVal
+  , takeJSVal
   , EvalRequest(..)
   , AllocRequest(..)
   , ImportRequest(..)

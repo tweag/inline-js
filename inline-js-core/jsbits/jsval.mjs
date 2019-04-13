@@ -22,6 +22,13 @@ class JSValManager {
     this.map.delete(k);
   }
 
+  takeJSVal(k) {
+    this.checkJSVal(k);
+    const v = this.map.get(k);
+    this.map.delete(k);
+    return v;
+  }
+
   checkJSVal(k) {
     if (typeof k !== "number")
       throw new Error(`Invalid JSVal type ${typeof k}`);
