@@ -22,16 +22,12 @@ encodeRequest msg_id req =
     putWord32host $ fromIntegral msg_id
     putRequest req
 
-decodeResponse :: Response r => MsgId -> LBS.ByteString -> IO r
-decodeResponse msg_id buf =
-  case runGetOrFail
-         ((,) <$> (fromIntegral <$> getWord32host) <*> getResponse)
-         buf of
-    Right (rest, _, (msg_id', resp))
-      | LBS.null rest && msg_id == msg_id' -> pure resp
+decodeResponse :: Response r => LBS.ByteString -> IO r
+decodeResponse buf =
+  case runGetOrFail getResponse buf of
+    Right (rest, _, resp)
+      | LBS.null rest -> pure resp
     _ ->
       fail $
-      "Language.JavaScript.Inline.Message.Class.decodeResponse: failed to decode message " <>
-      show msg_id <>
-      " from " <>
+      "Language.JavaScript.Inline.Message.Class.decodeResponse: failed to decode message from " <>
       show buf

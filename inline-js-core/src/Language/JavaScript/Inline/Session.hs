@@ -21,14 +21,10 @@ module Language.JavaScript.Inline.Session
 
 import Control.Exception
 import Control.Monad
-import Data.Binary.Get
-import qualified Data.ByteString.Lazy as LBS
-import Data.Coerce
 import Language.JavaScript.Inline.Message.Class
 import Language.JavaScript.Inline.MessageCounter
 import Language.JavaScript.Inline.Transport.Process
 import Language.JavaScript.Inline.Transport.Type
-import Language.JavaScript.Inline.Transport.Utils
 import qualified Paths_inline_js_core
 import System.IO
 import System.IO.Unsafe
@@ -73,23 +69,20 @@ data JSSession = JSSession
   { nodeTransport :: Transport
   , nodeStdIn, nodeStdOut, nodeStdErr :: Maybe Handle
   , msgCounter :: MsgCounter
-  , msgRecv :: MsgId -> IO LBS.ByteString
   }
 
 newJSSession :: JSSessionOpts -> IO JSSession
 newJSSession JSSessionOpts {..} = do
-  (t0, _m_stdin, _m_stdout, _m_stderr) <-
+  (t, _m_stdin, _m_stdout, _m_stderr) <-
     newProcessTransport nodeProcessTransportOpts
-  (_uniq_recv, t2) <- uniqueRecv (runGet (fromIntegral <$> getWord32host)) t0
   _msg_counter <- newMsgCounter
   pure
     JSSession
-      { nodeTransport = t2
+      { nodeTransport = t
       , nodeStdIn = _m_stdin
       , nodeStdOut = _m_stdout
       , nodeStdErr = _m_stderr
       , msgCounter = _msg_counter
-      , msgRecv = coerce _uniq_recv
       }
 
 closeJSSession :: JSSession -> IO ()
@@ -106,8 +99,8 @@ sendMsg JSSession {..} msg = do
 
 recvMsg :: Response r => JSSession -> MsgId -> IO r
 recvMsg JSSession {..} msg_id = do
-  buf <- msgRecv msg_id
-  decodeResponse msg_id buf
+  buf <- recvData nodeTransport msg_id
+  decodeResponse buf
 
 sendRecv :: (Request req, Response resp) => JSSession -> req -> IO resp
 sendRecv s = recvMsg s <=< sendMsg s

@@ -14,10 +14,13 @@ import Control.Monad
 import Data.ByteString.Builder
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy as LBS
+import Data.Coerce
 import Data.Foldable
+import qualified Data.IntMap.Strict as IntMap
 import Data.Word
 import Foreign
 import GHC.IO.Handle.FD
+import Language.JavaScript.Inline.MessageCounter
 import Language.JavaScript.Inline.Transport.Type
 import qualified Paths_inline_js_core
 import System.Directory
@@ -79,10 +82,29 @@ newProcessTransport ProcessTransportOpts {..} = do
             word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
           w
      in w
+  recv_map <- newTVarIO IntMap.empty
+  recv_tid <-
+    forkIO $
+    let w = do
+          len <-
+            alloca $ \p -> do
+              hGet' rh0 p 4
+              peek p
+          msg_id <-
+            alloca $ \p -> do
+              hGet' rh0 p 4
+              peek p
+          let len' = fromIntegral (len :: Word32) - 4
+              msg_id' = fromIntegral (msg_id :: Word32)
+          buf <- fmap LBS.fromStrict $ BS.create len' $ \p -> hGet' rh0 p len'
+          atomically $ modifyTVar' recv_map $ IntMap.insert msg_id' buf
+          w
+     in w
   pure
     ( Transport
         { closeTransport =
             do killThread send_tid
+               killThread recv_tid
                terminateProcess _ph
                case nodeWorkDir of
                  Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
@@ -92,12 +114,17 @@ newProcessTransport ProcessTransportOpts {..} = do
               buf' <- evaluate $ force buf
               atomically $ writeTQueue send_queue buf'
         , recvData =
-            do len <-
-                 alloca $ \p -> do
-                   hGet' rh0 p 4
-                   peek p
-               let len' = fromIntegral (len :: Word32)
-               fmap LBS.fromStrict $ BS.create len' $ \p -> hGet' rh0 p len'
+            \msg_id ->
+              atomically $ do
+                m <- readTVar recv_map
+                case IntMap.updateLookupWithKey
+                       (\_ _ -> Nothing)
+                       (coerce msg_id)
+                       m of
+                  (Just buf, m') -> do
+                    writeTVar recv_map m'
+                    pure buf
+                  _ -> retry
         }
     , _m_stdin
     , _m_stdout
