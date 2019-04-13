@@ -5,14 +5,17 @@ module Language.JavaScript.Inline.Core
   , newJSSession
   , closeJSSession
   , withJSSession
-  , withNodeStdIn
-  , withNodeStdOut
-  , withNodeStdErr
+  , nodeStdIn
+  , nodeStdOut
+  , nodeStdErr
   , MsgId
   , Request
   , Response
   , JSCode(..)
-  , JSVal(..)
+  , JSVal
+  , bufferToString
+  , jsonParse
+  , jsonStringify
   , deRefJSVal
   , freeJSVal
   , EvalRequest(..)
@@ -27,9 +30,9 @@ module Language.JavaScript.Inline.Core
   , importMJS
   ) where
 
-import Language.JavaScript.Inline.Command
-import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Message.Class
-import Language.JavaScript.Inline.Message.Eval
-import Language.JavaScript.Inline.MessageCounter
-import Language.JavaScript.Inline.Session
+import Language.JavaScript.Inline.Core.Command
+import Language.JavaScript.Inline.Core.JSCode
+import Language.JavaScript.Inline.Core.Message.Class
+import Language.JavaScript.Inline.Core.Message.Eval
+import Language.JavaScript.Inline.Core.MessageCounter
+import Language.JavaScript.Inline.Core.Session

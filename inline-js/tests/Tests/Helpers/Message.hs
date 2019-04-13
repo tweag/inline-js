@@ -4,8 +4,7 @@ module Tests.Helpers.Message
   , withResolveTimeout
   ) where
 
-import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Message.Eval
+import Language.JavaScript.Inline.Core
 
 evaluation :: JSCode -> EvalRequest a
 evaluation = EvalRequest Nothing Nothing

@@ -12,13 +12,6 @@ import Data.Aeson (FromJSON(..), ToJSON(..))
 import Data.Text (pack)
 import GHC.Generics (Generic)
 import Language.JavaScript.Inline
-  ( block
-  , closeJSSession
-  , defJSSessionOpts
-  , expr
-  , newJSSession
-  , withJSSession
-  )
 import Test.Tasty (TestTree)
 import Test.Tasty.Hspec (it, shouldBe, testSpec)
 

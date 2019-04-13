@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
 
-module Language.JavaScript.Inline.Session
+module Language.JavaScript.Inline.Core.Session
   ( JSSessionOpts(..)
   , defJSSessionOpts
   , JSSession
@@ -12,9 +12,9 @@ module Language.JavaScript.Inline.Session
   , sendMsg
   , recvMsg
   , sendRecv
-  , withNodeStdIn
-  , withNodeStdOut
-  , withNodeStdErr
+  , nodeStdIn
+  , nodeStdOut
+  , nodeStdErr
   ) where
 
 import Control.Concurrent
@@ -31,8 +31,8 @@ import qualified Data.IntMap.Strict as IntMap
 import Data.Word
 import Foreign
 import GHC.IO.Handle.FD
-import Language.JavaScript.Inline.Message.Class
-import Language.JavaScript.Inline.MessageCounter
+import Language.JavaScript.Inline.Core.Message.Class
+import Language.JavaScript.Inline.Core.MessageCounter
 import qualified Paths_inline_js_core
 import System.Directory
 import System.FilePath
@@ -187,20 +187,3 @@ recvMsg JSSession {..} msg_id = do
 
 sendRecv :: (Request req, Response resp) => JSSession -> req -> IO resp
 sendRecv s = recvMsg s <=< sendMsg s
-
-withNodeStdIn, withNodeStdOut, withNodeStdErr ::
-     JSSession -> (Handle -> IO r) -> IO r
-withNodeStdIn JSSession {..} c =
-  case nodeStdIn of
-    Just h -> c h
-    _ -> fail "stdin handle not available"
-
-withNodeStdOut JSSession {..} c =
-  case nodeStdOut of
-    Just h -> c h
-    _ -> fail "stdout handle not available"
-
-withNodeStdErr JSSession {..} c =
-  case nodeStdErr of
-    Just h -> c h
-    _ -> fail "stderr handle not available"

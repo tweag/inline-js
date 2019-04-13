@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Language.JavaScript.Inline.Command
+module Language.JavaScript.Inline.Core.Command
   ( eval
   , alloc
   , importMJS
@@ -10,10 +10,10 @@ module Language.JavaScript.Inline.Command
 
 import Control.Monad.Fail
 import qualified Data.ByteString.Lazy as LBS
-import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Message.Class
-import Language.JavaScript.Inline.Message.Eval
-import Language.JavaScript.Inline.Session
+import Language.JavaScript.Inline.Core.JSCode
+import Language.JavaScript.Inline.Core.Message.Class
+import Language.JavaScript.Inline.Core.Message.Eval
+import Language.JavaScript.Inline.Core.Session
 import Prelude hiding (fail)
 import System.Directory
 
@@ -22,7 +22,7 @@ checkEvalResponse r =
   case r of
     EvalError {..} ->
       fail $
-      "Language.JavaScript.Inline.Commands.checkEvalResponse: evaluation failed with " <>
+      "Language.JavaScript.Inline.Core.Commands.checkEvalResponse: evaluation failed with " <>
       show evalError
     EvalResult {..} -> pure evalResult
 

@@ -4,12 +4,7 @@
 module Language.JavaScript.Inline
   ( expr
   , block
-  , newJSSession
-  , withJSSession
-  , closeJSSession
-  , defJSSessionOpts
-  , JSSessionOpts(..)
-  , JSSession
+  , module Language.JavaScript.Inline.Core
   ) where
 
 import qualified Data.Aeson as Aeson
@@ -18,16 +13,7 @@ import Data.List (nub)
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH (Q)
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
-import Language.JavaScript.Inline.Command (eval)
-import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Session
-  ( JSSession
-  , JSSessionOpts(..)
-  , closeJSSession
-  , defJSSessionOpts
-  , newJSSession
-  , withJSSession
-  )
+import Language.JavaScript.Inline.Core
 import Language.JavaScript.Parser.Lexer (Token(..), alexTestTokeniser)
 
 qq :: (String -> Q TH.Exp) -> QuasiQuoter

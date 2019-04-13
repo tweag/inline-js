@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Language.JavaScript.Inline.JSCode
+module Language.JavaScript.Inline.Core.JSCode
   ( JSCode(..)
   , codeToString
   , bufferToString

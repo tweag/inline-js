@@ -2,7 +2,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 
-module Language.JavaScript.Inline.MessageCounter
+module Language.JavaScript.Inline.Core.MessageCounter
   ( MsgId(..)
   , MsgCounter
   , newMsgCounter

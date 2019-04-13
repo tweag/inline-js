@@ -3,7 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
 
-module Language.JavaScript.Inline.Message.Eval
+module Language.JavaScript.Inline.Core.Message.Eval
   ( EvalRequest(..)
   , AllocRequest(..)
   , ImportRequest(..)
@@ -17,8 +17,8 @@ import Data.Coerce
 import qualified Data.Text.Lazy as LText
 import qualified Data.Text.Lazy.Encoding as LText
 import Data.Word
-import qualified Language.JavaScript.Inline.JSCode as JSCode
-import Language.JavaScript.Inline.Message.Class
+import qualified Language.JavaScript.Inline.Core.JSCode as JSCode
+import Language.JavaScript.Inline.Core.Message.Class
 
 data EvalRequest a = EvalRequest
   { evalTimeout, resolveTimeout :: Maybe Int

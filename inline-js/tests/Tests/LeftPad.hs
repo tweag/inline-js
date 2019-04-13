@@ -7,9 +7,7 @@ module Tests.LeftPad
 import qualified Data.ByteString.Lazy as LBS
 import Distribution.Simple.Utils
 import Distribution.Verbosity
-import Language.JavaScript.Inline.Command
-import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Session
+import Language.JavaScript.Inline.Core
 import System.Directory
 import System.Process
 import Test.Tasty

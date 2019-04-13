@@ -9,10 +9,7 @@ module Tests.Evaluation
 import Data.Aeson
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
-import Language.JavaScript.Inline.Message.Class
-import Language.JavaScript.Inline.Message.Eval
-import Language.JavaScript.Inline.MessageCounter
-import Language.JavaScript.Inline.Session
+import Language.JavaScript.Inline.Core
 import Test.Tasty (TestTree)
 import Test.Tasty.Hspec (it, shouldBe, testSpec)
 import Tests.Helpers.Message

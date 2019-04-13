@@ -1,4 +1,4 @@
-module Language.JavaScript.Inline.Message.Class
+module Language.JavaScript.Inline.Core.Message.Class
   ( Request(..)
   , Response(..)
   , encodeRequest
@@ -8,7 +8,7 @@ module Language.JavaScript.Inline.Message.Class
 import Data.Binary.Get
 import Data.Binary.Put
 import qualified Data.ByteString.Lazy as LBS
-import Language.JavaScript.Inline.MessageCounter
+import Language.JavaScript.Inline.Core.MessageCounter
 
 class Request r where
   putRequest :: r -> Put
@@ -29,5 +29,5 @@ decodeResponse buf =
       | LBS.null rest -> pure resp
     _ ->
       fail $
-      "Language.JavaScript.Inline.Message.Class.decodeResponse: failed to decode message from " <>
+      "Language.JavaScript.Inline.Core.Message.Class.decodeResponse: failed to decode message from " <>
       show buf
