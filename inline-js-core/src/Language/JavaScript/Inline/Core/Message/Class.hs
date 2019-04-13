@@ -10,9 +10,11 @@ import Data.Binary.Put
 import qualified Data.ByteString.Lazy as LBS
 import Language.JavaScript.Inline.Core.MessageCounter
 
+-- | The class of supported request types.
 class Request r where
   putRequest :: r -> Put
 
+-- | The class of supported response types.
 class Response r where
   getResponse :: Get r
 

@@ -8,17 +8,16 @@ module Language.JavaScript.Inline.Core
   , nodeStdIn
   , nodeStdOut
   , nodeStdErr
-  , MsgId
-  , Request
-  , Response
   , JSCode(..)
-  , JSVal
   , bufferToString
   , jsonParse
   , jsonStringify
+  , JSVal
   , deRefJSVal
   , freeJSVal
   , takeJSVal
+  , Request
+  , Response
   , EvalRequest(..)
   , AllocRequest(..)
   , ImportRequest(..)
@@ -35,5 +34,4 @@ import Language.JavaScript.Inline.Core.Command
 import Language.JavaScript.Inline.Core.JSCode
 import Language.JavaScript.Inline.Core.Message.Class
 import Language.JavaScript.Inline.Core.Message.Eval
-import Language.JavaScript.Inline.Core.MessageCounter
 import Language.JavaScript.Inline.Core.Session

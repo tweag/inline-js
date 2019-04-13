@@ -40,13 +40,17 @@ import System.IO
 import System.IO.Unsafe
 import System.Process
 
+-- | Options to initialize a 'JSSession'.
 data JSSessionOpts = JSSessionOpts
-  { nodePath :: FilePath
-  , nodeExtraArgs :: [String]
-  , nodeWorkDir :: Maybe FilePath
-  , nodeStdInInherit, nodeStdOutInherit, nodeStdErrInherit :: Bool
+  { nodePath :: FilePath -- ^ Path to the @node@ executable.
+  , nodeExtraArgs :: [String] -- ^ Extra arguments passed to @node@. Can't be accessed via @process.argv@.
+  , nodeWorkDir :: Maybe FilePath -- ^ Working directory of @node@. To @import()@ npm installed modules, set to the directory containing @node_modules@.
+  , nodeStdInInherit, nodeStdOutInherit, nodeStdErrInherit :: Bool -- ^ Inherit stdio handles of @node@ from the host process.
   }
 
+-- | A sensible default 'JSSessionOpts'.
+--
+-- Uses @node@ from @PATH@ and sets the inherit flags to 'False'.
 {-# NOINLINE defJSSessionOpts #-}
 defJSSessionOpts :: JSSessionOpts
 defJSSessionOpts =
@@ -62,11 +66,12 @@ defJSSessionOpts =
         , nodeStdErrInherit = False
         }
 
+-- | Represents an active @node@ process and related IPC states.
 data JSSession = JSSession
-  { closeJSSession :: IO ()
+  { closeJSSession :: IO () -- ^ Shuts down a 'JSSession'. Not idempotent, don't call more than once.
   , sendData :: LBS.ByteString -> IO ()
   , recvData :: MsgId -> IO LBS.ByteString
-  , nodeStdIn, nodeStdOut, nodeStdErr :: Maybe Handle
+  , nodeStdIn, nodeStdOut, nodeStdErr :: Maybe Handle -- ^ Available when the corresponding inherit flag in 'JSSessionOpts' is 'False'.
   , msgCounter :: MsgCounter
   }
 
@@ -76,6 +81,7 @@ hGet' h p l = do
   unless (l' == l) $
     fail $ "hGet': expected " <> show l <> " bytes, got " <> show l'
 
+-- | Initializes a new 'JSSession'.
 newJSSession :: JSSessionOpts -> IO JSSession
 newJSSession JSSessionOpts {..} = do
   (mjss_dir, mjss) <-
@@ -171,6 +177,7 @@ newJSSession JSSessionOpts {..} = do
       , msgCounter = _msg_counter
       }
 
+-- | Use 'bracket' to ensure 'closeJSSession' is called.
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (newJSSession opts) closeJSSession
 

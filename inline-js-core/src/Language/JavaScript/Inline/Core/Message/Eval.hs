@@ -20,19 +20,41 @@ import Data.Word
 import qualified Language.JavaScript.Inline.Core.JSCode as JSCode
 import Language.JavaScript.Inline.Core.Message.Class
 
+-- | Request to run a 'JSCode.JSCode'.
+--
+-- The code is evaluated to a @Promise@ first (if not, the result is called with @Promise.resolve()@ anyway),
+-- then we wait for the @Promise@ to resolve/reject, and finally return the result.
+--
+-- It's possible to specify evaluate/resolve timeout in milliseconds.
+--
+-- When parameterised by 'LBS.ByteString', the result is wrapped by @Buffer.from()@ and returned.
+--
+-- When parameterised by 'JSCode.JSVal', the 'JSCode.JSVal' associated with the result is returned.
+--
+-- When parameterised by '()', the result is discarded.
 data EvalRequest a = EvalRequest
   { evalTimeout, resolveTimeout :: Maybe Int
   , evalCode :: JSCode.JSCode
   }
 
+-- | Request to allocate a @Buffer@.
+--
+-- Returns a 'JSCode.JSVal'.
 newtype AllocRequest = AllocRequest
   { allocContent :: LBS.ByteString
   }
 
+-- | Request to @import()@ a @.mjs@ ECMAScript module.
+--
+-- Returns a 'JSCode.JSVal' of the module namespace object.
 newtype ImportRequest = ImportRequest
   { importPath :: FilePath
   }
 
+-- | The response type of all requests.
+--
+-- Please make sure the type parameter matches requirement of the request type (as described in their docs),
+-- otherwise undefined behavior awaits!
 data EvalResponse a
   = EvalError { evalError :: LBS.ByteString }
   | EvalResult { evalResult :: a }
