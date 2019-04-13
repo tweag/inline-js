@@ -6,6 +6,8 @@ module Language.JavaScript.Inline.Transport.Process
   , newProcessTransport
   ) where
 
+import Control.Concurrent
+import Control.Concurrent.STM
 import Control.DeepSeq
 import Control.Exception
 import Control.Monad
@@ -68,18 +70,27 @@ newProcessTransport ProcessTransportOpts {..} = do
               then Inherit
               else CreatePipe
         }
+  send_queue <- newTQueueIO
+  send_tid <-
+    forkIO $
+    let w = do
+          buf <- atomically $ readTQueue send_queue
+          hPutBuilder wh1 $
+            word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
+          w
+     in w
   pure
     ( Transport
         { closeTransport =
-            do terminateProcess _ph
+            do killThread send_tid
+               terminateProcess _ph
                case nodeWorkDir of
                  Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
                  _ -> pure ()
         , sendData =
             \buf -> do
               buf' <- evaluate $ force buf
-              hPutBuilder wh1 $
-                word32LE (fromIntegral $ LBS.length buf') <> lazyByteString buf'
+              atomically $ writeTQueue send_queue buf'
         , recvData =
             do len <-
                  alloca $ \p -> do

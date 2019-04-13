@@ -1,8 +1,7 @@
 {-# LANGUAGE TypeApplications #-}
 
 module Language.JavaScript.Inline.Transport.Utils
-  ( lockSend
-  , uniqueRecv
+  ( uniqueRecv
   ) where
 
 import Control.Concurrent
@@ -12,27 +11,6 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Functor
 import qualified Data.IntMap.Strict as IMap
 import Language.JavaScript.Inline.Transport.Type
-
-lockSend :: Transport -> IO Transport
-lockSend t = do
-  q <- newTQueueIO
-  void $
-    forkIO $
-    let w = do
-          mbuf <- atomically $ readTQueue q
-          case mbuf of
-            Just buf -> do
-              sendData t buf
-              w
-            _ -> pure ()
-     in w
-  pure
-    t
-      { closeTransport =
-          do closeTransport t
-             atomically $ writeTQueue q Nothing
-      , sendData = atomically . writeTQueue q . Just
-      }
 
 uniqueRecv ::
      (LBS.ByteString -> Int)
