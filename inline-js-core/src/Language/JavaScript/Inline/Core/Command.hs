@@ -27,6 +27,12 @@ checkEvalResponse r =
       show evalError
     EvalResult {..} -> pure evalResult
 
+-- | Runs a 'JSCode' and returns the result.
+--
+-- Throws in Haskell if the response indicates a failure.
+--
+-- Explicit type annotation of the returned value is often required.
+-- See docs of 'EvalRequest' for supported result types.
 eval ::
      forall r.
      ( Request (EvalRequest r)
@@ -42,9 +48,15 @@ eval s c =
     (EvalRequest {evalTimeout = Nothing, resolveTimeout = Nothing, evalCode = c} :: EvalRequest r) >>=
   checkEvalResponse
 
+-- | Allocates a @Buffer@ and returns the 'JSVal'.
+--
+-- Throws in Haskell if the response indicates a failure.
 alloc :: JSSession -> LBS.ByteString -> IO JSVal
 alloc s buf = sendRecv s AllocRequest {allocContent = buf} >>= checkEvalResponse
 
+-- | @import()@ a @.mjs@ ECMAScript module and returns the 'JSVal' of the module namespace object.
+--
+-- Throws in Haskell if the response indicates a failure.
 importMJS :: JSSession -> FilePath -> IO JSVal
 importMJS s p = do
   p' <- canonicalizePath p

@@ -53,9 +53,6 @@ newtype ImportRequest = ImportRequest
   }
 
 -- | The response type of all requests.
---
--- Please make sure the type parameter matches requirement of the request type (as described in their docs),
--- otherwise undefined behavior awaits!
 data EvalResponse a
   = EvalError { evalError :: LBS.ByteString }
   | EvalResult { evalResult :: a }

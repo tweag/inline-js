@@ -25,11 +25,26 @@ qq myQQ =
     , quoteDec = error "Language.JavaScript.Inline: quoteDec"
     }
 
--- | Produces splice with type @'Aeson.FromJSON' a => 'JSSession' -> 'IO' a@
+-- | Produces expression splices with type @'Aeson.FromJSON' a => 'JSSession' -> 'IO' a@
+--
+-- The spliced string should be a valid JavaScript expression.
+-- Shall you need to write control-flow statements, please use 'block' instead.
+--
+-- Note that it's possible to use @await@ in both 'expr' and 'block',
+-- since the code is wrapped into an async arrow function under the hood.
+--
+-- Use @$some_hs_var@ to refer to an in-scope Haskell variable.
+-- The variable's type should be an 'Aeson.ToJSON' instance.
 expr :: QuasiQuoter
 expr = qq expressionQuasiQuoter
 
--- | Produces splice with the same type of 'expr'
+-- | Produces expression splices with the same type of 'expr'.
+--
+-- The spliced string should be a series of valid JavaScript statements.
+-- JavaScript control-flow features (e.g. loops, try/catch) are supported.
+-- Use @return@ to return the result.
+--
+-- Most rules of 'expr' also apply to 'block'.
 block :: QuasiQuoter
 block = qq blockQuasiQuoter
 

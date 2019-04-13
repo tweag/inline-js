@@ -181,6 +181,13 @@ newJSSession JSSessionOpts {..} = do
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (newJSSession opts) closeJSSession
 
+-- | Send a request and return an 'IO' action to fetch the response.
+--
+-- The send procedure is asynchronous and returns immediately.
+--
+-- The returned 'IO' action blocks if the response is not yet sent back.
+--
+-- All send/receive operations are thread-safe.
 sendMsg ::
      (Request r, Response (ResponseOf r))
   => JSSession
@@ -193,6 +200,7 @@ sendMsg JSSession {..} msg = do
     buf <- recvData msg_id
     decodeResponse buf
 
+-- | Send a request and synchronously return the response.
 sendRecv ::
      (Request r, Response (ResponseOf r)) => JSSession -> r -> IO (ResponseOf r)
 sendRecv s = join . sendMsg s
