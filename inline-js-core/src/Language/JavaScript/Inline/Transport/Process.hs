@@ -6,6 +6,8 @@ module Language.JavaScript.Inline.Transport.Process
   , newProcessTransport
   ) where
 
+import Control.DeepSeq
+import Control.Exception
 import Control.Monad
 import Data.ByteString.Builder
 import qualified Data.ByteString.Internal as BS
@@ -74,9 +76,10 @@ newProcessTransport ProcessTransportOpts {..} = do
                  Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
                  _ -> pure ()
         , sendData =
-            \buf ->
+            \buf -> do
+              buf' <- evaluate $ force buf
               hPutBuilder wh1 $
-              word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
+                word32LE (fromIntegral $ LBS.length buf') <> lazyByteString buf'
         , recvData =
             do len <-
                  alloca $ \p -> do

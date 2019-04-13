@@ -80,7 +80,7 @@ newJSSession :: JSSessionOpts -> IO JSSession
 newJSSession JSSessionOpts {..} = do
   (t0, _m_stdin, _m_stdout, _m_stderr) <-
     newProcessTransport nodeProcessTransportOpts
-  t1 <- lockSend $ strictTransport t0
+  t1 <- lockSend t0
   (_uniq_recv, t2) <- uniqueRecv (runGet (fromIntegral <$> getWord32host)) t1
   _msg_counter <- newMsgCounter
   pure

@@ -3,12 +3,10 @@
 module Language.JavaScript.Inline.Transport.Utils
   ( lockSend
   , uniqueRecv
-  , strictTransport
   ) where
 
 import Control.Concurrent
 import Control.Concurrent.STM
-import Control.DeepSeq
 import Control.Exception
 import qualified Data.ByteString.Lazy as LBS
 import Data.Functor
@@ -81,15 +79,3 @@ uniqueRecv mk t = do
             fail
               "Language.JavaScript.Inline.Transport.Utils.uniqueRecv: recvData is disabled for this Transport"
         })
-
-strictTransport :: Transport -> Transport
-strictTransport t =
-  t
-    { sendData =
-        \buf' -> do
-          buf <- evaluate $ force buf'
-          sendData t buf
-    , recvData =
-        do buf' <- recvData t
-           evaluate $ force buf'
-    }
