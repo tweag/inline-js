@@ -1,7 +1,7 @@
 name: inline-js
 version: 0.0.1
 category: Web
-stability: alpha
+stability: beta
 maintainer: Shao Cheng <cheng.shao@tweag.io>
 copyright: (c) 2018 Tweag I/O
 license: BSD3
