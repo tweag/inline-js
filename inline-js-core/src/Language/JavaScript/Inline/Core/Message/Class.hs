@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Language.JavaScript.Inline.Core.Message.Class
   ( Request(..)
   , Response(..)
@@ -12,6 +14,7 @@ import Language.JavaScript.Inline.Core.MessageCounter
 
 -- | The class of supported request types.
 class Request r where
+  type ResponseOf r
   putRequest :: r -> Put
 
 -- | The class of supported response types.

@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Language.JavaScript.Inline.Core.Command
   ( eval
@@ -27,7 +28,11 @@ checkEvalResponse r =
     EvalResult {..} -> pure evalResult
 
 eval ::
-     forall r. (Request (EvalRequest r), Response (EvalResponse r))
+     forall r.
+     ( Request (EvalRequest r)
+     , Response (EvalResponse r)
+     , ResponseOf (EvalRequest r) ~ (EvalResponse r)
+     )
   => JSSession
   -> JSCode
   -> IO r

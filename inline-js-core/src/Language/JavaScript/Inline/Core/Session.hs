@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
@@ -10,7 +11,6 @@ module Language.JavaScript.Inline.Core.Session
   , closeJSSession
   , withJSSession
   , sendMsg
-  , recvMsg
   , sendRecv
   , nodeStdIn
   , nodeStdOut
@@ -181,16 +181,18 @@ newJSSession JSSessionOpts {..} = do
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (newJSSession opts) closeJSSession
 
-sendMsg :: Request r => JSSession -> r -> IO MsgId
+sendMsg ::
+     (Request r, Response (ResponseOf r))
+  => JSSession
+  -> r
+  -> IO (IO (ResponseOf r))
 sendMsg JSSession {..} msg = do
   msg_id <- newMsgId msgCounter
   sendData $ encodeRequest msg_id msg
-  pure msg_id
+  pure $ do
+    buf <- recvData msg_id
+    decodeResponse buf
 
-recvMsg :: Response r => JSSession -> MsgId -> IO r
-recvMsg JSSession {..} msg_id = do
-  buf <- recvData msg_id
-  decodeResponse buf
-
-sendRecv :: (Request req, Response resp) => JSSession -> req -> IO resp
-sendRecv s = recvMsg s <=< sendMsg s
+sendRecv ::
+     (Request r, Response (ResponseOf r)) => JSSession -> r -> IO (ResponseOf r)
+sendRecv s = join . sendMsg s

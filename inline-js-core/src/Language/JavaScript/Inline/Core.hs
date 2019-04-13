@@ -23,7 +23,6 @@ module Language.JavaScript.Inline.Core
   , ImportRequest(..)
   , EvalResponse(..)
   , sendMsg
-  , recvMsg
   , sendRecv
   , eval
   , alloc

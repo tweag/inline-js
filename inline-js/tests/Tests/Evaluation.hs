@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Tests.Evaluation
   ( tests
@@ -10,7 +11,7 @@ import Data.Aeson
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
 import Language.JavaScript.Inline.Core
-import Language.JavaScript.Inline.Core.MessageCounter
+import Language.JavaScript.Inline.Core.Message.Class
 import Test.Tasty (TestTree)
 import Test.Tasty.Hspec (it, shouldBe, testSpec)
 import Tests.Helpers.Message
@@ -21,14 +22,17 @@ tests =
   it "Should Handle Many Mixed-Async-and-Sync Requests" $
   withJSSession defJSSessionOpts $ \s -> do
     let requestTest ::
-             Request (EvalRequest r)
+             ( Request (EvalRequest r)
+             , Response (EvalResponse r)
+             , ResponseOf (EvalRequest r) ~ (EvalResponse r)
+             )
           => (EvalRequest r, EvalResponse r -> IO ())
-          -> IO (MsgId, EvalResponse r -> IO ())
+          -> IO (IO (EvalResponse r), EvalResponse r -> IO ())
         requestTest (request, test) = do
-          msgId <- sendMsg s request
-          pure (msgId, test)
-        recvAndRunTest (msgId, test) = do
-          result <- recvMsg s msgId
+          c <- sendMsg s request
+          pure (c, test)
+        recvAndRunTest (c, test) = do
+          result <- c
           test result
     testPairs <-
       traverse
