@@ -2,17 +2,17 @@
 
 [![CircleCI](https://circleci.com/gh/tweag/inline-js/tree/master.svg?style=shield)](https://circleci.com/gh/tweag/inline-js/tree/master)
 
-## Note
+## Introduction
 
-This repository contains two packages, `inline-js` and `inline-js-core`. Chances are, you won't be interested in working with `inline-js-core` directly, and will want to use the QuasiQuoter interface found in `inline-js`.
+This repository contains two packages, `inline-js-core` and `inline-js`.
 
-Currently, this repository is an active laboratory. The API is subject to radical changes based on feedback from the development of `asterius`.
+`inline-js-core` implements the logic to manage a `node` session and send/receive messages to run JavaScript. It only depends on ghc's boot libraries.
 
-Still, we are interested in how `inline-js` may be useful to your projects. If you have any questions, suggestions or criticisms, please don't hesitate to file an issue!
+`inline-js` follows in the tradition of [inline-c](http://hackage.haskell.org/package/inline-c) and [inline-java](http://hackage.haskell.org/package/inline-java) in enabling developers to bridge the gap between Haskell and another programming language. It comes with two QuasiQuoters, `expr` and `block`, to allow embedding a JavaScript expression/block in Haskell. It relies on `FromJSON`/`ToJSON` classes of `aeson` for Haskell/JavaScript data conversion.
 
-## How it Works
+Currently, this repository is an active laboratory. The API is subject to radical changes based on feedback from the development of `asterius`. But still, we are interested in how `inline-js` may be useful to your projects. Shall you have any questions, suggestions or criticisms, please don't hesitate to file an issue!
 
-`inline-js` follows in the tradition of [inline-c](http://hackage.haskell.org/package/inline-c) and [inline-java](http://hackage.haskell.org/package/inline-java) in enabling developers to bridge the gap between Haskell and another programming language. It comes with two QuasiQuoters, `expr` and `block`. Also included is an instance for data-types which are instances of the `aeson` `ToJSON` and `FromJSON` typeclasses, to allow their use across the Haskell-JS boundary.
+## Quick examples
 
 ### A sample use of `expr`:
 
@@ -22,11 +22,12 @@ sumInJS v1 v2 =
     withJSSession defJSSessionOpts [expr| $v1 + $v2 |]
 ```
 
-To antiquote a Haskell variable into the JavaScript context, just precede its name with the dollar symbol. The two `Int` values can be inserted without any typeclass derivation as `Int` is already an instance of `ToJSON` and `FromJSON`.
+To antiquote a Haskell variable into the JavaScript context, just precede its name with `$`. The two `Int` values can be inserted since `Int` is already an instance of `ToJSON` and `FromJSON`.
 
-Note that there is an implicit `return` inserted when using `expr`, so don't add one yourself. If you need to do more complex work, you'll want to use `block`.
+Note that there is an implicit `return` inserted when using `expr`, so don't add one yourself. If you need to do more complex work like using `for`-loops, you'll want to use `block`.
 
 ### A sample use of `block`:
+
 ``` haskell
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -65,36 +66,36 @@ getCharacterStatus =
 
 Here, you can see the Haskell value `gameWorld` (which has both `ToJSON` and `FromJSON` derived) serialized into the JavaScript quotation with the antiquotation `$gameWorld`. Explicit use of `return` is required to extract a value out from the quotation.
 
+Note that both `expr`/`block` supports using `await`, making it convenient to work with asynchronous JavaScript APIs based on `Promise`s.
+
+### Beyond passing JSON data
+
+The `expr`/`block` QuasiQuoters in `inline-js` pass JSON data between Haskell/JavaScript. `inline-js-core` additionally provides ability to:
+
+* Pass raw binary data, or `JSVal`s which are references of arbitrary JavaScript values.
+* Run dynamic `import()` to import a built-in module, npm module in `node_modules`, or a `.mjs` module file.
+* Specify evaluate/resolve timeouts when evaluating JavaScript.
+* Decouple the send/receive processes, so it's possible to asynchronously send a batch of requests and later retrieve the responses.
+* Manipulate `stdin`/`stdout`/`stderr` handles of the underlying `node` process.
+
+See the haddock documentation of `Language.JavaScript.Inline.Core` for details. If you're using `inline-js`, `Language.JavaScript.Inline` also re-exports that module.
+
 ### Session Management
 
-`inline-js` also exposes the `withJSSession`, `startJSSession` and `killJSSession` functions, with options for configuring the session. `inline-js` works by communicating with a Node.js script which evaluates the quoted JavaScript code. Within a session, global variables are maintained across splices. `let`, `var` and `const` variable declarations are not shared even within the same session.
+`inline-js` exposes the `withJSSession`, `newJSSession` and `closeJSSession` functions, with options for configuring the session. `inline-js` works by communicating with a Node.js "eval server" script which evaluates received JavaScript code snippets.
 
-Important note: `withJSSession` wraps the session with cleanup logic, but when you create a session with `startJSSession`, you will need to clean up with `killJSSesssion`.
+To avoid polluting the global namespace, the high-level `expr`/`block` QuasiQuoters wrap JavaScript code in the IIFE(Immediately Invoked Function Expression) style, so `let`, `var` and `const` variable declarations in the splices are not shared even within the same session. This is not the case if you're using lower-level `eval` from `inline-js-core` instead.
 
-## Progress Checklist
+Important note: do not run untrusted JavaScript via `inline-js-core`/`inline-js`. They don't provide any kind of security guarantee.
 
-* [x] Phase 0: Bare bones RPC
-    * [x] Lightweight JSON library, including AST/encoder/decoder
-    * [x] Lightweight RPC supporting concurrent non-order-preserving requests/responses in a cross platform manner, without relying on HTTP
-    * [x] Proper error handling
-    * [x] Basic ping/pong unit test powered by QuickCheck generated JSON values
-* [x] Phase 1: Eval server
-    * [x] Eval server for synchronous code, supporting eval timeouts
-    * [x] Eval server for asynchronous code, supporting eval/resolve timeouts
-* [ ] Phase 2: Marshaling arbitrary Haskell/Node.js values, including functions
-    * [x] Modeling arbitrary Node.js values as `JSRef`s
-        * [x] Mapping from `JSRef`s to JavaScript values in the eval server
-        * [x] Explicit construction of `JSRef`s based on Haskell eval commands
-        * [x] Assembling a Haskell `JSRef` into an eval command
-        * [x] Regional destruction of `JSRef`s in Haskell
-    * [ ] Modeling arbitrary Haskell values
-        * [ ] `Dynamic`-based? More strongly typed? Yet to be explored.
-* [ ] Phase 3: Haskell syntactic sugar, e.g. `foreign import javascript`
-    * [ ] Monad transformer to thread a session around
-    * [ ] Template Haskell splices to convert from syntactic sugar to actual logic
+## Building
+
+Simply `stack build` shall do. Run `stack test inline-js` to run the test suite, `stack test inline-js --test-arguments="-j8"` for parallel testing.
+
+A recent version of `node` and `npm` is required in `PATH`. We test against the latest version of Node.js (11) on CircleCI.
 
 ## Sponsors
 
 [![Tweag I/O](https://www.tweag.io/img/tweag-small.png)](https://www.tweag.io)
 
-`inline-js` and `inline-js-core` are developed by [Tweag I/O](https://tweag.io/).
+`inline-js-core`/`inline-js` are developed by [Tweag I/O](https://tweag.io/).

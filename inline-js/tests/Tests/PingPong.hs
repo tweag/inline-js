@@ -12,9 +12,7 @@ import Data.Int
 import Data.Maybe
 import qualified Data.Text as Text
 import GHC.Exts
-import Language.JavaScript.Inline.Command
-import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Session
+import Language.JavaScript.Inline.Core
 import Prelude hiding (fail)
 import Test.QuickCheck.Gen
 import Test.QuickCheck.Monadic

@@ -1,0 +1,36 @@
+module Language.JavaScript.Inline.Core
+  ( JSSessionOpts(..)
+  , defJSSessionOpts
+  , JSSession
+  , newJSSession
+  , closeJSSession
+  , withJSSession
+  , nodeStdIn
+  , nodeStdOut
+  , nodeStdErr
+  , JSCode(..)
+  , bufferToString
+  , jsonParse
+  , jsonStringify
+  , JSVal
+  , deRefJSVal
+  , freeJSVal
+  , takeJSVal
+  , Request
+  , Response
+  , EvalRequest(..)
+  , AllocRequest(..)
+  , ImportRequest(..)
+  , EvalResponse(..)
+  , sendMsg
+  , sendRecv
+  , eval
+  , alloc
+  , importMJS
+  ) where
+
+import Language.JavaScript.Inline.Core.Command
+import Language.JavaScript.Inline.Core.JSCode
+import Language.JavaScript.Inline.Core.Message.Class
+import Language.JavaScript.Inline.Core.Message.Eval
+import Language.JavaScript.Inline.Core.Session

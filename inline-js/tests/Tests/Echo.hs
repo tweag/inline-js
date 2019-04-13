@@ -6,9 +6,7 @@ module Tests.Echo
 
 import Control.Monad
 import qualified Data.ByteString.Lazy as LBS
-import Language.JavaScript.Inline.Command
-import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Session
+import Language.JavaScript.Inline.Core
 import qualified Paths_inline_js
 import System.FilePath
 import Test.QuickCheck.Monadic

@@ -7,9 +7,7 @@ module Tests.Wasm
 import Data.Aeson
 import qualified Data.ByteString.Lazy as LBS
 import Data.String
-import Language.JavaScript.Inline.Command
-import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Session
+import Language.JavaScript.Inline.Core
 import qualified Paths_inline_js
 import System.FilePath
 import Test.SmallCheck.Series
@@ -32,11 +30,11 @@ tests = do
       withJSSession defJSSessionOpts $ \s -> do
         buf_ref <- alloc s fib_buf
         result_ref <-
-          evalAsync s $ "WebAssembly.instantiate(" <> deRefJSVal buf_ref <> ")"
+          eval s $ "WebAssembly.instantiate(" <> takeJSVal buf_ref <> ")"
         fib_result_buf <-
           eval s $
           jsonStringify $
-          deRefJSVal result_ref <> ".instance.exports.fib(" <>
+          takeJSVal result_ref <> ".instance.exports.fib(" <>
           fromString (show i) <>
           ")"
         pure $ eitherDecode' fib_result_buf == Right (fib i)

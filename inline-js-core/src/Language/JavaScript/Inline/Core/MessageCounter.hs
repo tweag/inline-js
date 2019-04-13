@@ -2,7 +2,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 
-module Language.JavaScript.Inline.MessageCounter
+module Language.JavaScript.Inline.Core.MessageCounter
   ( MsgId(..)
   , MsgCounter
   , newMsgCounter
@@ -34,5 +34,5 @@ newMsgCounter =
 newMsgId :: MsgCounter -> IO MsgId
 newMsgId (MsgCounter mba) =
   IO $ \s0 ->
-    case fetchAddIntArray# mba 0# 1# s0 of
+    case fetchAddIntArray# mba 0# 2# s0 of
       (# s1, x #) -> (# s1, MsgId (I# x) #)

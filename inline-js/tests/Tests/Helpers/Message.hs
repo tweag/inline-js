@@ -1,18 +1,13 @@
 module Tests.Helpers.Message
-  ( syncEvaluation
-  , asyncEvaluation
+  ( evaluation
   , withEvalTimeout
   , withResolveTimeout
   ) where
 
-import Language.JavaScript.Inline.JSCode
-import Language.JavaScript.Inline.Message.Eval
+import Language.JavaScript.Inline.Core
 
-syncEvaluation :: JSCode -> EvalRequest a
-syncEvaluation = EvalRequest False Nothing Nothing
-
-asyncEvaluation :: JSCode -> EvalRequest a
-asyncEvaluation = EvalRequest True Nothing Nothing
+evaluation :: JSCode -> EvalRequest a
+evaluation = EvalRequest Nothing Nothing
 
 withEvalTimeout :: EvalRequest a -> Int -> EvalRequest a
 withEvalTimeout request milliseconds = request {evalTimeout = pure milliseconds}

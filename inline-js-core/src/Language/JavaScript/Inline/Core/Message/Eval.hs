@@ -2,8 +2,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
+{-# LANGUAGE TypeFamilies #-}
 
-module Language.JavaScript.Inline.Message.Eval
+module Language.JavaScript.Inline.Core.Message.Eval
   ( EvalRequest(..)
   , AllocRequest(..)
   , ImportRequest(..)
@@ -17,42 +18,65 @@ import Data.Coerce
 import qualified Data.Text.Lazy as LText
 import qualified Data.Text.Lazy.Encoding as LText
 import Data.Word
-import qualified Language.JavaScript.Inline.JSCode as JSCode
-import Language.JavaScript.Inline.Message.Class
+import qualified Language.JavaScript.Inline.Core.JSCode as JSCode
+import Language.JavaScript.Inline.Core.Message.Class
 
+-- | Request to run a 'JSCode.JSCode'.
+--
+-- The code is evaluated to a @Promise@ first (if not, the result is called with @Promise.resolve()@ anyway),
+-- then we wait for the @Promise@ to resolve/reject, and finally return the result.
+--
+-- It's possible to specify evaluate/resolve timeout in milliseconds.
+--
+-- When parameterised by 'LBS.ByteString', the result is wrapped by @Buffer.from()@ and returned.
+--
+-- When parameterised by 'JSCode.JSVal', the 'JSCode.JSVal' associated with the result is returned.
+--
+-- When parameterised by '()', the result is discarded.
 data EvalRequest a = EvalRequest
-  { isAsync :: Bool
-  , evalTimeout, resolveTimeout :: Maybe Int
+  { evalTimeout, resolveTimeout :: Maybe Int
   , evalCode :: JSCode.JSCode
   }
 
+-- | Request to allocate a @Buffer@.
+--
+-- Returns a 'JSCode.JSVal'.
 newtype AllocRequest = AllocRequest
   { allocContent :: LBS.ByteString
   }
 
+-- | Request to @import()@ a @.mjs@ ECMAScript module.
+--
+-- Returns a 'JSCode.JSVal' of the module namespace object.
 newtype ImportRequest = ImportRequest
   { importPath :: FilePath
   }
 
+-- | The response type of all requests.
 data EvalResponse a
   = EvalError { evalError :: LBS.ByteString }
   | EvalResult { evalResult :: a }
 
 instance Request (EvalRequest LBS.ByteString) where
+  type ResponseOf (EvalRequest LBS.ByteString) = EvalResponse LBS.ByteString
   putRequest = putEvalRequestWith 0
 
 instance Request (EvalRequest JSCode.JSVal) where
+  type ResponseOf (EvalRequest JSCode.JSVal) = EvalResponse JSCode.JSVal
   putRequest = putEvalRequestWith 1
 
 instance Request (EvalRequest ()) where
+  type ResponseOf (EvalRequest ()) = EvalResponse ()
   putRequest = putEvalRequestWith 2
 
 instance Request AllocRequest where
+  type ResponseOf AllocRequest = EvalResponse JSCode.JSVal
   putRequest AllocRequest {..} = do
     putWord32host 1
     putLazyByteString allocContent
 
 instance Request ImportRequest where
+  type ResponseOf ImportRequest = EvalResponse JSCode.JSVal
   putRequest ImportRequest {..} = do
     putWord32host 2
     putLazyByteString $ LText.encodeUtf8 $ LText.pack importPath
@@ -70,10 +94,6 @@ putEvalRequestWith :: Word32 -> EvalRequest a -> Put
 putEvalRequestWith rt EvalRequest {..} = do
   putWord32host 0
   putWord32host rt
-  putWord32host $
-    if isAsync
-      then 1
-      else 0
   putWord32host $
     fromIntegral $
     case evalTimeout of
