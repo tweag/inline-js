@@ -37,4 +37,5 @@ tests = do
           takeJSVal result_ref <> ".instance.exports.fib(" <>
           fromString (show i) <>
           ")"
+        closeJSSession s
         pure $ eitherDecode' fib_result_buf == Right (fib i)

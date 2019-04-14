@@ -31,6 +31,7 @@ import qualified Data.IntMap.Strict as IntMap
 import Data.Word
 import Foreign
 import GHC.IO.Handle.FD
+import Language.JavaScript.Inline.Core.Internal
 import Language.JavaScript.Inline.Core.Message.Class
 import Language.JavaScript.Inline.Core.MessageCounter
 import qualified Paths_inline_js_core
@@ -68,7 +69,7 @@ defJSSessionOpts =
 
 -- | Represents an active @node@ process and related IPC states.
 data JSSession = JSSession
-  { closeJSSession :: IO () -- ^ Shuts down a 'JSSession'. Not idempotent, don't call more than once.
+  { closeJSSession :: IO () -- ^ Shuts down a 'JSSession'. Safe to call more than once.
   , sendData :: LBS.ByteString -> IO ()
   , recvData :: MsgId -> IO LBS.ByteString
   , nodeStdIn, nodeStdOut, nodeStdErr :: Maybe Handle -- ^ Available when the corresponding inherit flag in 'JSSessionOpts' is 'False'.
@@ -146,15 +147,17 @@ newJSSession JSSessionOpts {..} = do
           w
      in w
   _msg_counter <- newMsgCounter
+  _close <-
+    once $ do
+      killThread send_tid
+      killThread recv_tid
+      terminateProcess _ph
+      case nodeWorkDir of
+        Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
+        _ -> pure ()
   pure
     JSSession
-      { closeJSSession =
-          do killThread send_tid
-             killThread recv_tid
-             terminateProcess _ph
-             case nodeWorkDir of
-               Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
-               _ -> pure ()
+      { closeJSSession = _close
       , sendData =
           \buf -> do
             buf' <- evaluate $ force buf
@@ -186,6 +189,7 @@ withJSSession opts = bracket (newJSSession opts) closeJSSession
 -- The send procedure is asynchronous and returns immediately.
 --
 -- The returned 'IO' action blocks if the response is not yet sent back.
+-- Otherwise the result is memoized, and it's safe to call the action multiple times.
 --
 -- All send/receive operations are thread-safe.
 sendMsg ::
@@ -196,7 +200,7 @@ sendMsg ::
 sendMsg JSSession {..} msg = do
   msg_id <- newMsgId msgCounter
   sendData $ encodeRequest msg_id msg
-  pure $ do
+  once $ do
     buf <- recvData msg_id
     decodeResponse buf
 
