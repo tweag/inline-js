@@ -39,3 +39,5 @@ library:
   source-dirs: src
   generated-exposed-modules:
     - Paths_inline_js_core
+  other-modules:
+    - Language.JavaScript.Inline.Core.Internal
