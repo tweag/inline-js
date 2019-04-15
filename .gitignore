@@ -1,2 +1,5 @@
+.ghc.environment*
 .ghcid
-.stack-work/
+.stack-work
+dist
+dist-newstyle
