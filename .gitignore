@@ -1,3 +1,5 @@
-.stack-work/
-*.cabal
+.ghc.environment*
 .ghcid
+.stack-work
+dist
+dist-newstyle

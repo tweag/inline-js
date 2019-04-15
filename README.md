@@ -92,7 +92,9 @@ Important note: do not run untrusted JavaScript via `inline-js-core`/`inline-js`
 
 Simply `stack build` shall do. Run `stack test inline-js` to run the test suite, `stack test inline-js --test-arguments="-j8"` for parallel testing.
 
-A recent version of `node` and `npm` is required in `PATH`. We test against the latest version of Node.js (11) on CircleCI.
+`cabal new-build` should also work. We've checked in a `cabal.project.freeze` file which matches the Stackage resolver we're using; if you're building with older versions of ghc, please relax the constraints in that file accordingly.
+
+A recent version of `node` and `npm` is required in `PATH`. We test against the latest version of Node.js (11) and Stackage LTS resolver on CircleCI.
 
 ## Sponsors
 
