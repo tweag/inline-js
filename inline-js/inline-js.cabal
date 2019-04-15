@@ -1,0 +1,73 @@
+cabal-version:  2.2
+name:           inline-js
+version:        0.0.1
+category:       Web
+stability:      beta
+homepage:       https://github.com/tweag/inline-js#readme
+bug-reports:    https://github.com/tweag/inline-js/issues
+maintainer:     Shao Cheng <cheng.shao@tweag.io>
+copyright:      (c) 2018 Tweag I/O
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    LICENSE
+data-files:
+    testdata/*.mjs
+    testdata/*.wasm
+
+source-repository head
+  type: git
+  location: https://github.com/tweag/inline-js
+
+common deps
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , filepath
+    , inline-js-core
+    , language-javascript
+    , template-haskell
+    , text
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wnoncanonical-monad-instances
+
+library
+  import: deps
+  exposed-modules:
+      Language.JavaScript.Inline
+  other-modules:
+      Paths_inline_js
+  hs-source-dirs:
+      src
+  default-language: Haskell2010
+
+test-suite inline-js-test-suite
+  import: deps
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Tests.Echo
+      Tests.Evaluation
+      Tests.Helpers.Message
+      Tests.LeftPad
+      Tests.PingPong
+      Tests.Quotation
+      Tests.Wasm
+      Paths_inline_js
+  hs-source-dirs:
+      tests
+  ghc-options: -threaded -rtsopts
+  build-depends:
+      Cabal
+    , QuickCheck
+    , containers
+    , directory
+    , inline-js
+    , process
+    , smallcheck
+    , tasty
+    , tasty-hspec
+    , tasty-quickcheck
+    , tasty-smallcheck
+  default-language: Haskell2010
