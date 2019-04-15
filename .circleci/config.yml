@@ -17,7 +17,7 @@ jobs:
               nixpkgs.gitMinimal \
               nixpkgs.gnutar \
               nixpkgs.gzip \
-              nixpkgs.haskell.compiler.ghc844 \
+              nixpkgs.haskell.compiler.ghc864 \
               nixpkgs.nodejs-11_x \
               nixpkgs.openssh
             cabal new-update
