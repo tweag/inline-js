@@ -13,6 +13,7 @@ jobs:
             nix-channel --update
             nix-env -u
             nix-env -iA \
+              nixpkgs.binutils \
               nixpkgs.cabal-install \
               nixpkgs.gitMinimal \
               nixpkgs.gnutar \
