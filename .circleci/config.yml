@@ -50,3 +50,10 @@ jobs:
           command: |
             stack --nix --no-terminal build --haddock --test --no-run-tests
             stack --nix --no-terminal test inline-js --test-arguments="-j8"
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - inline-js-test-cabal
+      - inline-js-test-stack
