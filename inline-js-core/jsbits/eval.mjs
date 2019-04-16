@@ -27,6 +27,12 @@ const ipc = new Transport(
   })
 );
 
+function bufferFromU32(x) {
+  const buf = Buffer.allocUnsafe(4);
+  buf.writeUInt32LE(x, 0);
+  return buf;
+}
+
 function sendMsg(msg_id, ret_tag, is_err, result) {
   try {
     switch (ret_tag) {
@@ -52,6 +58,20 @@ function sendMsg(msg_id, ret_tag, is_err, result) {
         msg_buf.writeUInt32LE(msg_id, 0);
         msg_buf.writeUInt32LE(0, 4);
         ipc.send(msg_buf);
+        break;
+      }
+      case 3: {
+        const [hs_func_ref, args] = result,
+          buf_args = args.flatMap(arg => {
+            const raw_buf = Buffer.from(arg);
+            return [bufferFromU32(raw_buf.length), raw_buf];
+          });
+        buf_args.unshift(
+          bufferFromU32(msg_id),
+          bufferFromU32(hs_func_ref),
+          bufferFromU32(args.length)
+        );
+        ipc.send(Buffer.concat(buf_args));
         break;
       }
       default: {
@@ -105,6 +125,27 @@ ipc.on("recv", async buf => {
           import_url = url.pathToFileURL(import_path).href,
           import_result = await import(import_url);
         sendMsg(msg_id, 1, false, import_result);
+        break;
+      }
+      case 3: {
+        const hs_func_ref = buf.readUInt32LE(8);
+        sendMsg(
+          msg_id,
+          1,
+          false,
+          (...args) =>
+            new Promise((resolve, reject) => {
+              const callback_id = ctx.JSVal.newJSVal([resolve, reject]);
+              sendMsg(callback_id, 3, false, [hs_func_ref, args]);
+            })
+        );
+        break;
+      }
+      case 4: {
+        const [resolve, reject] = ctx.JSVal.takeJSVal(msg_id),
+          is_err = Boolean(buf.readUInt32LE(8)),
+          hs_result = buf.slice(12);
+        (is_err ? reject : resolve)(hs_result);
         break;
       }
       default: {
