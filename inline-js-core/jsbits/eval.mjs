@@ -1,5 +1,6 @@
 import fs from "fs";
 import process from "process";
+import { StringDecoder } from "string_decoder";
 import url from "url";
 import vm from "vm";
 
@@ -62,7 +63,7 @@ function sendMsg(msg_id, ret_tag, is_err, result) {
   }
 }
 
-const decoder = new TextDecoder("utf-8", { fatal: true });
+const decoder = new StringDecoder("utf8");
 
 ipc.on("recv", async buf => {
   const msg_id = buf.readUInt32LE(0);
@@ -73,7 +74,7 @@ ipc.on("recv", async buf => {
         const ret_tag = buf.readUInt32LE(8),
           eval_timeout = buf.readUInt32LE(12),
           resolve_timeout = buf.readUInt32LE(16),
-          msg_content = decoder.decode(buf.slice(20)),
+          msg_content = decoder.end(buf.slice(20)),
           eval_options = {
             displayErrors: true,
             importModuleDynamically: spec => import(spec)
@@ -100,7 +101,7 @@ ipc.on("recv", async buf => {
         break;
       }
       case 2: {
-        const import_path = decoder.decode(buf.slice(8)),
+        const import_path = decoder.end(buf.slice(8)),
           import_url = url.pathToFileURL(import_path).href,
           import_result = await import(import_url);
         sendMsg(msg_id, 1, false, import_result);
