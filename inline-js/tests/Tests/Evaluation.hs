@@ -11,7 +11,6 @@ import Data.Aeson
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
 import Language.JavaScript.Inline.Core
-import Language.JavaScript.Inline.Core.Message.Class
 import Test.Tasty (TestTree)
 import Test.Tasty.Hspec (it, shouldBe, testSpec)
 import Tests.Helpers.Message

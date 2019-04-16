@@ -17,6 +17,7 @@ module Language.JavaScript.Inline.Core
   , freeJSVal
   , takeJSVal
   , Request
+  , ResponseOf
   , Response
   , EvalRequest(..)
   , AllocRequest(..)
