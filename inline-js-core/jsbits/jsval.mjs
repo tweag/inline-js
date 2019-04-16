@@ -1,13 +1,13 @@
 class JSValManager {
   constructor() {
     this.map = new Map([[0, null]]);
-    this.last = 1;
+    this.last = 0;
     Object.seal(this);
   }
 
   newJSVal(v) {
     if (v === undefined || v === null) return 0;
-    const k = this.last++;
+    const k = (this.last += 2);
     this.map.set(k, v);
     return k;
   }

@@ -23,15 +23,17 @@ source-repository head
 library
   exposed-modules:
       Language.JavaScript.Inline.Core
+  other-modules:
       Language.JavaScript.Inline.Core.Command
+      Language.JavaScript.Inline.Core.HSCode
+      Language.JavaScript.Inline.Core.Internal
       Language.JavaScript.Inline.Core.JSCode
       Language.JavaScript.Inline.Core.Message.Class
       Language.JavaScript.Inline.Core.Message.Eval
+      Language.JavaScript.Inline.Core.Message.HSCode
       Language.JavaScript.Inline.Core.MessageCounter
       Language.JavaScript.Inline.Core.Session
       Paths_inline_js_core
-  other-modules:
-      Language.JavaScript.Inline.Core.Internal
   autogen-modules:
       Paths_inline_js_core
   hs-source-dirs:

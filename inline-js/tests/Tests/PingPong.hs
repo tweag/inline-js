@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Tests.PingPong
@@ -9,6 +11,7 @@ import Control.Monad.Fail
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson
 import Data.Int
+import Data.List
 import Data.Maybe
 import qualified Data.Text as Text
 import GHC.Exts
@@ -47,16 +50,22 @@ tests =
     withMaxSuccess 1024 $
     monadicIO $ do
       s <- liftIO getSetup
+      (f, _) <-
+        liftIO $
+        exportHSFunc s $
+        HSFunc $ \bufs -> pure $ "[" <> mconcat (intersperse "," bufs) <> "]"
       forAllM genValue $ \v ->
         run $ do
           v_buf_ref <- alloc s $ encode v
+          v_buf_ref' <-
+            eval s $ deRefJSVal f <> "(" <> takeJSVal v_buf_ref <> ")"
           _recv_v <-
             fmap (fromJust . decode') $
             eval s $
-            jsonStringify $ jsonParse $ bufferToString $ deRefJSVal v_buf_ref
-          unless (v == _recv_v) $
+            jsonStringify (jsonParse $ bufferToString $ deRefJSVal v_buf_ref')
+          unless (Array [v] == _recv_v) $
             fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
-          () <- eval s $ freeJSVal v_buf_ref
+          () <- eval s $ freeJSVal v_buf_ref'
           pure ()
 
 setup :: IO JSSession

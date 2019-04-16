@@ -12,6 +12,7 @@ module Language.JavaScript.Inline.Core.Session
   , withJSSession
   , sendMsg
   , sendRecv
+  , newHSFunc
   , nodeStdIn
   , nodeStdOut
   , nodeStdErr
@@ -19,20 +20,22 @@ module Language.JavaScript.Inline.Core.Session
 
 import Control.Concurrent
 import Control.Concurrent.STM
-import Control.DeepSeq
 import Control.Exception
 import Control.Monad
+import Data.Binary.Put
 import Data.ByteString.Builder
-import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce
 import Data.Foldable
+import Data.IORef
 import qualified Data.IntMap.Strict as IntMap
+import Data.IntMap.Strict (IntMap)
 import Data.Word
-import Foreign
 import GHC.IO.Handle.FD
+import Language.JavaScript.Inline.Core.HSCode
 import Language.JavaScript.Inline.Core.Internal
 import Language.JavaScript.Inline.Core.Message.Class
+import Language.JavaScript.Inline.Core.Message.HSCode
 import Language.JavaScript.Inline.Core.MessageCounter
 import qualified Paths_inline_js_core
 import System.Directory
@@ -74,13 +77,8 @@ data JSSession = JSSession
   , recvData :: MsgId -> IO LBS.ByteString
   , nodeStdIn, nodeStdOut, nodeStdErr :: Maybe Handle -- ^ Available when the corresponding inherit flag in 'JSSessionOpts' is 'False'.
   , msgCounter :: MsgCounter
+  , hsFuncs :: IORef (IntMap HSFunc, Int)
   }
-
-hGet' :: Handle -> Ptr a -> Int -> IO ()
-hGet' h p l = do
-  l' <- hGetBuf h p l
-  unless (l' == l) $
-    fail $ "hGet': expected " <> show l <> " bytes, got " <> show l'
 
 -- | Initializes a new 'JSSession'.
 newJSSession :: JSSessionOpts -> IO JSSession
@@ -128,22 +126,45 @@ newJSSession JSSessionOpts {..} = do
             word32LE (fromIntegral $ LBS.length buf) <> lazyByteString buf
           w
      in w
+  _hs_funcs <- newIORef (IntMap.empty, 1)
   recv_map <- newTVarIO IntMap.empty
   recv_tid <-
     forkIO $
     let w = do
-          len <-
-            alloca $ \p -> do
-              hGet' rh0 p 4
-              peek p
-          msg_id <-
-            alloca $ \p -> do
-              hGet' rh0 p 4
-              peek p
-          let len' = fromIntegral (len :: Word32) - 4
-              msg_id' = fromIntegral (msg_id :: Word32)
-          buf <- fmap LBS.fromStrict $ BS.create len' $ \p -> hGet' rh0 p len'
-          atomically $ modifyTVar' recv_map $ IntMap.insert msg_id' buf
+          len <- peekHandle rh0
+          msg_id <- peekHandle rh0
+          if odd msg_id
+            then do
+              let len' = fromIntegral (len :: Word32) - 4
+                  msg_id' = fromIntegral (msg_id :: Word32)
+              buf <- hGetLBS rh0 len'
+              atomically $ modifyTVar' recv_map $ IntMap.insert msg_id' buf
+            else do
+              hs_func_ref <- peekHandle rh0
+              args_len <- peekHandle rh0
+              args <-
+                replicateM (fromIntegral (args_len :: Word32)) $ do
+                  arg_len <- peekHandle rh0
+                  hGetLBS rh0 (fromIntegral (arg_len :: Word32))
+              void $
+                forkIO $ do
+                  r <-
+                    tryAny $ do
+                      let ref = fromIntegral (hs_func_ref :: Word32)
+                      hs_func <- (IntMap.! ref) . fst <$> readIORef _hs_funcs
+                      runHSFunc hs_func args
+                  atomically $
+                    writeTQueue send_queue $
+                    runPut $ do
+                      putWord32host msg_id
+                      putWord32host 4
+                      case r of
+                        Left err -> do
+                          putWord32host 1
+                          putBuilder $ stringUtf8 $ show err
+                        Right buf -> do
+                          putWord32host 0
+                          putLazyByteString buf
           w
      in w
   _msg_counter <- newMsgCounter
@@ -152,16 +173,14 @@ newJSSession JSSessionOpts {..} = do
       killThread send_tid
       killThread recv_tid
       terminateProcess _ph
+      atomicWriteIORef _hs_funcs (IntMap.empty, 1)
       case nodeWorkDir of
         Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
         _ -> pure ()
   pure
     JSSession
       { closeJSSession = _close
-      , sendData =
-          \buf -> do
-            buf' <- evaluate $ force buf
-            atomically $ writeTQueue send_queue buf'
+      , sendData = atomically . writeTQueue send_queue
       , recvData =
           \msg_id ->
             atomically $ do
@@ -178,6 +197,7 @@ newJSSession JSSessionOpts {..} = do
       , nodeStdOut = _m_stdout
       , nodeStdErr = _m_stderr
       , msgCounter = _msg_counter
+      , hsFuncs = _hs_funcs
       }
 
 -- | Use 'bracket' to ensure 'closeJSSession' is called.
@@ -208,3 +228,14 @@ sendMsg JSSession {..} msg = do
 sendRecv ::
      (Request r, Response (ResponseOf r)) => JSSession -> r -> IO (ResponseOf r)
 sendRecv s = join . sendMsg s
+
+-- | Register an 'HSFunc' into the current 'JSSession',
+-- returns the request to actually make the JavaScript wrapper and the finalizer.
+--
+-- In most cases you just need the synchronous 'Language.JavaScript.Inline.Core.exportHSFunc'.
+newHSFunc :: JSSession -> HSFunc -> IO (ExportHSFuncRequest, IO ())
+newHSFunc JSSession {..} f =
+  atomicModifyIORef' hsFuncs $ \(m, l) ->
+    ( (IntMap.insert l f m, succ l)
+    , ( coerce l
+      , atomicModifyIORef' hsFuncs $ \(m', l') -> ((IntMap.delete l m', l'), ())))

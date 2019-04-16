@@ -7,10 +7,12 @@ module Language.JavaScript.Inline.Core.Command
   ( eval
   , alloc
   , importMJS
+  , exportHSFunc
   ) where
 
 import Control.Monad.Fail
 import qualified Data.ByteString.Lazy as LBS
+import Language.JavaScript.Inline.Core.HSCode
 import Language.JavaScript.Inline.Core.JSCode
 import Language.JavaScript.Inline.Core.Message.Class
 import Language.JavaScript.Inline.Core.Message.Eval
@@ -61,3 +63,16 @@ importMJS :: JSSession -> FilePath -> IO JSVal
 importMJS s p = do
   p' <- canonicalizePath p
   sendRecv s ImportRequest {importPath = p'} >>= checkEvalResponse
+
+-- | Exports an 'HSFunc' to JavaScript,
+-- returns the JavaScript wrapper function's 'JSVal' and a finalizer to free the 'HSFunc'.
+-- When the 'HSFunc' is no longer used,
+-- first call 'freeJSVal' to free the JavaScript wrapper function,
+-- then call the finalizer to remove the registered 'HSFunc' from the current 'JSSession'.
+--
+-- Throws in Haskell if the response indicates a failure.
+exportHSFunc :: JSSession -> HSFunc -> IO (JSVal, IO ())
+exportHSFunc s f = do
+  (r, fin) <- newHSFunc s f
+  v <- sendRecv s r >>= checkEvalResponse
+  pure (v, fin)
