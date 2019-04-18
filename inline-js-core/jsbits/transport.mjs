@@ -1,6 +1,11 @@
 import fs from "fs";
 import { parentPort, workerData } from "worker_threads";
 
+const shared_futex = workerData[2],
+  shared_flag = workerData[3],
+  shared_msg_len = workerData[4],
+  shared_msg_buf = workerData[5];
+
 function bufferFromU32(x) {
   const buf = Buffer.allocUnsafe(4);
   buf.writeUInt32LE(x, 0);
@@ -30,7 +35,17 @@ class Transport {
         const msg_buf = this.iRest.slice(0, this.iMsgLen),
           msg_id = msg_buf.readUInt32LE(0),
           msg_tag = msg_buf.readUInt32LE(4);
-        parentPort.postMessage([msg_id, msg_tag, msg_buf.slice(8)]);
+        if (msg_id) {
+          parentPort.postMessage([msg_id, msg_tag, msg_buf.slice(8)]);
+        } else {
+          const is_err = msg_buf.readUInt32LE(8),
+            hs_result = msg_buf.slice(12);
+          hs_result.copy(shared_msg_buf);
+          Atomics.store(shared_msg_len, 0, hs_result.length);
+          Atomics.store(shared_flag, 0, is_err);
+          Atomics.store(shared_futex, 0, 1);
+          Atomics.notify(shared_futex, 0, 1);
+        }
         this.iRest = this.iRest.slice(this.iMsgLen);
         this.iMsgLen = 0;
       }

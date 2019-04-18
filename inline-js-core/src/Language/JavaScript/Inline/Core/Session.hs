@@ -233,9 +233,9 @@ sendRecv s = join . sendMsg s
 -- returns the request to actually make the JavaScript wrapper and the finalizer.
 --
 -- In most cases you just need the synchronous 'Language.JavaScript.Inline.Core.exportHSFunc'.
-newHSFunc :: JSSession -> HSFunc -> IO (ExportHSFuncRequest, IO ())
-newHSFunc JSSession {..} f =
+newHSFunc :: JSSession -> Bool -> HSFunc -> IO (ExportHSFuncRequest, IO ())
+newHSFunc JSSession {..} s f =
   atomicModifyIORef' hsFuncs $ \(m, l) ->
     ( (IntMap.insert l f m, succ l)
-    , ( coerce l
+    , ( ExportHSFuncRequest {sync = s, exportHSFuncRef = coerce l}
       , atomicModifyIORef' hsFuncs $ \(m', l') -> ((IntMap.delete l m', l'), ())))

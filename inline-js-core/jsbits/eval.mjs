@@ -14,6 +14,10 @@ process.on("uncaughtException", err => {
 
 const ctx = vm.createContext(context_global),
   decoder = new StringDecoder("utf8"),
+  shared_futex = new Int32Array(new SharedArrayBuffer(4)),
+  shared_flag = new Int32Array(new SharedArrayBuffer(4)),
+  shared_msg_len = new Int32Array(new SharedArrayBuffer(4)),
+  shared_msg_buf = new Uint8Array(new SharedArrayBuffer(1048576)),
   ipc = new Worker(
     path.join(
       path.dirname(url.fileURLToPath(import.meta.url)),
@@ -22,7 +26,11 @@ const ctx = vm.createContext(context_global),
     {
       workerData: [
         Number.parseInt(process.argv[process.argv.length - 1]),
-        Number.parseInt(process.argv[process.argv.length - 2])
+        Number.parseInt(process.argv[process.argv.length - 2]),
+        shared_futex,
+        shared_flag,
+        shared_msg_len,
+        shared_msg_buf
       ]
     }
   );
@@ -96,6 +104,23 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
           is_err = Boolean(buf.readUInt32LE(0)),
           hs_result = buf.slice(4);
         (is_err ? reject : resolve)(hs_result);
+        break;
+      }
+      case 5: {
+        const hs_func_ref = buf.readUInt32LE(0);
+        sendMsg(msg_id, 1, false, (...args) => {
+          Atomics.store(shared_futex, 0, 0);
+          sendMsg(0, 3, false, [hs_func_ref, args]);
+          Atomics.wait(shared_futex, 0, 0);
+          const is_err = Boolean(Atomics.load(shared_flag)),
+            result = Buffer.from(
+              shared_msg_buf.buffer,
+              0,
+              Atomics.load(shared_msg_len, 0)
+            );
+          if (is_err) throw result;
+          else return result;
+        });
         break;
       }
       default: {
