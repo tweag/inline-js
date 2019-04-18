@@ -50,11 +50,13 @@ data JSSessionOpts = JSSessionOpts
   , nodeExtraArgs :: [String] -- ^ Extra arguments passed to @node@. Can't be accessed via @process.argv@.
   , nodeWorkDir :: Maybe FilePath -- ^ Working directory of @node@. To @import()@ npm installed modules, set to the directory containing @node_modules@.
   , nodeStdInInherit, nodeStdOutInherit, nodeStdErrInherit :: Bool -- ^ Inherit stdio handles of @node@ from the host process.
+  , nodeSharedMemSize :: Int -- ^ Shared memory size of @node@ in megabytes.
   }
 
 -- | A sensible default 'JSSessionOpts'.
 --
 -- Uses @node@ from @PATH@ and sets the inherit flags to 'False'.
+-- Shared memory size defaults to 1MB.
 {-# NOINLINE defJSSessionOpts #-}
 defJSSessionOpts :: JSSessionOpts
 defJSSessionOpts =
@@ -68,6 +70,7 @@ defJSSessionOpts =
         , nodeStdInInherit = False
         , nodeStdOutInherit = False
         , nodeStdErrInherit = False
+        , nodeSharedMemSize = 1
         }
 
 -- | Represents an active @node@ process and related IPC states.
@@ -102,7 +105,12 @@ newJSSession JSSessionOpts {..} = do
     createProcess
       (proc nodePath $
        nodeExtraArgs <>
-       ["--experimental-modules", mjss_dir </> "eval.mjs", show wfd0, show rfd1])
+       [ "--experimental-modules"
+       , mjss_dir </> "eval.mjs"
+       , show nodeSharedMemSize
+       , show wfd0
+       , show rfd1
+       ])
         { cwd = nodeWorkDir
         , std_in =
             if nodeStdInInherit
@@ -232,7 +240,11 @@ sendRecv s = join . sendMsg s
 -- | Register an 'HSFunc' into the current 'JSSession',
 -- returns the request to actually make the JavaScript wrapper and the finalizer.
 --
--- In most cases you just need the synchronous 'Language.JavaScript.Inline.Core.exportHSFunc'.
+-- In most cases you just need 'Language.JavaScript.Inline.Core.exportHSFunc'.
+--
+-- The 'Bool' flag indicates whether the resulting JavaScript wrapper function is synchronous.
+-- Ensure your 'HSFunc' result value is no longer than 'nodeSharedMemSize'.
+-- Remember, making it synchronous is a very heavy hammer, only enable the flag as a last resort!
 newHSFunc :: JSSession -> Bool -> HSFunc -> IO (ExportHSFuncRequest, IO ())
 newHSFunc JSSession {..} s f =
   atomicModifyIORef' hsFuncs $ \(m, l) ->

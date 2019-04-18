@@ -78,6 +78,9 @@ exportHSFunc s f = do
   v <- sendRecv s r >>= checkEvalResponse
   pure (v, fin)
 
+-- | Like 'exportHSFunc', except the JavaScript function is made synchronous.
+-- Very heavy hammer, only use as a last resort,
+-- and make sure the result's length doesn't exceed 'nodeSharedMemSize'.
 exportSyncHSFunc :: JSSession -> HSFunc -> IO (JSVal, IO ())
 exportSyncHSFunc s f = do
   (r, fin) <- newHSFunc s True f

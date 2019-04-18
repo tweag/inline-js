@@ -17,7 +17,11 @@ const ctx = vm.createContext(context_global),
   shared_futex = new Int32Array(new SharedArrayBuffer(4)),
   shared_flag = new Int32Array(new SharedArrayBuffer(4)),
   shared_msg_len = new Int32Array(new SharedArrayBuffer(4)),
-  shared_msg_buf = new Uint8Array(new SharedArrayBuffer(1048576)),
+  shared_msg_buf = new Uint8Array(
+    new SharedArrayBuffer(
+      Number.parseInt(process.argv[process.argv.length - 3]) * 1048576
+    )
+  ),
   ipc = new Worker(
     path.join(
       path.dirname(url.fileURLToPath(import.meta.url)),
