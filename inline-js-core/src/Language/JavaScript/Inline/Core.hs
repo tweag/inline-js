@@ -32,6 +32,7 @@ module Language.JavaScript.Inline.Core
   , importMJS
   , newHSFunc
   , exportHSFunc
+  , exportSyncHSFunc
   ) where
 
 import Language.JavaScript.Inline.Core.Command

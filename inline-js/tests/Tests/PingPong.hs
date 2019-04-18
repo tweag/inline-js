@@ -54,6 +54,7 @@ tests =
         liftIO $
         exportHSFunc s $
         HSFunc $ \bufs -> pure $ "[" <> mconcat (intersperse "," bufs) <> "]"
+      (f', _) <- liftIO $ exportSyncHSFunc s $ HSFunc $ pure . mconcat
       forAllM genValue $ \v ->
         run $ do
           v_buf_ref <- alloc s $ encode v
@@ -62,7 +63,10 @@ tests =
           _recv_v <-
             fmap (fromJust . decode') $
             eval s $
-            jsonStringify (jsonParse $ bufferToString $ deRefJSVal v_buf_ref')
+            jsonStringify
+              (jsonParse $
+               bufferToString $
+               deRefJSVal f' <> "(" <> deRefJSVal v_buf_ref' <> ")")
           unless (Array [v] == _recv_v) $
             fail $ "pingpong: pong mismatch: " <> show (v, _recv_v)
           () <- eval s $ freeJSVal v_buf_ref'

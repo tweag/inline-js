@@ -8,6 +8,7 @@ module Language.JavaScript.Inline.Core.Command
   , alloc
   , importMJS
   , exportHSFunc
+  , exportSyncHSFunc
   ) where
 
 import Control.Monad.Fail
@@ -73,6 +74,15 @@ importMJS s p = do
 -- Throws in Haskell if the response indicates a failure.
 exportHSFunc :: JSSession -> HSFunc -> IO (JSVal, IO ())
 exportHSFunc s f = do
-  (r, fin) <- newHSFunc s f
+  (r, fin) <- newHSFunc s False f
+  v <- sendRecv s r >>= checkEvalResponse
+  pure (v, fin)
+
+-- | Like 'exportHSFunc', except the JavaScript function is made synchronous.
+-- Very heavy hammer, only use as a last resort,
+-- and make sure the result's length doesn't exceed 'nodeSharedMemSize'.
+exportSyncHSFunc :: JSSession -> HSFunc -> IO (JSVal, IO ())
+exportSyncHSFunc s f = do
+  (r, fin) <- newHSFunc s True f
   v <- sendRecv s r >>= checkEvalResponse
   pure (v, fin)

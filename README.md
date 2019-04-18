@@ -76,6 +76,7 @@ The `expr`/`block` QuasiQuoters in `inline-js` pass JSON data between Haskell/Ja
 * Run dynamic `import()` to import a built-in module, npm module in `node_modules`, or a `.mjs` module file.
 * Specify evaluate/resolve timeouts when evaluating JavaScript.
 * Decouple the send/receive processes, so it's possible to asynchronously send a batch of requests and later retrieve the responses.
+* Exporting a Haskell function as a JavaScript function. It's even possible to make the JavaScript function *synchronous* so it can be used as a WebAssembly import!
 * Manipulate `stdin`/`stdout`/`stderr` handles of the underlying `node` process.
 
 See the haddock documentation of `Language.JavaScript.Inline.Core` for details. If you're using `inline-js`, `Language.JavaScript.Inline` also re-exports that module.

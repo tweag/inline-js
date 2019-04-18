@@ -10,8 +10,9 @@ import qualified Data.ByteString.Lazy as LBS
 -- each argument is converted to binary with @Buffer.from()@.
 -- The Haskell function computes and returns the result in a forked thread.
 --
--- Note that the JavaScript wrapper is an async function, and either
--- resolves with the result, or rejects with an UTF-8 encoded Haskell exception.
+-- Note that the JavaScript wrapper is an async function by default, and returns a
+-- @Promise@ which either resolves with a @Buffer@ result,
+-- or rejects with an UTF-8 encoded Haskell exception.
 newtype HSFunc = HSFunc
   { runHSFunc :: [LBS.ByteString] -> IO LBS.ByteString
   }

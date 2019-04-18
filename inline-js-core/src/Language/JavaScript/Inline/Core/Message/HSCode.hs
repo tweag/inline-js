@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -13,12 +14,16 @@ import Language.JavaScript.Inline.Core.Message.Eval
 
 -- | Request to export an 'HSFunc' as a JavaScript wrapper function.
 -- The wrapper is returned as 'JSVal'.
-newtype ExportHSFuncRequest = ExportHSFuncRequest
-  { exportHSFuncRef :: HSFuncRef
+data ExportHSFuncRequest = ExportHSFuncRequest
+  { sync :: Bool
+  , exportHSFuncRef :: HSFuncRef
   }
 
 instance Request ExportHSFuncRequest where
   type ResponseOf ExportHSFuncRequest = EvalResponse JSVal
-  putRequest ExportHSFuncRequest {exportHSFuncRef = HSFuncRef r} = do
-    putWord32host 3
+  putRequest ExportHSFuncRequest {exportHSFuncRef = HSFuncRef r, ..} = do
+    putWord32host $
+      if sync
+        then 5
+        else 3
     putWord32host $ fromIntegral r
