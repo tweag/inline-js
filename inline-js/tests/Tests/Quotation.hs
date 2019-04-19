@@ -2,6 +2,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Tests.Quotation
   ( tests
@@ -9,6 +10,7 @@ module Tests.Quotation
 
 import Control.Monad (forM_)
 import Data.Aeson (FromJSON(..), ToJSON(..))
+import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Text (pack)
 import GHC.Generics (Generic)
 import Language.JavaScript.Inline
@@ -115,3 +117,11 @@ tests =
             }
           |]
       result `shouldBe` "Your HP: 10/30"
+    it "should pass and return a lazy ByteString" $ do
+      let buf = LBS.pack "SPICE GIRL WANNABEEE"
+      result <-
+        withJSSession defJSSessionOpts $ \s -> do
+          () <- [expr| global.x = $buf |] s
+          (v :: JSVal) <- [expr| global.x |] s
+          [expr| $v |] s
+      result `shouldBe` buf

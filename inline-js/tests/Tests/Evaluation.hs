@@ -10,58 +10,44 @@ module Tests.Evaluation
 import Data.Aeson
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
+import Data.Functor
 import Language.JavaScript.Inline.Core
 import Test.Tasty (TestTree)
-import Test.Tasty.Hspec (it, shouldBe, testSpec)
-import Tests.Helpers.Message
+import Test.Tasty.Hspec
 
 tests :: IO TestTree
 tests =
   testSpec "JSCode Evaluation" $
   it "Should Handle Many Mixed-Async-and-Sync Requests" $
   withJSSession defJSSessionOpts $ \s -> do
-    let requestTest ::
-             ( Request (EvalRequest r)
-             , Response (EvalResponse r)
-             , ResponseOf (EvalRequest r) ~ (EvalResponse r)
-             )
-          => (EvalRequest r, EvalResponse r -> IO ())
-          -> IO (IO (EvalResponse r), EvalResponse r -> IO ())
-        requestTest (request, test) = do
-          c <- sendMsg s request
-          pure (c, test)
-        recvAndRunTest (c, test) = do
-          result <- c
-          test result
-    testPairs <-
-      traverse
-        requestTest
-        [ ( evaluation "import('fs').then(fs => fs.readFileSync.toString())"
-          , \r -> isError r `shouldBe` False)
-        , (evaluation "while(true){}" `withEvalTimeout` 1000, failsToReturn)
-        , (evaluation "BOOM", failsToReturn)
-        , ( evaluation "let x = 6*7; JSON.stringify(null)"
-          , successfullyReturns Null)
-        , (evaluation "JSON.stringify(x)", successfullyReturns $ Number 42)
-        , ( evaluation "JSON.stringify(\"left\" + \"pad\")"
-          , successfullyReturns $ String "leftpad")
-        , (evaluation "Promise.reject('BOOM')", failsToReturn)
-        , ( evaluation "Promise.resolve(JSON.stringify(x))"
-          , successfullyReturns $ Number 42)
-        , ( evaluation "new Promise((resolve, _) => setTimeout(resolve, 10000))" `withResolveTimeout`
-            1000
-          , failsToReturn)
-        ]
-    traverse_ recvAndRunTest testPairs
+    let testPair :: (IO LBS.ByteString, IO LBS.ByteString -> IO ()) -> IO ()
+        testPair (c, f) = f c
+    traverse_
+      testPair
+      [ (eval s "import('fs').then(fs => fs.readFileSync.toString())", notError)
+      , (evalWithTimeout s (Just 1000) Nothing "while(true){}", isError)
+      , (eval s "BOOM", isError)
+      , (eval s "let x = 6*7; JSON.stringify(null)", successfullyReturns Null)
+      , (eval s "JSON.stringify(x)", successfullyReturns $ Number 42)
+      , ( eval s "JSON.stringify(\"left\" + \"pad\")"
+        , successfullyReturns $ String "leftpad")
+      , (eval s "Promise.reject('BOOM')", isError)
+      , ( eval s "Promise.resolve(JSON.stringify(x))"
+        , successfullyReturns $ Number 42)
+      , ( evalWithTimeout
+            s
+            Nothing
+            (Just 1000)
+            "new Promise((resolve, _) => setTimeout(resolve, 10000))"
+        , isError)
+      ]
 
-failsToReturn :: EvalResponse r -> IO ()
-failsToReturn r = isError r `shouldBe` True
+successfullyReturns :: Value -> IO LBS.ByteString -> IO ()
+successfullyReturns expected c = do
+  r <- c
+  decode' r `shouldBe` Just expected
 
-successfullyReturns :: Value -> EvalResponse LBS.ByteString -> IO ()
-successfullyReturns expected r = do
-  isError r `shouldBe` False
-  decode' (evalResult r) `shouldBe` Just expected
+isError, notError :: IO a -> IO ()
+isError = (`shouldThrow` anyException)
 
-isError :: EvalResponse r -> Bool
-isError EvalError {} = True
-isError _ = False
+notError = void

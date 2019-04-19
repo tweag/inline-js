@@ -7,12 +7,13 @@ module Language.JavaScript.Inline
   , module Language.JavaScript.Inline.Core
   ) where
 
-import qualified Data.Aeson as Aeson
 import Data.ByteString.Builder
+import Data.Coerce
 import Data.List (nub)
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH (Q)
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
+import Language.JavaScript.Inline.Class
 import Language.JavaScript.Inline.Core
 import Language.JavaScript.Parser.Lexer (Token(..), alexTestTokeniser)
 
@@ -25,16 +26,24 @@ qq myQQ =
     , quoteDec = error "Language.JavaScript.Inline: quoteDec"
     }
 
--- | Produces expression splices with type @'Aeson.FromJSON' a => 'JSSession' -> 'IO' a@
+-- | Produces expression splices with type @'FromEvalResult' a => 'JSSession' -> 'IO' a@.
+-- Some things to keep in mind here:
 --
--- The spliced string should be a valid JavaScript expression.
--- Shall you need to write control-flow statements, please use 'block' instead.
+-- 1. The spliced string should be a valid JavaScript expression.
+-- To write control-flow statements, it's better to use 'block' instead.
 --
--- Note that it's possible to use @await@ in both 'expr' and 'block',
--- since the code is wrapped into an async arrow function under the hood.
+-- 2. The spliced JavaScript expression is wrapped in an async arrow function,
+-- and the returned @Promise@ is resolved to get the result to the Haskell side.
+-- This means it's possible to use @await@ here. This applies to both 'expr' and 'block'.
 --
--- Use @$some_hs_var@ to refer to an in-scope Haskell variable.
--- The variable's type should be an 'Aeson.ToJSON' instance.
+-- 3. Use @$some_hs_var@ to refer to an in-scope Haskell variable.
+-- The variable's type should be an 'ToJSCode' instance.
+-- 'ToJSCode' class is not exposed, but it works for any 'Data.Aeson.ToJSON' instance,
+-- plus 'JSVal' and several @bytestring@ types.
+--
+-- 4. Likewise, 'FromEvalResult' isn't exposed either, but it works for 'Data.Aeson.FromJSON'
+-- instances, 'JSVal's and @bytestring@ types. Explicit type annotation of the returned value
+-- is often needed.
 expr :: QuasiQuoter
 expr = qq expressionQuasiQuoter
 
@@ -44,7 +53,7 @@ expr = qq expressionQuasiQuoter
 -- JavaScript control-flow features (e.g. loops, try/catch) are supported.
 -- Use @return@ to return the result.
 --
--- Most rules of 'expr' also apply to 'block'.
+-- The other rules of 'expr' also apply to 'block'.
 block :: QuasiQuoter
 block = qq blockQuasiQuoter
 
@@ -57,9 +66,10 @@ blockQuasiQuoter input =
       antiquotedParameterNames =
         nub [name | IdentifierToken {tokenLiteral = ('$':name)} <- tokens]
       wrappedCode = wrapCode input antiquotedParameterNames
-   in [|\session -> do
-          result <- eval session $ JSCode $(wrappedCode)
-          either fail pure $ Aeson.eitherDecode' result|]
+   in [|\session ->
+          withFromEvalResult $ \p f -> do
+            result <- eval session $ JSCode ($(wrappedCode) p)
+            either fail pure (f result)|]
 
 -- |
 -- This fits the quasiquoted content into following format:
@@ -74,15 +84,18 @@ blockQuasiQuoter input =
 --
 wrapCode :: String -> [String] -> Q TH.Exp
 wrapCode code antiquotedNames =
-  [|mconcat
-      [ string7 "(async ( "
-      , $(argumentList antiquotedNames)
-      , string7 " ) => { "
-      , stringUtf8 code
-      , string7 " })( "
-      , $(argumentValues antiquotedNames)
-      , string7 " ).then(r => JSON.stringify(r))"
-      ]|]
+  [|\p ->
+      mconcat
+        [ string7 "(async ( "
+        , $(argumentList antiquotedNames)
+        , string7 " ) => { "
+        , stringUtf8 code
+        , string7 " })( "
+        , $(argumentValues antiquotedNames)
+        , string7 " ).then("
+        , coerce p
+        , string7 ")"
+        ]|]
 
 argumentList :: [String] -> Q TH.Exp
 argumentList rawNames =
@@ -102,6 +115,6 @@ argumentValues rawNames =
       foldr
         (\name acc ->
            [|$(acc) <> string7 ", " <>
-             lazyByteString (Aeson.encode $(TH.varE $ TH.mkName name))|])
-        [|lazyByteString (Aeson.encode $(TH.varE $ TH.mkName firstName))|]
+             coerce (toJSCode $(TH.varE $ TH.mkName name))|])
+        [|coerce (toJSCode $(TH.varE $ TH.mkName firstName))|]
         names

@@ -12,33 +12,26 @@ module Language.JavaScript.Inline.Core
   , bufferToString
   , jsonParse
   , jsonStringify
-  , JSVal
+  , JSVal(..)
   , deRefJSVal
   , freeJSVal
   , takeJSVal
   , HSFunc(..)
-  , Request
-  , ResponseOf
-  , Response
-  , EvalRequest(..)
-  , AllocRequest(..)
-  , ImportRequest(..)
-  , ExportHSFuncRequest
-  , EvalResponse(..)
-  , sendMsg
-  , sendRecv
   , eval
+  , evalWithTimeout
   , alloc
   , importMJS
-  , newHSFunc
   , exportHSFunc
   , exportSyncHSFunc
+  , eval'
+  , evalWithTimeout'
+  , alloc'
+  , importMJS'
+  , exportHSFunc'
+  , exportSyncHSFunc'
   ) where
 
 import Language.JavaScript.Inline.Core.Command
 import Language.JavaScript.Inline.Core.HSCode
-import Language.JavaScript.Inline.Core.JSCode
-import Language.JavaScript.Inline.Core.Message.Class
-import Language.JavaScript.Inline.Core.Message.Eval
-import Language.JavaScript.Inline.Core.Message.HSCode
+import Language.JavaScript.Inline.Core.JSCode hiding (importMJS)
 import Language.JavaScript.Inline.Core.Session

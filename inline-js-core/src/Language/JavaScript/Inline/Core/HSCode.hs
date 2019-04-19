@@ -13,6 +13,13 @@ import qualified Data.ByteString.Lazy as LBS
 -- Note that the JavaScript wrapper is an async function by default, and returns a
 -- @Promise@ which either resolves with a @Buffer@ result,
 -- or rejects with an UTF-8 encoded Haskell exception.
+--
+-- It's possible to export Haskell functions with more fanciful types;
+-- one just needs to manually supply wrappers on both the Haskell/JavaScript end
+-- to perform serialization/deserialization.
+--
+-- Note: I tried very hard to introduce a nice type-directed export mechanism here,
+-- but gave up upon too many died brain cells :(
 newtype HSFunc = HSFunc
   { runHSFunc :: [LBS.ByteString] -> IO LBS.ByteString
   }

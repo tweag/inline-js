@@ -55,51 +55,12 @@ class Transport {
 
 const ipc = new Transport(workerData[0], workerData[1]);
 
-parentPort.on("message", ([msg_id, ret_tag, is_err, result]) => {
-  let buf;
-  switch (ret_tag) {
-    case 0: {
-      const result_buf = Buffer.from(result),
-        msg_buf = Buffer.allocUnsafe(8 + result_buf.length);
-      msg_buf.writeUInt32LE(msg_id, 0);
-      msg_buf.writeUInt32LE(Number(is_err), 4);
-      result_buf.copy(msg_buf, 8);
-      buf = msg_buf;
-      break;
-    }
-    case 1: {
-      const msg_buf = Buffer.allocUnsafe(12);
-      msg_buf.writeUInt32LE(msg_id, 0);
-      msg_buf.writeUInt32LE(0, 4);
-      msg_buf.writeUInt32LE(result, 8);
-      buf = msg_buf;
-      break;
-    }
-    case 2: {
-      const msg_buf = Buffer.allocUnsafe(8);
-      msg_buf.writeUInt32LE(msg_id, 0);
-      msg_buf.writeUInt32LE(0, 4);
-      buf = msg_buf;
-      break;
-    }
-    case 3: {
-      const [hs_func_ref, args] = result,
-        buf_args = args.flatMap(arg => {
-          const raw_buf = Buffer.from(arg);
-          return [bufferFromU32(raw_buf.length), raw_buf];
-        });
-      buf_args.unshift(
-        bufferFromU32(msg_id),
-        bufferFromU32(hs_func_ref),
-        bufferFromU32(args.length)
-      );
-      buf = Buffer.concat(buf_args);
-      break;
-    }
-    default: {
-      throw new Error(`Unsupported ret_tag ${ret_tag}`);
-    }
-  }
-  fs.writeSync(ipc.o, bufferFromU32(buf.length));
-  fs.writeSync(ipc.o, buf);
+parentPort.on("message", ([msg_id, is_err, result]) => {
+  const result_buf = Buffer.from(result),
+    msg_buf = Buffer.allocUnsafe(8 + result_buf.length);
+  msg_buf.writeUInt32LE(msg_id, 0);
+  msg_buf.writeUInt32LE(Number(is_err), 4);
+  result_buf.copy(msg_buf, 8);
+  fs.writeSync(ipc.o, bufferFromU32(msg_buf.length));
+  fs.writeSync(ipc.o, msg_buf);
 });
