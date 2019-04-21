@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StrictData #-}
 
 module Language.JavaScript.Inline.Core.Session
@@ -11,7 +12,6 @@ module Language.JavaScript.Inline.Core.Session
   , closeJSSession
   , withJSSession
   , sendMsg
-  , sendRecv
   , newHSFunc
   , nodeStdIn
   , nodeStdOut
@@ -57,6 +57,9 @@ data JSSessionOpts = JSSessionOpts
 --
 -- Uses @node@ from @PATH@ and sets the inherit flags to 'False'.
 -- Shared memory size defaults to 1MB.
+--
+-- See doc of 'Language.JavaScript.Inline.Core.exportSyncHSFunc'
+-- for what the "shared memory" is about.
 {-# NOINLINE defJSSessionOpts #-}
 defJSSessionOpts :: JSSessionOpts
 defJSSessionOpts =
@@ -139,26 +142,27 @@ newJSSession JSSessionOpts {..} = do
   recv_tid <-
     forkIO $
     let w = do
-          len <- peekHandle rh0
-          msg_id <- peekHandle rh0
+          (len :: Word32) <- peekHandle rh0
+          (msg_id :: Word32) <- peekHandle rh0
           if odd msg_id
             then do
-              let len' = fromIntegral (len :: Word32) - 4
-                  msg_id' = fromIntegral (msg_id :: Word32)
+              let len' = fromIntegral len - 4
+                  msg_id' = fromIntegral msg_id
               buf <- hGetLBS rh0 len'
               atomically $ modifyTVar' recv_map $ IntMap.insert msg_id' buf
             else do
-              hs_func_ref <- peekHandle rh0
-              args_len <- peekHandle rh0
+              (_ :: Word32) <- peekHandle rh0
+              (hs_func_ref :: Word32) <- peekHandle rh0
+              (args_len :: Word32) <- peekHandle rh0
               args <-
-                replicateM (fromIntegral (args_len :: Word32)) $ do
-                  arg_len <- peekHandle rh0
-                  hGetLBS rh0 (fromIntegral (arg_len :: Word32))
+                replicateM (fromIntegral args_len) $ do
+                  (arg_len :: Word32) <- peekHandle rh0
+                  hGetLBS rh0 (fromIntegral arg_len)
               void $
                 forkIO $ do
                   r <-
                     tryAny $ do
-                      let ref = fromIntegral (hs_func_ref :: Word32)
+                      let ref = fromIntegral hs_func_ref
                       hs_func <- (IntMap.! ref) . fst <$> readIORef _hs_funcs
                       runHSFunc hs_func args
                   atomically $
@@ -212,14 +216,6 @@ newJSSession JSSessionOpts {..} = do
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (newJSSession opts) closeJSSession
 
--- | Send a request and return an 'IO' action to fetch the response.
---
--- The send procedure is asynchronous and returns immediately.
---
--- The returned 'IO' action blocks if the response is not yet sent back.
--- Otherwise the result is memoized, and it's safe to call the action multiple times.
---
--- All send/receive operations are thread-safe.
 sendMsg ::
      (Request r, Response (ResponseOf r))
   => JSSession
@@ -232,19 +228,6 @@ sendMsg JSSession {..} msg = do
     buf <- recvData msg_id
     decodeResponse buf
 
--- | Send a request and synchronously return the response.
-sendRecv ::
-     (Request r, Response (ResponseOf r)) => JSSession -> r -> IO (ResponseOf r)
-sendRecv s = join . sendMsg s
-
--- | Register an 'HSFunc' into the current 'JSSession',
--- returns the request to actually make the JavaScript wrapper and the finalizer.
---
--- In most cases you just need 'Language.JavaScript.Inline.Core.exportHSFunc'.
---
--- The 'Bool' flag indicates whether the resulting JavaScript wrapper function is synchronous.
--- Ensure your 'HSFunc' result value is no longer than 'nodeSharedMemSize'.
--- Remember, making it synchronous is a very heavy hammer, only enable the flag as a last resort!
 newHSFunc :: JSSession -> Bool -> HSFunc -> IO (ExportHSFuncRequest, IO ())
 newHSFunc JSSession {..} s f =
   atomicModifyIORef' hsFuncs $ \(m, l) ->

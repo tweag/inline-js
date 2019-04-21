@@ -39,13 +39,19 @@ const ctx = vm.createContext(context_global),
     }
   );
 
-function sendMsg(msg_id, ret_tag, is_err, result) {
-  ipc.postMessage([
-    msg_id,
-    ret_tag,
-    is_err,
-    ret_tag === 1 ? ctx.JSVal.newJSVal(result) : result
-  ]);
+function bufferFromU32(x) {
+  const buf = Buffer.allocUnsafe(4);
+  buf.writeUInt32LE(x, 0);
+  return buf;
+}
+
+function callHSFuncRequestBody(hs_func_ref, args) {
+  const buf_args = args.flatMap(arg => {
+    const raw_buf = Buffer.from(arg);
+    return [bufferFromU32(raw_buf.length), raw_buf];
+  });
+  buf_args.unshift(bufferFromU32(hs_func_ref), bufferFromU32(args.length));
+  return Buffer.concat(buf_args);
 }
 
 ipc.on("message", async ([msg_id, msg_tag, buf]) => {
@@ -75,32 +81,44 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
               ])
             : raw_promise,
           promise_result = await promise;
-        sendMsg(msg_id, ret_tag, false, promise_result);
+        ipc.postMessage([
+          msg_id,
+          false,
+          ret_tag === 1
+            ? bufferFromU32(ctx.JSVal.newJSVal(promise_result))
+            : ret_tag === 2
+            ? Buffer.allocUnsafe(0)
+            : promise_result
+        ]);
         break;
       }
       case 1: {
-        sendMsg(msg_id, 1, false, buf);
-        break;
-      }
-      case 2: {
-        const import_path = decoder.end(buf),
-          import_url = url.pathToFileURL(import_path).href,
-          import_result = await import(import_url);
-        sendMsg(msg_id, 1, false, import_result);
+        ipc.postMessage([
+          msg_id,
+          false,
+          bufferFromU32(ctx.JSVal.newJSVal(buf))
+        ]);
         break;
       }
       case 3: {
         const hs_func_ref = buf.readUInt32LE(0);
-        sendMsg(
+        ipc.postMessage([
           msg_id,
-          1,
           false,
-          (...args) =>
-            new Promise((resolve, reject) => {
-              const callback_id = ctx.JSVal.newJSVal([resolve, reject]);
-              sendMsg(callback_id, 3, false, [hs_func_ref, args]);
-            })
-        );
+          bufferFromU32(
+            ctx.JSVal.newJSVal(
+              (...args) =>
+                new Promise((resolve, reject) => {
+                  const callback_id = ctx.JSVal.newJSVal([resolve, reject]);
+                  ipc.postMessage([
+                    callback_id,
+                    false,
+                    callHSFuncRequestBody(hs_func_ref, args)
+                  ]);
+                })
+            )
+          )
+        ]);
         break;
       }
       case 4: {
@@ -112,19 +130,31 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
       }
       case 5: {
         const hs_func_ref = buf.readUInt32LE(0);
-        sendMsg(msg_id, 1, false, (...args) => {
-          Atomics.store(shared_futex, 0, 0);
-          sendMsg(0, 3, false, [hs_func_ref, args]);
-          Atomics.wait(shared_futex, 0, 0);
-          const is_err = Boolean(Atomics.load(shared_flag)),
-            result = Buffer.from(
-              shared_msg_buf.buffer,
-              0,
-              Atomics.load(shared_msg_len, 0)
-            );
-          if (is_err) throw result;
-          else return result;
-        });
+        ipc.postMessage([
+          msg_id,
+          false,
+          bufferFromU32(
+            ctx.JSVal.newJSVal((...args) => {
+              Atomics.store(shared_futex, 0, 0);
+              ipc.postMessage([
+                0,
+                false,
+                callHSFuncRequestBody(hs_func_ref, args)
+              ]);
+              Atomics.wait(shared_futex, 0, 0);
+              const is_err = Boolean(Atomics.load(shared_flag)),
+                result = Buffer.from(
+                  Buffer.from(
+                    shared_msg_buf.buffer,
+                    0,
+                    Atomics.load(shared_msg_len, 0)
+                  )
+                );
+              if (is_err) throw result;
+              else return result;
+            })
+          )
+        ]);
         break;
       }
       default: {
@@ -132,6 +162,6 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
       }
     }
   } catch (err) {
-    sendMsg(msg_id, 0, true, err.toString());
+    ipc.postMessage([msg_id, true, err.toString()]);
   }
 });

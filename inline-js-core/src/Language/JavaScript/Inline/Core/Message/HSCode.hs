@@ -12,8 +12,6 @@ import Language.JavaScript.Inline.Core.JSCode
 import Language.JavaScript.Inline.Core.Message.Class
 import Language.JavaScript.Inline.Core.Message.Eval
 
--- | Request to export an 'HSFunc' as a JavaScript wrapper function.
--- The wrapper is returned as 'JSVal'.
 data ExportHSFuncRequest = ExportHSFuncRequest
   { sync :: Bool
   , exportHSFuncRef :: HSFuncRef
