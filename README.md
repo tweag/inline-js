@@ -10,8 +10,6 @@ This repository contains two packages, `inline-js-core` and `inline-js`.
 
 `inline-js` follows in the tradition of [inline-c](http://hackage.haskell.org/package/inline-c) and [inline-java](http://hackage.haskell.org/package/inline-java) in enabling developers to bridge the gap between Haskell and another programming language. It comes with two QuasiQuoters, `expr` and `block`, to allow embedding a JavaScript expression/block in Haskell. It relies on `FromJSON`/`ToJSON` classes of `aeson` for Haskell/JavaScript data conversion.
 
-Currently, this repository is an active laboratory. The API is subject to radical changes based on feedback from the development of `asterius`. But still, we are interested in how `inline-js` may be useful to your projects. Shall you have any questions, suggestions or criticisms, please don't hesitate to file an issue!
-
 ## Quick examples
 
 ### A sample use of `expr`:
@@ -91,9 +89,7 @@ Important note: do not run untrusted JavaScript via `inline-js-core`/`inline-js`
 
 ## Building
 
-Simply `stack build` shall do. Run `stack test inline-js` to run the test suite, `stack test inline-js --test-arguments="-j8"` for parallel testing.
-
-`cabal new-build` should also work. We've checked in a `cabal.project.freeze` file which matches the Stackage resolver we're using; if you're building with older versions of ghc, please relax the constraints in that file accordingly.
+Simply `stack build` shall do. Run `stack test inline-js` to run the test suite, `stack test inline-js --test-arguments="-j8"` for parallel testing. `cabal new-build` should also work.
 
 A recent version of `node` and `npm` is required in `PATH`. We test against the latest version of Node.js (11) and Stackage LTS resolver on CircleCI.
 
