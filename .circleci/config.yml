@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-  inline-js-test-cabal:
+  inline-js-test-nix:
     docker:
       - image: terrorjack/pixie:latest
     resource_class: xlarge
@@ -9,24 +9,22 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre174594.0c0954781e2 nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre178484.8bc70c937b3 nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
-              nixpkgs.binutils \
-              nixpkgs.cabal-install \
               nixpkgs.gitMinimal \
-              nixpkgs.gnutar \
-              nixpkgs.gzip \
-              nixpkgs.haskell.compiler.ghc864 \
-              nixpkgs.nodejs-11_x \
               nixpkgs.openssh
-            cabal new-update
       - checkout
       - run:
           name: Test inline-js
           command: |
-            cabal new-run inline-js:inline-js-test-suite -- -j8
+            nix-shell \
+              --command "cabal new-run inline-js:inline-js-test-suite -- -j8" \
+              --pure \
+              -p cabal-install \
+              -p nodejs-11_x \
+              -p "haskellPackages.ghcWithPackages (pkgs: [pkgs.aeson pkgs.base64-bytestring pkgs.language-javascript pkgs.tasty-hspec pkgs.tasty-quickcheck pkgs.tasty-smallcheck])"
 
   inline-js-test-stack:
     docker:
@@ -36,25 +34,23 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre174594.0c0954781e2 nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre178484.8bc70c937b3 nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
               nixpkgs.gitMinimal \
-              nixpkgs.gnutar \
-              nixpkgs.gzip \
               nixpkgs.openssh \
               nixpkgs.stack
       - checkout
       - run:
           name: Test inline-js
           command: |
-            stack --nix --no-terminal build --haddock --test --no-run-tests
-            stack --nix --no-terminal test inline-js --test-arguments="-j8"
+            stack --nix --no-nix-pure --no-terminal build --haddock --test --no-run-tests
+            stack --nix --no-nix-pure --no-terminal test inline-js --test-arguments="-j8"
 
 workflows:
   version: 2
   build:
     jobs:
-      - inline-js-test-cabal
+      - inline-js-test-nix
       - inline-js-test-stack
