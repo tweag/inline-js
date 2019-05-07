@@ -45,8 +45,8 @@ jobs:
       - run:
           name: Test inline-js
           command: |
-            stack --nix --no-terminal build --haddock --test --no-run-tests
-            stack --nix --no-terminal test inline-js --test-arguments="-j8"
+            stack --nix --no-nix-pure --no-terminal build --haddock --test --no-run-tests
+            stack --nix --no-nix-pure --no-terminal test inline-js --test-arguments="-j8"
 
 workflows:
   version: 2
