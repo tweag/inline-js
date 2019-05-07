@@ -10,6 +10,8 @@ This repository contains two packages, `inline-js-core` and `inline-js`.
 
 `inline-js` follows in the tradition of [inline-c](http://hackage.haskell.org/package/inline-c) and [inline-java](http://hackage.haskell.org/package/inline-java) in enabling developers to bridge the gap between Haskell and another programming language. It comes with two QuasiQuoters, `expr` and `block`, to allow embedding a JavaScript expression/block in Haskell. It relies on `FromJSON`/`ToJSON` classes of `aeson` for Haskell/JavaScript data conversion.
 
+Also check our [blog post](https://www.tweag.io/posts/2019-05-07-inline-js.html) for introductory examples and how it works under the hood.
+
 ## Quick examples
 
 ### A sample use of `expr`:
