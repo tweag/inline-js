@@ -9,7 +9,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre178484.8bc70c937b3 nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre178895.9ebc6ad944c nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
@@ -34,7 +34,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre178484.8bc70c937b3 nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre178895.9ebc6ad944c nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
