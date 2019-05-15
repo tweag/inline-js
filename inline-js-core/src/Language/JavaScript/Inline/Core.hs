@@ -17,6 +17,7 @@ module Language.JavaScript.Inline.Core
   , freeJSVal
   , takeJSVal
   , HSFunc(..)
+  , EvalException(..)
   , eval
   , evalWithTimeout
   , alloc
