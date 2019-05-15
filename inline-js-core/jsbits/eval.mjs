@@ -162,6 +162,6 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
       }
     }
   } catch (err) {
-    ipc.postMessage([msg_id, true, err.toString()]);
+    ipc.postMessage([msg_id, true, err.stack ? err.stack : err.toString()]);
   }
 });
