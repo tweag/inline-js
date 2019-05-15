@@ -4,7 +4,8 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Language.JavaScript.Inline.Core.Command
-  ( eval
+  ( EvalException(..)
+  , eval
   , eval'
   , evalWithTimeout
   , evalWithTimeout'
@@ -18,6 +19,7 @@ module Language.JavaScript.Inline.Core.Command
   , exportSyncHSFunc'
   ) where
 
+import Control.Exception
 import Control.Monad
 import qualified Data.ByteString.Lazy as LBS
 import Language.JavaScript.Inline.Core.HSCode
@@ -29,13 +31,18 @@ import Language.JavaScript.Inline.Core.Session
 import Prelude
 import System.Directory
 
+-- | The eval server may respond with an error message, in which case this
+-- exception is raised.
+newtype EvalException = EvalException
+  { evalErrorMessage :: LBS.ByteString
+  } deriving (Show)
+
+instance Exception EvalException
+
 checkEvalResponse :: EvalResponse r -> IO r
 checkEvalResponse r =
   case r of
-    EvalError {..} ->
-      fail $
-      "Language.JavaScript.Inline.Core.Commands.checkEvalResponse: evaluation failed with " <>
-      show evalError
+    EvalError {..} -> throwIO EvalException {evalErrorMessage = evalError}
     EvalResult {..} -> pure evalResult
 
 checkEvalResponse' :: IO (EvalResponse r) -> IO r
