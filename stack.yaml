@@ -4,4 +4,4 @@ packages:
   - inline-js-core
 nix:
   packages:
-    - nodejs-11_x
+    - nodejs-12_x
