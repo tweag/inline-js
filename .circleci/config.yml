@@ -9,7 +9,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre178895.9ebc6ad944c nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre180124.920d066ded1 nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
@@ -23,7 +23,7 @@ jobs:
               --command "cabal new-run inline-js:inline-js-test-suite -- -j8" \
               --pure \
               -p cabal-install \
-              -p nodejs-11_x \
+              -p nodejs-12_x \
               -p "haskellPackages.ghcWithPackages (pkgs: [pkgs.aeson pkgs.base64-bytestring pkgs.language-javascript pkgs.tasty-hspec pkgs.tasty-quickcheck pkgs.tasty-smallcheck])"
 
   inline-js-test-stack:
@@ -34,7 +34,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre178895.9ebc6ad944c nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre180124.920d066ded1 nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
