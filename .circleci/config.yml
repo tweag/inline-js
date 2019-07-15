@@ -102,5 +102,7 @@ workflows:
   version: 2
   build:
     jobs:
-      - inline-js-test-nix
+      - inline-js-test-nix-nodejs-12
+      - inline-js-test-nix-nodejs-11
+      - inline-js-test-nix-nodejs-10
       - inline-js-test-stack
