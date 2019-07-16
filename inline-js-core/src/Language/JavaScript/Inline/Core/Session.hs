@@ -37,6 +37,7 @@ import Language.JavaScript.Inline.Core.Internal
 import Language.JavaScript.Inline.Core.Message.Class
 import Language.JavaScript.Inline.Core.Message.HSCode
 import Language.JavaScript.Inline.Core.MessageCounter
+import Language.JavaScript.Inline.Core.NodeVersion
 import qualified Paths_inline_js_core
 import System.Directory
 import System.FilePath
@@ -89,6 +90,7 @@ data JSSession = JSSession
 -- | Initializes a new 'JSSession'.
 newJSSession :: JSSessionOpts -> IO JSSession
 newJSSession JSSessionOpts {..} = do
+  checkNodeVersion nodePath
   (mjss_dir, mjss) <-
     do mjss_dir <- (</> "jsbits") <$> Paths_inline_js_core.getDataDir
        case nodeWorkDir of
