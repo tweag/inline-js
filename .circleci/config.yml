@@ -20,7 +20,7 @@ jobs:
               nixpkgs.openssh \
               nixpkgs.python3
             cd /usr
-            curl https://raw.githubusercontent.com/tweag/asterius/master/utils/v8-node.py | sh
+            curl -L https://raw.githubusercontent.com/tweag/asterius/master/utils/v8-node.py | python3
             cd $CIRCLE_WORKING_DIRECTORY
       - checkout
       - run:
