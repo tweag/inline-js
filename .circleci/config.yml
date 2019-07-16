@@ -21,6 +21,8 @@ jobs:
               nixpkgs.python3
             cd /usr
             curl -L https://raw.githubusercontent.com/tweag/asterius/master/utils/v8-node.py | python3
+            export npm_config_prefix=/usr
+            curl -L https://www.npmjs.com/install.sh | sh
       - checkout
       - run:
           name: Test inline-js
