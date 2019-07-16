@@ -21,7 +21,6 @@ jobs:
               nixpkgs.python3
             cd /usr
             curl -L https://raw.githubusercontent.com/tweag/asterius/master/utils/v8-node.py | python3
-            cd $CIRCLE_WORKING_DIRECTORY
       - checkout
       - run:
           name: Test inline-js
