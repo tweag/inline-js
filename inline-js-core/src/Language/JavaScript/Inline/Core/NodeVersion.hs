@@ -9,14 +9,20 @@ import Data.Version
 import System.Process
 
 split :: (a -> Bool) -> [a] -> [[a]]
-split f = foldr w []
+split f l =
+  case foldr w [] l of
+    []:r -> r
+    r -> r
   where
     w x acc
-      | f x = [] : acc
+      | f x =
+        case acc of
+          (_:_):_ -> [] : acc
+          _ -> acc
       | otherwise =
         case acc of
-          xs:acc' -> (x : xs) : acc'
           [] -> [[x]]
+          xs:acc' -> (x : xs) : acc'
 
 nodeVersion :: FilePath -> IO Version
 nodeVersion p = do
