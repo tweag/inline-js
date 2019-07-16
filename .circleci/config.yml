@@ -1,6 +1,36 @@
 version: 2
 
 jobs:
+  inline-js-test-nix-nodejs-v8:
+    docker:
+      - image: terrorjack/pixie:debian
+    resource_class: xlarge
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            apt update
+            apt full-upgrade -y
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-19.09pre185543.2af67605413 nixpkgs
+            nix-channel --update
+            nix-env -u
+            nix-env -iA \
+              nixpkgs.curl \
+              nixpkgs.gitMinimal \
+              nixpkgs.openssh \
+              nixpkgs.python3
+            cd /usr
+            curl https://raw.githubusercontent.com/tweag/asterius/master/utils/v8-node.py | sh
+            cd $CIRCLE_WORKING_DIRECTORY
+      - checkout
+      - run:
+          name: Test inline-js
+          command: |
+            nix-shell \
+              --command "cabal new-run inline-js:inline-js-test-suite -- -j8" \
+              -p cabal-install \
+              -p "haskellPackages.ghcWithPackages (pkgs: [pkgs.aeson pkgs.base64-bytestring pkgs.language-javascript pkgs.tasty-hspec pkgs.tasty-quickcheck pkgs.tasty-smallcheck])"
+
   inline-js-test-nix-nodejs-12:
     docker:
       - image: terrorjack/pixie:latest
@@ -77,6 +107,7 @@ workflows:
   version: 2
   build:
     jobs:
+      - inline-js-test-nix-nodejs-v8
       - inline-js-test-nix-nodejs-12
       - inline-js-test-nix-nodejs-11
       - inline-js-test-stack
