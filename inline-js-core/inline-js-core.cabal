@@ -32,6 +32,7 @@ library
       Language.JavaScript.Inline.Core.Message.Eval
       Language.JavaScript.Inline.Core.Message.HSCode
       Language.JavaScript.Inline.Core.MessageCounter
+      Language.JavaScript.Inline.Core.NodeVersion
       Language.JavaScript.Inline.Core.Session
       Paths_inline_js_core
   autogen-modules:
