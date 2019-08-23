@@ -93,7 +93,7 @@ Important note: do not run untrusted JavaScript via `inline-js-core`/`inline-js`
 
 Simply `stack build` shall do. Run `stack test inline-js` to run the test suite, `stack test inline-js --test-arguments="-j8"` for parallel testing. `cabal new-build` should also work.
 
-`inline-js-core`/`inline-js` requires at least nodejs 11 to work; earlier versions will be rejected upon initialization of `JSSession`.
+`inline-js-core`/`inline-js` requires at least nodejs 12.2 to work; earlier versions will be rejected upon initialization of `JSSession`.
 
 ## Sponsors
 
