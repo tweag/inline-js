@@ -4,16 +4,23 @@ import { StringDecoder } from "string_decoder";
 import url from "url";
 import vm from "vm";
 import { Worker } from "worker_threads";
+import JSVal from "./jsval.mjs";
 
-import context_global from "./context.mjs";
+function errorStringify(err) {
+  return err.stack ? err.stack : `${err}`;
+}
 
 process.on("uncaughtException", err => {
-  process.stderr.write(err.stack);
+  process.stderr.write(errorStringify(err));
   throw err;
 });
 
-const ctx = vm.createContext(context_global),
-  decoder = new StringDecoder("utf8"),
+process.on("unhandledRejection", err => {
+  process.stderr.write(errorStringify(err));
+  throw err;
+});
+
+const decoder = new StringDecoder("utf8"),
   shared_futex = new Int32Array(new SharedArrayBuffer(4)),
   shared_flag = new Int32Array(new SharedArrayBuffer(4)),
   shared_msg_len = new Int32Array(new SharedArrayBuffer(4)),
@@ -54,6 +61,8 @@ function callHSFuncRequestBody(hs_func_ref, args) {
   return Buffer.concat(buf_args);
 }
 
+global.JSVal = JSVal;
+
 ipc.on("message", async ([msg_id, msg_tag, buf]) => {
   try {
     buf = Buffer.from(buf);
@@ -68,7 +77,7 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
             importModuleDynamically: spec => import(spec)
           };
         if (eval_timeout) eval_options.timeout = eval_timeout;
-        const eval_result = vm.runInContext(msg_content, ctx, eval_options),
+        const eval_result = vm.runInThisContext(msg_content, eval_options),
           raw_promise = Promise.resolve(
             eval_result === undefined ? null : eval_result
           ),
@@ -85,7 +94,7 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
           msg_id,
           false,
           ret_tag === 1
-            ? bufferFromU32(ctx.JSVal.newJSVal(promise_result))
+            ? bufferFromU32(JSVal.newJSVal(promise_result))
             : ret_tag === 2
             ? Buffer.allocUnsafe(0)
             : promise_result
@@ -93,11 +102,7 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
         break;
       }
       case 1: {
-        ipc.postMessage([
-          msg_id,
-          false,
-          bufferFromU32(ctx.JSVal.newJSVal(buf))
-        ]);
+        ipc.postMessage([msg_id, false, bufferFromU32(JSVal.newJSVal(buf))]);
         break;
       }
       case 3: {
@@ -106,10 +111,10 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
           msg_id,
           false,
           bufferFromU32(
-            ctx.JSVal.newJSVal(
+            JSVal.newJSVal(
               (...args) =>
                 new Promise((resolve, reject) => {
-                  const callback_id = ctx.JSVal.newJSVal([resolve, reject]);
+                  const callback_id = JSVal.newJSVal([resolve, reject]);
                   ipc.postMessage([
                     callback_id,
                     false,
@@ -122,7 +127,7 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
         break;
       }
       case 4: {
-        const [resolve, reject] = ctx.JSVal.takeJSVal(msg_id),
+        const [resolve, reject] = JSVal.takeJSVal(msg_id),
           is_err = Boolean(buf.readUInt32LE(0)),
           hs_result = buf.slice(4);
         (is_err ? reject : resolve)(hs_result);
@@ -134,7 +139,7 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
           msg_id,
           false,
           bufferFromU32(
-            ctx.JSVal.newJSVal((...args) => {
+            JSVal.newJSVal((...args) => {
               Atomics.store(shared_futex, 0, 0);
               ipc.postMessage([
                 0,
@@ -162,6 +167,6 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
       }
     }
   } catch (err) {
-    ipc.postMessage([msg_id, true, err.stack ? err.stack : err.toString()]);
+    ipc.postMessage([msg_id, true, errorStringify(err)]);
   }
 });
