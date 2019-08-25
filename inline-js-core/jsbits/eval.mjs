@@ -1,3 +1,4 @@
+import module from "module";
 import path from "path";
 import process from "process";
 import { StringDecoder } from "string_decoder";
@@ -62,6 +63,7 @@ function callHSFuncRequestBody(hs_func_ref, args) {
 }
 
 global.JSVal = JSVal;
+global.require = module.createRequire(import.meta.url);
 
 ipc.on("message", async ([msg_id, msg_tag, buf]) => {
   try {

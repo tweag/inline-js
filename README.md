@@ -73,7 +73,7 @@ Note that both `expr`/`block` supports using `await`, making it convenient to wo
 The `expr`/`block` QuasiQuoters in `inline-js` pass JSON data between Haskell/JavaScript. `inline-js-core` additionally provides ability to:
 
 * Pass raw binary data, or `JSVal`s which are references of arbitrary JavaScript values.
-* Run dynamic `import()` to import a built-in module, npm module in `node_modules`, or a `.mjs` module file.
+* Run `import()` or `require()` to import a built-in module, npm module in `node_modules`, or a `.mjs` module file.
 * Specify evaluate/resolve timeouts when evaluating JavaScript.
 * Decouple the send/receive processes, so it's possible to asynchronously send a batch of requests and later retrieve the responses.
 * Exporting a Haskell function as a JavaScript function. It's even possible to make the JavaScript function *synchronous* so it can be used as a WebAssembly import!
