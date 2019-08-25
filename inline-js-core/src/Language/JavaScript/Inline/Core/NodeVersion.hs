@@ -34,5 +34,8 @@ nodeVersion p = do
 checkNodeVersion :: FilePath -> IO ()
 checkNodeVersion p = do
   v <- nodeVersion p
-  unless (v >= Version [11] []) $
-    fail $ "Detected node version " <> show v <> ", requires at least node 11"
+  unless (v >= Version [12, 2] [])
+    $ fail
+    $ "Detected node version "
+    <> show v
+    <> ", requires at least node 12.2"
