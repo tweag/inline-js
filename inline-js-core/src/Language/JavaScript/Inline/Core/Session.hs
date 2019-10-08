@@ -40,6 +40,7 @@ import Language.JavaScript.Inline.Core.MessageCounter
 import Language.JavaScript.Inline.Core.NodeVersion
 import qualified Paths_inline_js_core
 import System.Directory
+import System.Environment.Blank
 import System.FilePath
 import System.IO
 import System.IO.Unsafe
@@ -50,6 +51,7 @@ data JSSessionOpts = JSSessionOpts
   { nodePath :: FilePath -- ^ Path to the @node@ executable.
   , nodeExtraArgs :: [String] -- ^ Extra arguments passed to @node@. Can't be accessed via @process.argv@.
   , nodeWorkDir :: Maybe FilePath -- ^ Working directory of @node@. To @import()@ npm installed modules, set to the directory containing @node_modules@.
+  , nodeExtraEnv :: [(String, String)] -- ^ Extra environment variables to be passed to @node@.
   , nodeStdInInherit, nodeStdOutInherit, nodeStdErrInherit :: Bool -- ^ Inherit stdio handles of @node@ from the host process.
   , nodeSharedMemSize :: Int -- ^ Shared memory size of @node@ in megabytes.
   }
@@ -71,6 +73,7 @@ defJSSessionOpts =
         { nodePath = "node"
         , nodeExtraArgs = []
         , nodeWorkDir = Nothing
+        , nodeExtraEnv = []
         , nodeStdInInherit = False
         , nodeStdOutInherit = False
         , nodeStdErrInherit = False
@@ -99,6 +102,7 @@ newJSSession JSSessionOpts {..} = do
            for_ mjss $ \mjs -> copyFile (mjss_dir </> mjs) (p </> mjs)
            pure (p, mjss)
          _ -> pure (mjss_dir, [])
+  parent_env <- getEnvironment
   (rh0, wh0) <- createPipe
   (rh1, wh1) <- createPipe
   for_ [rh0, wh0, rh1, wh1] $ \h -> do
@@ -117,6 +121,7 @@ newJSSession JSSessionOpts {..} = do
        , show rfd1
        ])
         { cwd = nodeWorkDir
+        , env = Just $ nodeExtraEnv <> parent_env
         , std_in =
             if nodeStdInInherit
               then Inherit
