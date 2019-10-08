@@ -10,7 +10,7 @@ jobs:
           command: |
             apt update
             apt full-upgrade -y
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-20.03pre193309.c4196cca9ac nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-20.03pre194957.bef773ed53f nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
@@ -38,7 +38,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-20.03pre193309.c4196cca9ac nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-20.03pre194957.bef773ed53f nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
@@ -62,7 +62,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-20.03pre193309.c4196cca9ac nixpkgs
+            nix-channel --add https://releases.nixos.org/nixpkgs/nixpkgs-20.03pre194957.bef773ed53f nixpkgs
             nix-channel --update
             nix-env -u
             nix-env -iA \
