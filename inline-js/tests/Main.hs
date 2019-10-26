@@ -1,4 +1,7 @@
-import Test.Tasty (defaultMain, testGroup)
+import Test.Tasty
+  ( defaultMain,
+    testGroup,
+  )
 import qualified Tests.Echo as Echo
 import qualified Tests.Evaluation as Evaluation
 import qualified Tests.LeftPad as LeftPad
@@ -10,11 +13,11 @@ main :: IO ()
 main = do
   tests <-
     sequence
-      [ Echo.tests
-      , Evaluation.tests
-      , LeftPad.tests
-      , PingPong.tests
-      , Quotation.tests
-      , Wasm.tests
+      [ Echo.tests,
+        Evaluation.tests,
+        LeftPad.tests,
+        PingPong.tests,
+        Quotation.tests,
+        Wasm.tests
       ]
   defaultMain $ testGroup "inline-js Test Suite" tests
