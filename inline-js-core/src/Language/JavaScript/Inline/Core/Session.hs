@@ -219,7 +219,8 @@ withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (newJSSession opts) closeJSSession
 
 sendMsg ::
-  forall req resp . (Request req, Response resp) =>
+  forall req resp.
+  (Request req, Response resp) =>
   JSSession ->
   req ->
   IO (IO resp)
