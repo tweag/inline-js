@@ -77,6 +77,8 @@ jobs:
             brew install \
               haskell-stack \
               node
+            node --version
+            npm --version
       - checkout
       - run:
           name: Test inline-js
