@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module Language.JavaScript.Inline.Core.Command
   ( EvalException (..),
@@ -71,10 +70,7 @@ checkEvalResponse' = (>>= checkEvalResponse)
 --    the result is discarded)
 eval ::
   forall r.
-  ( Request (EvalRequest r),
-    Response (EvalResponse r),
-    ResponseOf (EvalRequest r) ~ (EvalResponse r)
-  ) =>
+  (Request (EvalRequest r), Response (EvalResponse r)) =>
   JSSession ->
   JSCode ->
   IO r
@@ -93,10 +89,7 @@ eval s = join . eval' s
 -- forked thread you created :)
 eval' ::
   forall r.
-  ( Request (EvalRequest r),
-    Response (EvalResponse r),
-    ResponseOf (EvalRequest r) ~ (EvalResponse r)
-  ) =>
+  (Request (EvalRequest r), Response (EvalResponse r)) =>
   JSSession ->
   JSCode ->
   IO (IO r)
@@ -106,10 +99,7 @@ eval' s = evalWithTimeout' s Nothing Nothing
 -- milliseconds.
 evalWithTimeout ::
   forall r.
-  ( Request (EvalRequest r),
-    Response (EvalResponse r),
-    ResponseOf (EvalRequest r) ~ (EvalResponse r)
-  ) =>
+  (Request (EvalRequest r), Response (EvalResponse r)) =>
   JSSession ->
   Maybe Int ->
   Maybe Int ->
@@ -119,10 +109,7 @@ evalWithTimeout s et rt c = join $ evalWithTimeout' s et rt c
 
 evalWithTimeout' ::
   forall r.
-  ( Request (EvalRequest r),
-    Response (EvalResponse r),
-    ResponseOf (EvalRequest r) ~ (EvalResponse r)
-  ) =>
+  (Request (EvalRequest r), Response (EvalResponse r)) =>
   JSSession ->
   Maybe Int ->
   Maybe Int ->

@@ -2,7 +2,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module Language.JavaScript.Inline.Core.Message.Eval
   ( EvalRequest (..),
@@ -39,27 +38,15 @@ data EvalResponse a
       }
 
 instance Request (EvalRequest LBS.ByteString) where
-
-  type ResponseOf (EvalRequest LBS.ByteString) = EvalResponse LBS.ByteString
-
   putRequest = putEvalRequestWith 0
 
 instance Request (EvalRequest JSCode.JSVal) where
-
-  type ResponseOf (EvalRequest JSCode.JSVal) = EvalResponse JSCode.JSVal
-
   putRequest = putEvalRequestWith 1
 
 instance Request (EvalRequest ()) where
-
-  type ResponseOf (EvalRequest ()) = EvalResponse ()
-
   putRequest = putEvalRequestWith 2
 
 instance Request AllocRequest where
-
-  type ResponseOf AllocRequest = EvalResponse JSCode.JSVal
-
   putRequest AllocRequest {..} = do
     putWord32host 1
     putLazyByteString allocContent

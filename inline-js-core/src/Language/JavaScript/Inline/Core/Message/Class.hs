@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
-
 module Language.JavaScript.Inline.Core.Message.Class
   ( Request (..),
     Response (..),
@@ -14,9 +12,6 @@ import qualified Data.ByteString.Lazy as LBS
 import Language.JavaScript.Inline.Core.MessageCounter
 
 class Request r where
-
-  type ResponseOf r
-
   putRequest :: r -> Put
 
 class Response r where
