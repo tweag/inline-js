@@ -19,7 +19,7 @@ jobs:
       - run:
           name: Test inline-js
           command: |
-            stack --no-terminal build --haddock --test --no-run-tests
+            stack --no-terminal -j2 build --haddock --test --no-run-tests
             stack --no-terminal test inline-js --test-arguments="-j2"
 
   inline-js-test-nodejs-13:
@@ -40,7 +40,7 @@ jobs:
       - run:
           name: Test inline-js
           command: |
-            stack --no-terminal build --haddock --test --no-run-tests
+            stack --no-terminal -j2 build --haddock --test --no-run-tests
             stack --no-terminal test inline-js --test-arguments="-j2"
 
   inline-js-test-nodejs-v8:
@@ -62,7 +62,7 @@ jobs:
       - run:
           name: Test inline-js
           command: |
-            stack --no-terminal build --haddock --test --no-run-tests
+            stack --no-terminal -j2 build --haddock --test --no-run-tests
             stack --no-terminal test inline-js --test-arguments="-j2"
 
   inline-js-test-macos:
@@ -81,8 +81,8 @@ jobs:
       - run:
           name: Test inline-js
           command: |
-            stack --no-terminal build --test --no-run-tests
-            stack --no-terminal test inline-js --test-arguments="-j2"
+            stack --no-terminal -j4 build --test --no-run-tests
+            stack --no-terminal test inline-js --test-arguments="-j4"
 
 workflows:
   version: 2
