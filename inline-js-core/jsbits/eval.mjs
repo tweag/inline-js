@@ -41,15 +41,6 @@ function bufferFromU32(x) {
   return buf;
 }
 
-function callHSFuncRequestBody(hs_func_ref, args) {
-  const buf_args = args.flatMap(arg => {
-    const raw_buf = Buffer.from(arg);
-    return [bufferFromU32(raw_buf.length), raw_buf];
-  });
-  buf_args.unshift(bufferFromU32(hs_func_ref), bufferFromU32(args.length));
-  return Buffer.concat(buf_args);
-}
-
 global.JSVal = JSVal;
 global.require = module.createRequire(import.meta.url);
 
