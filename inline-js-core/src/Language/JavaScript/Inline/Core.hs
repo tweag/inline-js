@@ -16,23 +16,17 @@ module Language.JavaScript.Inline.Core
     deRefJSVal,
     freeJSVal,
     takeJSVal,
-    HSFunc (..),
     EvalException (..),
     eval,
     alloc,
     importMJS,
-    exportHSFunc,
-    exportSyncHSFunc,
     eval',
     alloc',
     importMJS',
-    exportHSFunc',
-    exportSyncHSFunc',
   )
 where
 
 import Language.JavaScript.Inline.Core.Command
-import Language.JavaScript.Inline.Core.HSCode
 import Language.JavaScript.Inline.Core.JSCode hiding
   ( importMJS,
   )

@@ -22,14 +22,6 @@ process.on("unhandledRejection", err => {
 });
 
 const decoder = new StringDecoder("utf8"),
-  shared_futex = new Int32Array(new SharedArrayBuffer(4)),
-  shared_flag = new Int32Array(new SharedArrayBuffer(4)),
-  shared_msg_len = new Int32Array(new SharedArrayBuffer(4)),
-  shared_msg_buf = new Uint8Array(
-    new SharedArrayBuffer(
-      Number.parseInt(process.argv[process.argv.length - 3]) * 1048576
-    )
-  ),
   ipc = new Worker(
     path.join(
       path.dirname(url.fileURLToPath(import.meta.url)),
@@ -38,11 +30,7 @@ const decoder = new StringDecoder("utf8"),
     {
       workerData: [
         Number.parseInt(process.argv[process.argv.length - 1]),
-        Number.parseInt(process.argv[process.argv.length - 2]),
-        shared_futex,
-        shared_flag,
-        shared_msg_len,
-        shared_msg_buf
+        Number.parseInt(process.argv[process.argv.length - 2])
       ]
     }
   );
@@ -94,63 +82,6 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
       }
       case 1: {
         ipc.postMessage([msg_id, false, bufferFromU32(JSVal.newJSVal(buf))]);
-        break;
-      }
-      case 3: {
-        const hs_func_ref = buf.readUInt32LE(0);
-        ipc.postMessage([
-          msg_id,
-          false,
-          bufferFromU32(
-            JSVal.newJSVal(
-              (...args) =>
-                new Promise((resolve, reject) => {
-                  const callback_id = JSVal.newJSVal([resolve, reject]);
-                  ipc.postMessage([
-                    callback_id,
-                    false,
-                    callHSFuncRequestBody(hs_func_ref, args)
-                  ]);
-                })
-            )
-          )
-        ]);
-        break;
-      }
-      case 4: {
-        const [resolve, reject] = JSVal.takeJSVal(msg_id),
-          is_err = Boolean(buf.readUInt32LE(0)),
-          hs_result = buf.slice(4);
-        (is_err ? reject : resolve)(hs_result);
-        break;
-      }
-      case 5: {
-        const hs_func_ref = buf.readUInt32LE(0);
-        ipc.postMessage([
-          msg_id,
-          false,
-          bufferFromU32(
-            JSVal.newJSVal((...args) => {
-              Atomics.store(shared_futex, 0, 0);
-              ipc.postMessage([
-                0,
-                false,
-                callHSFuncRequestBody(hs_func_ref, args)
-              ]);
-              Atomics.wait(shared_futex, 0, 0);
-              const is_err = Boolean(Atomics.load(shared_flag)),
-                result = Buffer.from(
-                  Buffer.from(
-                    shared_msg_buf.buffer,
-                    0,
-                    Atomics.load(shared_msg_len, 0)
-                  )
-                );
-              if (is_err) throw result;
-              else return result;
-            })
-          )
-        ]);
         break;
       }
       default: {
