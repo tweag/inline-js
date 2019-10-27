@@ -10,17 +10,12 @@ module Language.JavaScript.Inline.Core.Command
     alloc',
     importMJS,
     importMJS',
-    exportHSFunc,
-    exportHSFunc',
-    exportSyncHSFunc,
-    exportSyncHSFunc',
   )
 where
 
 import Control.Exception
 import Control.Monad
 import qualified Data.ByteString.Lazy as LBS
-import Language.JavaScript.Inline.Core.HSCode
 import Language.JavaScript.Inline.Core.JSCode hiding
   ( importMJS,
   )
@@ -118,37 +113,3 @@ importMJS' :: JSSession -> FilePath -> IO (IO JSVal)
 importMJS' s p = do
   p' <- canonicalizePath p
   eval' s $ JSCode.importMJS p'
-
--- | Exports an 'HSFunc' to JavaScript, returns the JavaScript wrapper
--- function's 'JSVal' and a finalizer to free the 'HSFunc'. When the 'HSFunc' is
--- no longer used, first call 'freeJSVal' to free the JavaScript wrapper
--- function, then call the finalizer to remove the registered 'HSFunc' from the
--- current 'JSSession'.
---
--- Throws in Haskell if the response indicates a failure.
-exportHSFunc :: JSSession -> HSFunc -> IO (JSVal, IO ())
-exportHSFunc s f = do
-  (c, fin) <- exportHSFunc' s f
-  v <- c
-  pure (v, fin)
-
-exportHSFunc' :: JSSession -> HSFunc -> IO (IO JSVal, IO ())
-exportHSFunc' s f = do
-  (r, fin) <- newHSFunc s False f
-  c <- checkEvalResponse' <$> sendMsg s r
-  pure (c, fin)
-
--- | Like 'exportHSFunc', except the JavaScript function is made synchronous.
--- Very heavy hammer, only use as a last resort, and make sure the result's
--- length doesn't exceed 'nodeSharedMemSize'.
-exportSyncHSFunc :: JSSession -> HSFunc -> IO (JSVal, IO ())
-exportSyncHSFunc s f = do
-  (c, fin) <- exportSyncHSFunc' s f
-  v <- c
-  pure (v, fin)
-
-exportSyncHSFunc' :: JSSession -> HSFunc -> IO (IO JSVal, IO ())
-exportSyncHSFunc' s f = do
-  (r, fin) <- newHSFunc s True f
-  c <- checkEvalResponse' <$> sendMsg s r
-  pure (c, fin)
