@@ -71,26 +71,15 @@ ipc.on("message", async ([msg_id, msg_tag, buf]) => {
     switch (msg_tag) {
       case 0: {
         const ret_tag = buf.readUInt32LE(0),
-          eval_timeout = buf.readUInt32LE(4),
-          resolve_timeout = buf.readUInt32LE(8),
-          msg_content = decoder.end(buf.slice(12)),
+          msg_content = decoder.end(buf.slice(4)),
           eval_options = {
             displayErrors: true,
             importModuleDynamically: spec => import(spec)
           };
-        if (eval_timeout) eval_options.timeout = eval_timeout;
         const eval_result = vm.runInThisContext(msg_content, eval_options),
-          raw_promise = Promise.resolve(
+          promise = Promise.resolve(
             eval_result === undefined ? null : eval_result
           ),
-          promise = resolve_timeout
-            ? Promise.race([
-                raw_promise,
-                new Promise((_, reject) =>
-                  setTimeout(reject, resolve_timeout, "")
-                )
-              ])
-            : raw_promise,
           promise_result = await promise;
         ipc.postMessage([
           msg_id,

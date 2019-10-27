@@ -6,8 +6,6 @@ module Language.JavaScript.Inline.Core.Command
   ( EvalException (..),
     eval,
     eval',
-    evalWithTimeout,
-    evalWithTimeout',
     alloc,
     alloc',
     importMJS,
@@ -93,36 +91,9 @@ eval' ::
   JSSession ->
   JSCode ->
   IO (IO r)
-eval' s = evalWithTimeout' s Nothing Nothing
-
--- | Like 'eval', while the eval/resolve timeouts can be specified in
--- milliseconds.
-evalWithTimeout ::
-  forall r.
-  (Request (EvalRequest r), Response (EvalResponse r)) =>
-  JSSession ->
-  Maybe Int ->
-  Maybe Int ->
-  JSCode ->
-  IO r
-evalWithTimeout s et rt c = join $ evalWithTimeout' s et rt c
-
-evalWithTimeout' ::
-  forall r.
-  (Request (EvalRequest r), Response (EvalResponse r)) =>
-  JSSession ->
-  Maybe Int ->
-  Maybe Int ->
-  JSCode ->
-  IO (IO r)
-evalWithTimeout' s et rt c =
+eval' s c =
   checkEvalResponse'
-    <$> sendMsg
-      s
-      ( EvalRequest {evalTimeout = et, resolveTimeout = rt, evalCode = c} ::
-          EvalRequest
-            r
-      )
+    <$> sendMsg s (EvalRequest {evalCode = c} :: EvalRequest r)
 
 -- | Allocates a @Buffer@ and returns the 'JSVal'.
 --

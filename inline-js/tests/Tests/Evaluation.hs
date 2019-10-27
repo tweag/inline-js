@@ -33,7 +33,6 @@ tests =
                   notError
                 ),
                 (eval s "require('process').version", notError),
-                (evalWithTimeout s (Just 1000) Nothing "while(true){}", isError),
                 (eval s "BOOM", isError),
                 ( eval s "let x = 6*7; JSON.stringify(null)",
                   successfullyReturns Null
@@ -45,13 +44,6 @@ tests =
                 (eval s "Promise.reject('BOOM')", isError),
                 ( eval s "Promise.resolve(JSON.stringify(x))",
                   successfullyReturns $ Number 42
-                ),
-                ( evalWithTimeout
-                    s
-                    Nothing
-                    (Just 1000)
-                    "new Promise((resolve, _) => setTimeout(resolve, 10000))",
-                  isError
                 )
               ]
       ]

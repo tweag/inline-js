@@ -18,10 +18,9 @@ import Data.Word
 import qualified Language.JavaScript.Inline.Core.JSCode as JSCode
 import Language.JavaScript.Inline.Core.Message.Class
 
-data EvalRequest a
+newtype EvalRequest a
   = EvalRequest
-      { evalTimeout, resolveTimeout :: Maybe Int,
-        evalCode :: JSCode.JSCode
+      { evalCode :: JSCode.JSCode
       }
 
 newtype AllocRequest
@@ -64,12 +63,6 @@ putEvalRequestWith :: Word32 -> EvalRequest a -> Put
 putEvalRequestWith rt EvalRequest {..} = do
   putWord32host 0
   putWord32host rt
-  putWord32host $ fromIntegral $ case evalTimeout of
-    Just t -> t
-    _ -> 0
-  putWord32host $ fromIntegral $ case resolveTimeout of
-    Just t -> t
-    _ -> 0
   putBuilder $ coerce evalCode
 
 getResponseWith :: Get r -> Get (EvalResponse r)
