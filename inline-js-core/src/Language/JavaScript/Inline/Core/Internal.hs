@@ -1,11 +1,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Language.JavaScript.Inline.Core.Internal
-  ( peekHandle
-  , hGetLBS
-  , tryAny
-  , once
-  ) where
+  ( peekHandle,
+    hGetLBS,
+    tryAny,
+    once,
+  )
+where
 
 import Control.Exception
 import Control.Monad
@@ -18,18 +19,18 @@ import System.IO.Unsafe
 hGet' :: Handle -> Ptr a -> Int -> IO ()
 hGet' h p l = do
   l' <- hGetBuf h p l
-  unless (l' == l) $
-    fail $ "hGet': expected " <> show l <> " bytes, got " <> show l'
+  unless (l' == l)
+    $ fail
+    $ "hGet': expected "
+      <> show l
+      <> " bytes, got "
+      <> show l'
 
 {-# INLINE peekHandle #-}
-peekHandle ::
-     forall a. Storable a
-  => Handle
-  -> IO a
-peekHandle h =
-  alloca $ \p -> do
-    hGet' h p (sizeOf (undefined :: a))
-    peek p
+peekHandle :: forall a. Storable a => Handle -> IO a
+peekHandle h = alloca $ \p -> do
+  hGet' h p (sizeOf (undefined :: a))
+  peek p
 
 {-# INLINE hGetLBS #-}
 hGetLBS :: Handle -> Int -> IO LBS.ByteString

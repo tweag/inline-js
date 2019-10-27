@@ -2,29 +2,30 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Language.JavaScript.Inline.Core.JSCode
-  ( JSCode(..)
-  , bufferToString
-  , jsonParse
-  , jsonStringify
-  , importMJS
-  , JSVal(..)
-  , deRefJSVal
-  , freeJSVal
-  , takeJSVal
-  ) where
+  ( JSCode (..),
+    bufferToString,
+    jsonParse,
+    jsonStringify,
+    importMJS,
+    JSVal (..),
+    deRefJSVal,
+    freeJSVal,
+    takeJSVal,
+  )
+where
 
 import Data.ByteString.Builder
 import Data.Coerce
-import Data.String (IsString(..))
+import Data.String (IsString (..))
 
--- | A UTF-8 encoded JavaScript code snippet.
--- Can be a single expression or a series of statements.
+-- | A UTF-8 encoded JavaScript code snippet. Can be a single expression or a
+-- series of statements.
 --
--- Larger expressions can be easily composed from smaller ones
--- by concating 'JSCode', and occasionally adding brackets to
--- ensure valid syntax (e.g. @(f)(a)@ when @f@ is a function expression).
-newtype JSCode =
-  JSCode Builder
+-- Larger expressions can be easily composed from smaller ones by concating
+-- 'JSCode', and occasionally adding brackets to ensure valid syntax (e.g.
+-- @(f)(a)@ when @f@ is a function expression).
+newtype JSCode
+  = JSCode Builder
   deriving (IsString, Semigroup, Monoid)
 
 instance Show JSCode where
@@ -46,21 +47,21 @@ jsonStringify expr = "JSON.stringify(" <> expr <> ")"
 importMJS :: FilePath -> JSCode
 importMJS p =
   coerce $
-  "import('url').then(url => url.pathToFileURL(" <> stringUtf8 (show p) <>
-  ").href).then(url => import(url))"
+    "import('url').then(url => url.pathToFileURL("
+      <> stringUtf8 (show p)
+      <> ").href).then(url => import(url))"
 
 -- | A reference to a JavaScript value.
 --
--- It's supposed to be completely opaque,
--- yet we expose its internal here,
--- so you can use 'JSVal's in stuff like 'Data.IntMap.IntMap'.
+-- It's supposed to be completely opaque, yet we expose its internal here, so
+-- you can use 'JSVal's in stuff like 'Data.IntMap.IntMap'.
 --
--- You can't make a valid 'JSVal' out of thin air.
--- Obtain it either via higher-level TH splices in @inline-js@,
--- or via something like 'Language.JavaScript.Inline.Core.eval',
--- explicitly annotating the return type.
-newtype JSVal =
-  JSVal Int
+-- You can't make a valid 'JSVal' out of thin air. Obtain it either via
+-- higher-level TH splices in @inline-js@, or via something like
+-- 'Language.JavaScript.Inline.Core.eval', explicitly annotating the return
+-- type.
+newtype JSVal
+  = JSVal Int
   deriving (Eq, Ord, Show)
 
 -- | Dereferences a 'JSVal' and returns the value.
@@ -71,7 +72,8 @@ deRefJSVal (JSVal p) = JSCode $ mconcat ["JSVal.deRefJSVal(", intDec p, ")"]
 
 -- | Removes a 'JSVal' and returns nothing.
 --
--- Don't forget to call it on unused 'JSVal's when using a long-lived 'Language.JavaScript.Inline.Core.JSSession'.
+-- Don't forget to call it on unused 'JSVal's when using a long-lived
+-- 'Language.JavaScript.Inline.Core.JSSession'.
 --
 -- Throws on a non-existent 'JSVal'.
 freeJSVal :: JSVal -> JSCode

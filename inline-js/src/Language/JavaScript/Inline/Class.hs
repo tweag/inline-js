@@ -5,9 +5,10 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Language.JavaScript.Inline.Class
-  ( toJSCode
-  , withFromEvalResult
-  ) where
+  ( toJSCode,
+    withFromEvalResult,
+  )
+where
 
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as BS
@@ -31,8 +32,9 @@ instance ToJSCode BS.ByteString where
 instance ToJSCode LBS.ByteString where
   {-# INLINE toJSCode #-}
   toJSCode buf =
-    "Buffer.from('" <> coerce (lazyByteString (LBS.encode buf)) <>
-    "', 'base64')"
+    "Buffer.from('"
+      <> coerce (lazyByteString (LBS.encode buf))
+      <> "', 'base64')"
 
 instance ToJSCode SBS.ShortByteString where
   {-# INLINE toJSCode #-}
@@ -52,9 +54,11 @@ type family EvalResult a where
   EvalResult a = LBS.ByteString
 
 class FromEvalResult a where
+
   postProcessor :: proxy a -> JSCode
   {-# INLINE postProcessor #-}
   postProcessor _ = "r => r"
+
   fromEvalResult :: EvalResult a -> Either String a
 
 instance FromEvalResult BS.ByteString where
@@ -77,16 +81,22 @@ instance FromEvalResult () where
   {-# INLINE fromEvalResult #-}
   fromEvalResult = Right
 
-instance {-# OVERLAPPABLE #-} (EvalResult a ~ LBS.ByteString, Aeson.FromJSON a) =>
-                              FromEvalResult a where
+instance
+  {-# OVERLAPPABLE #-}
+  (EvalResult a ~ LBS.ByteString, Aeson.FromJSON a) =>
+  FromEvalResult a
+  where
+
   {-# INLINE postProcessor #-}
   postProcessor _ = "r => JSON.stringify(r)"
+
   {-# INLINE fromEvalResult #-}
   fromEvalResult = Aeson.eitherDecode'
 
 {-# INLINE withFromEvalResult #-}
 withFromEvalResult ::
-     forall a r. FromEvalResult a
-  => (JSCode -> (EvalResult a -> Either String a) -> r)
-  -> r
+  forall a r.
+  FromEvalResult a =>
+  (JSCode -> (EvalResult a -> Either String a) -> r) ->
+  r
 withFromEvalResult c = c (postProcessor (Proxy :: Proxy a)) fromEvalResult
