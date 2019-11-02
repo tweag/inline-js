@@ -51,7 +51,6 @@ checkEvalResponse' = (>>= checkEvalResponse)
 -- 3. @()@, which indicates the code doesn't return anything (even if it does,
 --    the result is discarded)
 eval ::
-  forall r.
   (Request (EvalRequest r), Response (EvalResponse r)) =>
   JSSession ->
   JSCode ->
