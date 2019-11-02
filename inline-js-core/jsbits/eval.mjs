@@ -79,14 +79,16 @@ async function handleHostMessage(msg_buf) {
   }
 }
 
+const msg_len_buf = Buffer.allocUnsafe(4),
+  shutdown_buf = Buffer.from("SHUTDOWN");
+
 async function onHostMessage() {
-  const msg_len_buf = Buffer.allocUnsafe(4);
-  await pipeRead(node_read_fd, msg_len_buf, 0, 4);
+  await pipeRead(node_read_fd, msg_len_buf, 4);
   const msg_len = msg_len_buf.readUInt32LE(0),
     msg_buf = Buffer.allocUnsafe(msg_len);
-  await pipeRead(node_read_fd, msg_buf, 0, msg_len);
+  await pipeRead(node_read_fd, msg_buf, msg_len);
+  if (!msg_buf.equals(shutdown_buf)) setImmediate(onHostMessage);
   setImmediate(handleHostMessage, msg_buf);
-  setImmediate(onHostMessage);
 }
 
 onHostMessage();
