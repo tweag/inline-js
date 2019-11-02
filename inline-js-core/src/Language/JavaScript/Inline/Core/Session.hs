@@ -24,6 +24,7 @@ import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce
 import Data.Foldable
+import Data.Functor
 import qualified Data.IntMap.Strict as IntMap
 import Data.Word
 import GHC.IO.Handle.FD
@@ -123,7 +124,7 @@ newJSSession JSSessionOpts {..} = do
           std_err = if nodeStdErrInherit then Inherit else CreatePipe
         }
   send_queue <- newTQueueIO
-  send_tid <-
+  _ <-
     forkIO $
       let w = do
             buf <- atomically $ readTQueue send_queue
@@ -131,9 +132,9 @@ newJSSession JSSessionOpts {..} = do
               word32LE (fromIntegral $ LBS.length buf)
                 <> lazyByteString buf
             w
-       in w
+       in void $ tryAny w
   recv_map <- newTVarIO IntMap.empty
-  recv_tid <-
+  _ <-
     forkIO $
       let w = do
             (len :: Word32) <- peekHandle rh0
@@ -143,12 +144,10 @@ newJSSession JSSessionOpts {..} = do
             buf <- hGetLBS rh0 len'
             atomically $ modifyTVar' recv_map $ IntMap.insert msg_id' buf
             w
-       in w
+       in void $ tryAny w
   _msg_counter <- newMsgCounter
   _close <- once $ do
-    killThread send_tid
-    killThread recv_tid
-    terminateProcess _ph
+    -- terminateProcess _ph
     case nodeWorkDir of
       Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
       _ -> pure ()
