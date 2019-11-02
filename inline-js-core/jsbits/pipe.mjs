@@ -7,14 +7,14 @@ const read_lock = new Lock(),
   read_func = util.promisify(fs.read),
   write_func = util.promisify(fs.write);
 
-export async function pipeRead(fd, buf, offset, length) {
+export async function pipeRead(fd, buf, length) {
   await read_lock.take();
   let total_bytes_read = 0;
   while (total_bytes_read < length) {
     const { bytesRead } = await read_func(
       fd,
       buf,
-      offset + total_bytes_read,
+      total_bytes_read,
       length - total_bytes_read,
       null
     );
