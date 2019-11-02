@@ -5,8 +5,10 @@ module Language.JavaScript.Inline.Core.NodeVersion
   )
 where
 
+import Control.Exception
 import Control.Monad
 import Data.Version
+import Language.JavaScript.Inline.Core.Exception
 import System.Process
 
 split :: (a -> Bool) -> [a] -> [[a]]
@@ -32,8 +34,5 @@ nodeVersion p = do
 checkNodeVersion :: FilePath -> IO ()
 checkNodeVersion p = do
   v <- nodeVersion p
-  unless (v >= Version [12, 2] [])
-    $ fail
-    $ "Detected node version "
-      <> show v
-      <> ", requires at least node 12.2"
+  unless (v >= Version [12, 2] []) $
+    throwIO UnsupportedNodeVersion {detectedNodeVersion = v}

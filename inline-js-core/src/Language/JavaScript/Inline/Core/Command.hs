@@ -3,8 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Language.JavaScript.Inline.Core.Command
-  ( EvalException (..),
-    eval,
+  ( eval,
     eval',
     alloc,
     alloc',
@@ -16,6 +15,7 @@ where
 import Control.Exception
 import Control.Monad
 import qualified Data.ByteString.Lazy as LBS
+import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.JSCode hiding
   ( importMJS,
   )
@@ -24,21 +24,10 @@ import Language.JavaScript.Inline.Core.Message.Class
 import Language.JavaScript.Inline.Core.Message.Eval
 import Language.JavaScript.Inline.Core.Session
 import System.Directory
-import Prelude
-
--- | The eval server may respond with an error message, in which case this
--- exception is raised.
-newtype EvalException
-  = EvalException
-      { evalErrorMessage :: LBS.ByteString
-      }
-  deriving (Show)
-
-instance Exception EvalException
 
 checkEvalResponse :: EvalResponse r -> IO r
 checkEvalResponse r = case r of
-  EvalError {..} -> throwIO EvalException {evalErrorMessage = evalError}
+  EvalError {..} -> throwIO EvalException {evalError = evalError}
   EvalResult {..} -> pure evalResult
 
 checkEvalResponse' :: IO (EvalResponse r) -> IO r
