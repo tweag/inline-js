@@ -6,9 +6,11 @@ module Language.JavaScript.Inline.Core.Message.Class
   )
 where
 
+import Control.Exception
 import Data.Binary.Get
 import Data.Binary.Put
 import qualified Data.ByteString.Lazy as LBS
+import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.MessageCounter
 
 class Request r where
@@ -25,7 +27,4 @@ encodeRequest msg_id req = runPut $ do
 decodeResponse :: Response r => LBS.ByteString -> IO r
 decodeResponse buf = case runGetOrFail getResponse buf of
   Right (rest, _, resp) | LBS.null rest -> pure resp
-  _ ->
-    fail $
-      "Language.JavaScript.Inline.Core.Message.Class.decodeResponse: failed to decode message from "
-        <> show buf
+  _ -> throwIO IllegalResponse {illegalResponse = buf}

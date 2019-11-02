@@ -25,6 +25,7 @@ library
       Language.JavaScript.Inline.Core
   other-modules:
       Language.JavaScript.Inline.Core.Command
+      Language.JavaScript.Inline.Core.Exception
       Language.JavaScript.Inline.Core.Internal
       Language.JavaScript.Inline.Core.JSCode
       Language.JavaScript.Inline.Core.Message.Class

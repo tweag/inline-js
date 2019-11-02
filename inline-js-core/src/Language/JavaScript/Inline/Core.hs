@@ -16,7 +16,7 @@ module Language.JavaScript.Inline.Core
     deRefJSVal,
     freeJSVal,
     takeJSVal,
-    EvalException (..),
+    InlineJSException (..),
     eval,
     alloc,
     importMJS,
@@ -27,6 +27,7 @@ module Language.JavaScript.Inline.Core
 where
 
 import Language.JavaScript.Inline.Core.Command
+import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.JSCode hiding
   ( importMJS,
   )

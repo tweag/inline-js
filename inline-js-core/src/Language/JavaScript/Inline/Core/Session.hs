@@ -174,12 +174,7 @@ newJSSession JSSessionOpts {..} = do
 withJSSession :: JSSessionOpts -> (JSSession -> IO r) -> IO r
 withJSSession opts = bracket (newJSSession opts) closeJSSession
 
-sendMsg ::
-  forall req resp.
-  (Request req, Response resp) =>
-  JSSession ->
-  req ->
-  IO (IO resp)
+sendMsg :: (Request req, Response resp) => JSSession -> req -> IO (IO resp)
 sendMsg JSSession {..} msg = do
   msg_id <- newMsgId msgCounter
   sendData $ encodeRequest msg_id msg
