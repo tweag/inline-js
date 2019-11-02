@@ -147,7 +147,7 @@ newJSSession JSSessionOpts {..} = do
        in void $ tryAny w
   _msg_counter <- newMsgCounter
   _close <- once $ do
-    -- terminateProcess _ph
+    atomically $ writeTQueue send_queue "SHUTDOWN"
     case nodeWorkDir of
       Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
       _ -> pure ()
