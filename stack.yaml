@@ -1,4 +1,4 @@
-resolver: lts-14.11
+resolver: lts-14.12
 packages:
   - inline-js
   - inline-js-core
