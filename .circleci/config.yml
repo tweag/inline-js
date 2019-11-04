@@ -1,69 +1,42 @@
 version: 2
 
 jobs:
-  inline-js-test-nodejs-12:
+  inline-js-test-linux:
     docker:
-      - image: terrorjack/stackage:lts-14.11
+      - image: terrorjack/stackage:lts-14.12
     steps:
       - run:
           name: Install dependencies
           command: |
-            curl -sSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
-            echo "deb https://deb.nodesource.com/node_12.x eoan main" > /etc/apt/sources.list.d/nodesource.list
-            apt update
-            apt full-upgrade -y
-            apt install -y nodejs
-            node --version
-            npm --version
+            mkdir -p ~/.local/bin
+            curl -L https://raw.githubusercontent.com/TerrorJack/node-fetcher/master/node-fetcher.py -o ~/.local/bin/node-fetcher
+            chmod u+x ~/.local/bin/node-fetcher
       - checkout
       - run:
           name: Test inline-js
           command: |
-            stack --no-terminal -j2 build --haddock --test --no-run-tests
-            stack --no-terminal test inline-js --test-arguments="-j2"
+            mkdir ~/node
+            export PATH=~/node/bin:$PATH
 
-  inline-js-test-nodejs-13:
-    docker:
-      - image: terrorjack/stackage:lts-14.11
-    steps:
-      - run:
-          name: Install dependencies
-          command: |
-            curl -sSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
-            echo "deb https://deb.nodesource.com/node_13.x eoan main" > /etc/apt/sources.list.d/nodesource.list
-            apt update
-            apt full-upgrade -y
-            apt install -y nodejs
-            node --version
-            npm --version
-      - checkout
-      - run:
-          name: Test inline-js
-          command: |
             stack --no-terminal -j2 build --haddock --test --no-run-tests
-            stack --no-terminal test inline-js --test-arguments="-j2"
 
-  inline-js-test-nodejs-v8:
-    docker:
-      - image: terrorjack/stackage:lts-14.11
-    steps:
-      - run:
-          name: Install dependencies
-          command: |
-            apt update
-            apt full-upgrade -y
-            cd /usr
-            curl -L https://raw.githubusercontent.com/tweag/asterius/master/utils/v8-node.py | python3
-            export npm_config_prefix=/usr
-            curl -L https://www.npmjs.com/install.sh | sh
+            node-fetcher --channel release --version v12 --path ~/node
             node --version
             npm --version
-      - checkout
-      - run:
-          name: Test inline-js
-          command: |
-            stack --no-terminal -j2 build --haddock --test --no-run-tests
-            stack --no-terminal test inline-js --test-arguments="-j2"
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
+            rm -rf ~/node/*
+
+            node-fetcher --channel release --version v13 --path ~/node
+            node --version
+            npm --version
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
+            rm -rf ~/node/*
+
+            node-fetcher --channel v8-canary --path ~/node
+            node --version
+            npm --version
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
+            rm -rf ~/node/*
 
   inline-js-test-macos:
     macos:
@@ -84,13 +57,11 @@ jobs:
           name: Test inline-js
           command: |
             stack --no-terminal -j4 build --test --no-run-tests
-            stack --no-terminal test inline-js --test-arguments="-j4" || true
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j4" || true
 
 workflows:
   version: 2
   build:
     jobs:
-      - inline-js-test-nodejs-12
-      - inline-js-test-nodejs-13
-      - inline-js-test-nodejs-v8
+      - inline-js-test-linux
       - inline-js-test-macos
