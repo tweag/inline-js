@@ -58,7 +58,7 @@ jobs:
             mkdir ~/node
             export PATH=~/.local/bin:~/node/bin:$PATH
 
-            stack --no-terminal -j4 build --haddock --test --no-run-tests
+            stack --no-terminal -j4 build --test --no-run-tests
 
             node-fetcher --channel release --version v12 --path ~/node
             node --version
