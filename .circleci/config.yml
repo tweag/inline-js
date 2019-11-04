@@ -46,7 +46,7 @@ jobs:
           name: Install dependencies
           command: |
             brew install \
-              gnutar
+              gnu-tar
             mkdir -p ~/.local/bin
             curl -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | gtar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
       - checkout
