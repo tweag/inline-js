@@ -45,8 +45,10 @@ jobs:
       - run:
           name: Install dependencies
           command: |
+            brew install \
+              gnutar
             mkdir -p ~/.local/bin
-            curl -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+            curl -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | gtar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
       - checkout
       - run:
           name: Test inline-js
