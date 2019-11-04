@@ -40,7 +40,7 @@ jobs:
 
   inline-js-test-macos:
     macos:
-      xcode: "11.1.0"
+      xcode: "11.2.0"
     steps:
       - run:
           name: Install dependencies
@@ -49,6 +49,8 @@ jobs:
               gnu-tar
             mkdir -p ~/.local/bin
             curl -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | gtar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+            curl -L https://raw.githubusercontent.com/TerrorJack/node-fetcher/master/node-fetcher.py -o ~/.local/bin/node-fetcher
+            chmod u+x ~/.local/bin/node-fetcher
       - checkout
       - run:
           name: Test inline-js
