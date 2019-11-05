@@ -52,7 +52,7 @@ genValue =
 
 tests :: IO TestTree
 tests = pure $ withResource setup teardown $ \getSetup ->
-  testProperty "Ping-Pong Matching" $ withMaxSuccess 1024 $ monadicIO $ do
+  testProperty "Ping-Pong Matching" $ withMaxSuccess 32768 $ monadicIO $ do
     s <- liftIO getSetup
     forAllM genValue $ \v -> run $ do
       v_buf_ref <- alloc s $ encode v
