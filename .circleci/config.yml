@@ -3,7 +3,7 @@ version: 2
 jobs:
   inline-js-test-linux:
     docker:
-      - image: terrorjack/stackage:lts-14.12
+      - image: terrorjack/stackage:lts-14.13
     steps:
       - run:
           name: Install dependencies
