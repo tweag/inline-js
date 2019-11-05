@@ -100,21 +100,18 @@ newJSSession JSSessionOpts {..} = do
         pure (p, mjss)
       _ -> pure (mjss_dir, [])
   parent_env <- getEnvironment
-  (rh0, wh0) <- createPipe
-  (rh1, wh1) <- createPipe
-  for_ [rh0, wh0, rh1, wh1] $ \h -> do
-    hSetBinaryMode h True
-    hSetBuffering h NoBuffering
-  wfd0 <- handleToFd wh0
-  rfd1 <- handleToFd rh1
+  (host_read_h, node_write_h) <- createPipe
+  (node_read_h, host_write_h) <- createPipe
+  node_write_fd <- handleToFd node_write_h
+  node_read_fd <- handleToFd node_read_h
   (_m_stdin, _m_stdout, _m_stderr, _ph) <-
     createProcess
       ( proc nodePath $
           nodeExtraArgs
             <> [ "--experimental-modules",
                  mjss_dir </> "eval.mjs",
-                 show wfd0,
-                 show rfd1
+                 show node_write_fd,
+                 show node_read_fd
                ]
       )
         { cwd = nodeWorkDir,
@@ -123,25 +120,28 @@ newJSSession JSSessionOpts {..} = do
           std_out = if nodeStdOutInherit then Inherit else CreatePipe,
           std_err = if nodeStdErrInherit then Inherit else CreatePipe
         }
+  hClose node_write_h
+  hClose node_read_h
   send_queue <- newTQueueIO
   _ <-
     forkIO $
       let w = do
             buf <- atomically $ readTQueue send_queue
-            hPutBuilder wh1 $
+            hPutBuilder host_write_h $
               word32LE (fromIntegral $ LBS.length buf)
                 <> lazyByteString buf
+            hFlush host_write_h
             w
        in void $ tryAny w
   recv_map <- newTVarIO IntMap.empty
   _ <-
     forkIO $
       let w = do
-            (len :: Word32) <- peekHandle rh0
-            (msg_id :: Word32) <- peekHandle rh0
+            (len :: Word32) <- peekHandle host_read_h
+            (msg_id :: Word32) <- peekHandle host_read_h
             let len' = fromIntegral len - 4
                 msg_id' = fromIntegral msg_id
-            buf <- hGetLBS rh0 len'
+            buf <- hGetLBS host_read_h len'
             atomically $ modifyTVar' recv_map $ IntMap.insert msg_id' buf
             w
        in void $ tryAny w

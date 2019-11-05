@@ -22,7 +22,7 @@ tests = do
   datadir <- Paths_inline_js.getDataDir
   pure
     $ testProperty "Echo"
-    $ withMaxSuccess 8
+    $ withMaxSuccess 256
     $ monadicIO
     $ forAllM genLBS
     $ \buf -> run $ withJSSession defJSSessionOpts $ \s -> do
