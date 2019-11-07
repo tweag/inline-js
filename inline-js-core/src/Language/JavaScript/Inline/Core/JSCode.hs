@@ -34,7 +34,9 @@ instance Show JSCode where
 -- | UTF-8 decode a @Buffer@ and return a @string@.
 bufferToString :: JSCode -> JSCode
 bufferToString expr =
-  "(new TextDecoder('utf-8', {fatal: true})).decode(" <> expr <> ")"
+  "(new (require('util').TextDecoder)('utf-8', {fatal: true})).decode("
+    <> expr
+    <> ")"
 
 -- | @JSON.parse()@ a @string@.
 jsonParse :: JSCode -> JSCode
@@ -47,9 +49,9 @@ jsonStringify expr = "JSON.stringify(" <> expr <> ")"
 importMJS :: FilePath -> JSCode
 importMJS p =
   coerce $
-    "import('url').then(url => url.pathToFileURL("
+    "import((new (require('url').URL)('file:///'+"
       <> stringUtf8 (show p)
-      <> ").href).then(url => import(url))"
+      <> ")).href)"
 
 -- | A reference to a JavaScript value.
 --

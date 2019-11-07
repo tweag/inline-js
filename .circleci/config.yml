@@ -20,23 +20,27 @@ jobs:
 
             stack --no-terminal -j2 build --haddock --test --no-run-tests
 
-            node-fetcher --channel release --version v12 --path ~/node
-            node --version
-            npm --version
+            node-fetcher --channel release --version v10 --path ~/node --verbose
             stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
             rm -rf ~/node/*
 
-            node-fetcher --channel release --version v13 --path ~/node
-            node --version
-            npm --version
+            node-fetcher --channel release --version v12 --path ~/node --verbose
             stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
             rm -rf ~/node/*
 
-            node-fetcher --channel v8-canary --path ~/node
-            node --version
-            npm --version
+            node-fetcher --channel release --version v13 --path ~/node --verbose
             stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
             rm -rf ~/node/*
+
+            node-fetcher --channel nightly --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
+            rm -rf ~/node/*
+
+            node-fetcher --channel v8-canary --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
+
+            node-fetcher --channel v8 --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
 
   inline-js-test-macos:
     macos:
@@ -60,23 +64,24 @@ jobs:
 
             stack --no-terminal -j4 build --test --no-run-tests
 
-            node-fetcher --channel release --version v12 --path ~/node
-            node --version
-            npm --version
-            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j4"
+            node-fetcher --channel release --version v10 --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
             rm -rf ~/node/*
 
-            node-fetcher --channel release --version v13 --path ~/node
-            node --version
-            npm --version
-            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j4"
+            node-fetcher --channel release --version v12 --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
             rm -rf ~/node/*
 
-            node-fetcher --channel v8-canary --path ~/node
-            node --version
-            npm --version
-            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j4"
+            node-fetcher --channel release --version v13 --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
             rm -rf ~/node/*
+
+            node-fetcher --channel nightly --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
+            rm -rf ~/node/*
+
+            node-fetcher --channel v8-canary --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
 
 workflows:
   version: 2

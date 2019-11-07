@@ -36,4 +36,4 @@ class JSValManager {
   }
 }
 
-export default new JSValManager();
+module.exports = new JSValManager();

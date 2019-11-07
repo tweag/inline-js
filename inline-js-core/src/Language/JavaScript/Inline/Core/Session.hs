@@ -91,14 +91,14 @@ data JSSession
 newJSSession :: JSSessionOpts -> IO JSSession
 newJSSession JSSessionOpts {..} = do
   checkNodeVersion nodePath
-  (mjss_dir, mjss) <- do
-    mjss_dir <- (</> "jsbits") <$> Paths_inline_js_core.getDataDir
+  (jsbits_dir, jss) <- do
+    jsbits_dir <- (</> "jsbits") <$> Paths_inline_js_core.getDataDir
     case nodeWorkDir of
       Just p -> do
-        mjss <- listDirectory mjss_dir
-        for_ mjss $ \mjs -> copyFile (mjss_dir </> mjs) (p </> mjs)
-        pure (p, mjss)
-      _ -> pure (mjss_dir, [])
+        jss <- listDirectory jsbits_dir
+        for_ jss $ \js -> copyFile (jsbits_dir </> js) (p </> js)
+        pure (p, jss)
+      _ -> pure (jsbits_dir, [])
   parent_env <- getEnvironment
   (host_read_h, node_write_h) <- createPipe
   (node_read_h, host_write_h) <- createPipe
@@ -109,7 +109,7 @@ newJSSession JSSessionOpts {..} = do
       ( proc nodePath $
           nodeExtraArgs
             <> [ "--experimental-modules",
-                 mjss_dir </> "eval.mjs",
+                 jsbits_dir </> "eval.js",
                  show node_write_fd,
                  show node_read_fd
                ]
@@ -149,7 +149,7 @@ newJSSession JSSessionOpts {..} = do
   _close <- once $ do
     atomically $ writeTQueue send_queue "SHUTDOWN"
     case nodeWorkDir of
-      Just p -> for_ mjss $ \mjs -> removeFile $ p </> mjs
+      Just p -> for_ jss $ \js -> removeFile $ p </> js
       _ -> pure ()
   pure JSSession
     { closeJSSession = _close,

@@ -15,7 +15,7 @@ function newNode() {
   return { promise: p, resolve: r, next: newThunk(newNode) };
 }
 
-export class Lock {
+exports.Lock = class {
   constructor() {
     this.takeNode = newNode();
     this.putNode = this.takeNode;
@@ -33,4 +33,4 @@ export class Lock {
     this.putNode.resolve();
     this.putNode = this.putNode.next();
   }
-}
+};
