@@ -32,9 +32,15 @@ jobs:
             stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
             rm -rf ~/node/*
 
-            node-fetcher --channel v8-canary --path ~/node --verbose
+            node-fetcher --channel nightly --path ~/node --verbose
             stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
             rm -rf ~/node/*
+
+            node-fetcher --channel v8-canary --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
+
+            node-fetcher --channel v8 --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
 
   inline-js-test-macos:
     macos:
@@ -70,9 +76,12 @@ jobs:
             stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
             rm -rf ~/node/*
 
-            node-fetcher --channel v8-canary --path ~/node --verbose
+            node-fetcher --channel nightly --path ~/node --verbose
             stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
             rm -rf ~/node/*
+
+            node-fetcher --channel v8-canary --path ~/node --verbose
+            stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
 
 workflows:
   version: 2
