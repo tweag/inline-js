@@ -5,6 +5,7 @@ module Language.JavaScript.Inline.Core.NodeVersion
   )
 where
 
+import Control.DeepSeq
 import Control.Exception
 import Control.Monad
 import Data.Version
@@ -29,10 +30,10 @@ nodeVersion p = do
   ('v' : s) <- readProcess p ["--version"] ""
   let vs : tags = split (== '-') s
       v = map read $ split (== '.') vs
-  pure $ Version v tags
+  evaluate $ force $ Version v tags
 
 checkNodeVersion :: FilePath -> IO ()
 checkNodeVersion p = do
   v <- nodeVersion p
-  unless (v >= Version [12, 2] []) $
+  unless (v >= Version [10, 12] []) $
     throwIO UnsupportedNodeVersion {detectedNodeVersion = v}

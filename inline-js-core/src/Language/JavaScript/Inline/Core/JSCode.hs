@@ -34,7 +34,9 @@ instance Show JSCode where
 -- | UTF-8 decode a @Buffer@ and return a @string@.
 bufferToString :: JSCode -> JSCode
 bufferToString expr =
-  "(new TextDecoder('utf-8', {fatal: true})).decode(" <> expr <> ")"
+  "(new (require('util').TextDecoder)('utf-8', {fatal: true})).decode("
+    <> expr
+    <> ")"
 
 -- | @JSON.parse()@ a @string@.
 jsonParse :: JSCode -> JSCode
