@@ -35,5 +35,5 @@ nodeVersion p = do
 checkNodeVersion :: FilePath -> IO ()
 checkNodeVersion p = do
   v <- nodeVersion p
-  unless (v >= Version [10, 12] []) $
+  unless (v >= Version [10, 15, 3] []) $
     throwIO UnsupportedNodeVersion {detectedNodeVersion = v}

@@ -49,9 +49,9 @@ jsonStringify expr = "JSON.stringify(" <> expr <> ")"
 importMJS :: FilePath -> JSCode
 importMJS p =
   coerce $
-    "import('url').then(url => url.pathToFileURL("
+    "import((new (require('url').URL)('file:///'+"
       <> stringUtf8 (show p)
-      <> ").href).then(url => import(url))"
+      <> ")).href)"
 
 -- | A reference to a JavaScript value.
 --
