@@ -1,9 +1,7 @@
-import module from "module";
-import process from "process";
-import { StringDecoder } from "string_decoder";
-import vm from "vm";
-import JSVal from "./jsval.mjs";
-import { pipeRead, pipeWrite } from "./pipe.mjs";
+const { StringDecoder } = require("string_decoder"),
+  vm = require("vm"),
+  JSVal = require("./jsval.js"),
+  { pipeRead, pipeWrite } = require("./pipe.js");
 
 function errorStringify(err) {
   return err.stack ? err.stack : `${err}`;
@@ -25,7 +23,7 @@ function bufferFromU32(x) {
 }
 
 global.JSVal = JSVal;
-global.require = module.createRequire(import.meta.url);
+global.require = require;
 
 function postHostMessage(msg_id, is_err, result) {
   const result_buf = Buffer.from(result),

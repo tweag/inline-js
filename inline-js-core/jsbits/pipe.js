@@ -1,13 +1,13 @@
-import fs from "fs";
-import util from "util";
-import { Lock } from "./lock.mjs";
+const fs = require("fs"),
+  util = require("util"),
+  { Lock } = require("./lock.js");
 
 const read_lock = new Lock(),
   write_lock = new Lock(),
   read_func = util.promisify(fs.read),
   write_func = util.promisify(fs.write);
 
-export async function pipeRead(fd, buf, length) {
+exports.pipeRead = async (fd, buf, length) => {
   await read_lock.take();
   let total_bytes_read = 0;
   while (total_bytes_read < length) {
@@ -21,9 +21,9 @@ export async function pipeRead(fd, buf, length) {
     total_bytes_read += bytesRead;
   }
   read_lock.put();
-}
+};
 
-export async function pipeWrite(fd, buf) {
+exports.pipeWrite = async (fd, buf) => {
   await write_lock.take();
   let total_bytes_written = 0;
   while (total_bytes_written < buf.length) {
@@ -37,4 +37,4 @@ export async function pipeWrite(fd, buf) {
     total_bytes_written += bytesWritten;
   }
   write_lock.put();
-}
+};

@@ -14,7 +14,7 @@ extra-source-files:
     CHANGELOG.md
     LICENSE
 data-files:
-    jsbits/*.mjs
+    jsbits/*.js
 
 source-repository head
   type: git
