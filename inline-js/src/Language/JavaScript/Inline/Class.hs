@@ -12,7 +12,6 @@ where
 
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Base64 as BS
 import qualified Data.ByteString.Base64.Lazy as LBS
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
@@ -26,15 +25,14 @@ class ToJSCode a where
 
 instance ToJSCode BS.ByteString where
   {-# INLINE toJSCode #-}
-  toJSCode buf =
-    "Buffer.from('" <> coerce (byteString (BS.encode buf)) <> "', 'base64')"
+  toJSCode = toJSCode . LBS.fromStrict
 
 instance ToJSCode LBS.ByteString where
   {-# INLINE toJSCode #-}
   toJSCode buf =
-    "Buffer.from('"
+    "(s => { const buf = Buffer.from(s, 'base64'), arr_buf = new ArrayBuffer(buf.length); buf.copy(Buffer.from(arr_buf)); return arr_buf; })('"
       <> coerce (lazyByteString (LBS.encode buf))
-      <> "', 'base64')"
+      <> "')"
 
 instance ToJSCode SBS.ShortByteString where
   {-# INLINE toJSCode #-}
