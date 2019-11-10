@@ -88,26 +88,26 @@ jobs:
             cabal new-build -j2 inline-js:inline-js-test-suite
 
             node-fetcher --channel release --version v10 --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j2
+            cabal new-run inline-js:inline-js-test-suite -- -j2
             rm -rf ~/node/*
 
             node-fetcher --channel release --version v12 --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j2
+            cabal new-run inline-js:inline-js-test-suite -- -j2
             rm -rf ~/node/*
 
             node-fetcher --channel release --version v13 --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j2
+            cabal new-run inline-js:inline-js-test-suite -- -j2
             rm -rf ~/node/*
 
             node-fetcher --channel nightly --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j2
+            cabal new-run inline-js:inline-js-test-suite -- -j2
             rm -rf ~/node/*
 
             node-fetcher --channel v8-canary --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j2
+            cabal new-run inline-js:inline-js-test-suite -- -j2
 
             node-fetcher --channel v8 --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j2
+            cabal new-run inline-js:inline-js-test-suite -- -j2
 
   inline-js-test-macos-stack:
     macos:
@@ -181,23 +181,23 @@ jobs:
             cabal new-build -j4 inline-js:inline-js-test-suite
 
             node-fetcher --channel release --version v10 --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j4
+            cabal new-run inline-js:inline-js-test-suite -- -j4
             rm -rf ~/node/*
 
             node-fetcher --channel release --version v12 --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j4
+            cabal new-run inline-js:inline-js-test-suite -- -j4
             rm -rf ~/node/*
 
             node-fetcher --channel release --version v13 --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j4
+            cabal new-run inline-js:inline-js-test-suite -- -j4
             rm -rf ~/node/*
 
             node-fetcher --channel nightly --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j4
+            cabal new-run inline-js:inline-js-test-suite -- -j4
             rm -rf ~/node/*
 
             node-fetcher --channel v8-canary --path ~/node --verbose
-            cabal new-test inline-js:inline-js-test-suite -- -j4
+            cabal new-run inline-js:inline-js-test-suite -- -j4
 
 workflows:
   version: 2
