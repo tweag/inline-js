@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-  inline-js-test-linux:
+  inline-js-test-linux-stack:
     docker:
       - image: terrorjack/stackage:lts-14.14
     steps:
@@ -42,7 +42,74 @@ jobs:
             node-fetcher --channel v8 --path ~/node --verbose
             stack --no-terminal test inline-js:inline-js-test-suite --test-arguments="-j2"
 
-  inline-js-test-macos:
+  inline-js-test-linux-cabal:
+    docker:
+      - image: ubuntu:eoan
+    environment:
+      - DEBIAN_FRONTEND: noninteractive
+      - LANG: C.UTF-8
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            export PATH=~/.cabal/bin:~/.ghcup/bin:~/.local/bin:$PATH
+
+            apt update
+            apt full-upgrade -y
+            apt install -y \
+              build-essential \
+              curl \
+              git \
+              libffi-dev \
+              libgmp-dev \
+              libncurses-dev \
+              openssh-client \
+              python3-minimal
+
+            mkdir -p ~/.ghcup/bin
+            curl https://gitlab.haskell.org/haskell/ghcup/raw/master/ghcup -o ~/.ghcup/bin/ghcup
+            chmod u+x ~/.ghcup/bin/ghcup
+
+            ghcup install 8.8.1
+            ghcup set 8.8.1
+            ghcup install-cabal 3.0.0.0
+            cabal new-update
+
+            mkdir -p ~/.local/bin
+            curl -L https://raw.githubusercontent.com/TerrorJack/node-fetcher/master/node-fetcher.py -o ~/.local/bin/node-fetcher
+            chmod u+x ~/.local/bin/node-fetcher
+      - checkout
+      - run:
+          name: Test inline-js
+          command: |
+            mkdir ~/node
+            export PATH=~/.cabal/bin:~/.ghcup/bin:~/.local/bin:~/node/bin:$PATH
+
+            cabal new-build -j2 inline-js:inline-js-test-suite
+
+            node-fetcher --channel release --version v10 --path ~/node --verbose
+            cabal new-test -j2 inline-js:inline-js-test-suite -- -j2
+            rm -rf ~/node/*
+
+            node-fetcher --channel release --version v12 --path ~/node --verbose
+            cabal new-test -j2 inline-js:inline-js-test-suite -- -j2
+            rm -rf ~/node/*
+
+            node-fetcher --channel release --version v13 --path ~/node --verbose
+            cabal new-test -j2 inline-js:inline-js-test-suite -- -j2
+            rm -rf ~/node/*
+
+            node-fetcher --channel nightly --path ~/node --verbose
+            cabal new-test -j2 inline-js:inline-js-test-suite -- -j2
+            rm -rf ~/node/*
+
+            node-fetcher --channel v8-canary --path ~/node --verbose
+            cabal new-test -j2 inline-js:inline-js-test-suite -- -j2
+
+            node-fetcher --channel v8 --path ~/node --verbose
+            cabal new-test -j2 inline-js:inline-js-test-suite -- -j2
+
+  inline-js-test-macos-stack:
     macos:
       xcode: "11.2.0"
     steps:
@@ -87,5 +154,6 @@ workflows:
   version: 2
   build:
     jobs:
-      - inline-js-test-linux
-      - inline-js-test-macos
+      - inline-js-test-linux-stack
+      - inline-js-test-linux-cabal
+      - inline-js-test-macos-stack
