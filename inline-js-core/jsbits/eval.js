@@ -1,3 +1,5 @@
+"use strict";
+
 const { StringDecoder } = require("string_decoder"),
   vm = require("vm"),
   JSVal = require("./jsval.js"),
@@ -65,7 +67,9 @@ async function handleHostMessage(msg_buf) {
         break;
       }
       case 1: {
-        postHostMessage(msg_id, false, bufferFromU32(JSVal.newJSVal(buf)));
+        const arr_buf = new ArrayBuffer(buf.length);
+        buf.copy(Buffer.from(arr_buf));
+        postHostMessage(msg_id, false, bufferFromU32(JSVal.newJSVal(arr_buf)));
         break;
       }
       default: {
