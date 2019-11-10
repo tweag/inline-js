@@ -1,3 +1,5 @@
+"use strict";
+
 function newThunk(f) {
   let t = () => {
     const r = f();

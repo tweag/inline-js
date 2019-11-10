@@ -1,3 +1,5 @@
+"use strict";
+
 const fs = require("fs"),
   util = require("util"),
   { Lock } = require("./lock.js");

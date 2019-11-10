@@ -1,3 +1,5 @@
+"use strict";
+
 class JSValManager {
   constructor() {
     this.map = new Map([[0, null]]);

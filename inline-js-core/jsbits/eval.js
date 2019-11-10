@@ -1,3 +1,5 @@
+"use strict";
+
 const { StringDecoder } = require("string_decoder"),
   vm = require("vm"),
   JSVal = require("./jsval.js"),
