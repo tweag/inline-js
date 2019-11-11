@@ -22,15 +22,14 @@ import Control.Concurrent.STM
 import Control.Exception
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
-import Data.Coerce
 import Data.Foldable
 import Data.Functor
-import qualified Data.IntMap.Strict as IntMap
 import Data.Word
+import Foreign.Ptr
+import Foreign.StablePtr
 import GHC.IO.Handle.FD
 import Language.JavaScript.Inline.Core.Internal
 import Language.JavaScript.Inline.Core.Message.Class
-import Language.JavaScript.Inline.Core.MessageCounter
 import Language.JavaScript.Inline.Core.NodeVersion
 import qualified Paths_inline_js_core
 import System.Directory
@@ -80,11 +79,9 @@ data JSSession
       { -- | Shuts down a 'JSSession'. Safe to call more than once.
         closeJSSession :: IO (),
         sendData :: LBS.ByteString -> IO (),
-        recvData :: MsgId -> IO LBS.ByteString,
         -- | Available when the corresponding inherit flag in 'JSSessionOpts' is
         -- 'False'.
-        nodeStdIn, nodeStdOut, nodeStdErr :: Maybe Handle,
-        msgCounter :: MsgCounter
+        nodeStdIn, nodeStdOut, nodeStdErr :: Maybe Handle
       }
 
 -- | Initializes a new 'JSSession'.
@@ -133,19 +130,19 @@ newJSSession JSSessionOpts {..} = do
             hFlush host_write_h
             w
        in void $ tryAny w
-  recv_map <- newTVarIO IntMap.empty
   _ <-
     forkIO $
       let w = do
             (len :: Word32) <- peekHandle host_read_h
             (msg_id :: Word32) <- peekHandle host_read_h
             let len' = fromIntegral len - 4
-                msg_id' = fromIntegral msg_id
+                sp = castPtrToStablePtr $ intPtrToPtr $ fromIntegral msg_id
+            mv <- deRefStablePtr sp
+            freeStablePtr sp
             buf <- hGetLBS host_read_h len'
-            atomically $ modifyTVar' recv_map $ IntMap.insert msg_id' buf
+            putMVar mv buf
             w
        in void $ tryAny w
-  _msg_counter <- newMsgCounter
   _close <- once $ do
     atomically $ writeTQueue send_queue "SHUTDOWN"
     case nodeWorkDir of
@@ -154,20 +151,9 @@ newJSSession JSSessionOpts {..} = do
   pure JSSession
     { closeJSSession = _close,
       sendData = atomically . writeTQueue send_queue,
-      recvData = \msg_id -> atomically $ do
-        m <- readTVar recv_map
-        case IntMap.updateLookupWithKey
-          (\_ _ -> Nothing)
-          (coerce msg_id)
-          m of
-          (Just buf, m') -> do
-            writeTVar recv_map m'
-            pure buf
-          _ -> retry,
       nodeStdIn = _m_stdin,
       nodeStdOut = _m_stdout,
-      nodeStdErr = _m_stderr,
-      msgCounter = _msg_counter
+      nodeStdErr = _m_stderr
     }
 
 -- | Use 'bracket' to ensure 'closeJSSession' is called.
@@ -176,8 +162,8 @@ withJSSession opts = bracket (newJSSession opts) closeJSSession
 
 sendMsg :: (Request req, Response resp) => JSSession -> req -> IO (IO resp)
 sendMsg JSSession {..} msg = do
-  msg_id <- newMsgId msgCounter
-  sendData $ encodeRequest msg_id msg
-  once $ do
-    buf <- recvData msg_id
-    decodeResponse buf
+  mv <- newEmptyMVar
+  sp <- newStablePtr mv
+  sendData $ encodeRequest sp msg
+  once $
+    takeMVar mv >>= decodeResponse
