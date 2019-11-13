@@ -89,8 +89,10 @@ async function onHostMessage() {
   const msg_len = msg_len_buf.readUInt32LE(0),
     msg_buf = Buffer.allocUnsafe(msg_len);
   await pipeRead(node_read_fd, msg_buf, msg_len);
-  if (!msg_buf.equals(shutdown_buf)) setImmediate(onHostMessage);
-  setImmediate(handleHostMessage, msg_buf);
+  if (!msg_buf.equals(shutdown_buf)) {
+    setImmediate(onHostMessage);
+    setImmediate(handleHostMessage, msg_buf);
+  }
 }
 
 onHostMessage();
