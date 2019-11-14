@@ -111,7 +111,7 @@ jobs:
 
   inline-js-test-macos-stack:
     macos:
-      xcode: "11.2.0"
+      xcode: "11.2.1"
     steps:
       - run:
           name: Install dependencies
@@ -152,7 +152,7 @@ jobs:
 
   inline-js-test-macos-cabal:
     macos:
-      xcode: "11.2.0"
+      xcode: "11.2.1"
     steps:
       - run:
           name: Install dependencies
