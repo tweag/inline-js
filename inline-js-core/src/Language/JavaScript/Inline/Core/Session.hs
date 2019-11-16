@@ -20,14 +20,15 @@ where
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception
+import Control.Monad
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
-import Data.Functor
 import Data.Word
 import Foreign.Ptr
 import Foreign.StablePtr
 import GHC.IO.Handle.FD
+import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.Internal
 import Language.JavaScript.Inline.Core.Message.Class
 import Language.JavaScript.Inline.Core.NodeVersion
@@ -119,17 +120,21 @@ newJSSession JSSessionOpts {..} = do
         }
   hClose node_write_h
   hClose node_read_h
+  is_open <- newTVarIO True
   send_queue <- newTQueueIO
   _ <-
     forkIO $
       let w = do
-            buf <- atomically $ readTQueue send_queue
-            hPutBuilder host_write_h $
+            (f, bufs) <- atomically $ do
+              f <- readTVar is_open
+              bufs <- if f then (: []) <$> readTQueue send_queue else flushTQueue send_queue
+              pure (f, bufs)
+            hPutBuilder host_write_h $ flip foldMap bufs $ \buf ->
               word32LE (fromIntegral $ LBS.length buf)
                 <> lazyByteString buf
             hFlush host_write_h
-            w
-       in void $ tryAny w
+            when f w
+       in w
   _ <-
     forkIO $
       let w = do
@@ -144,13 +149,17 @@ newJSSession JSSessionOpts {..} = do
             w
        in void $ tryAny w
   _close <- once $ do
-    atomically $ writeTQueue send_queue "SHUTDOWN"
+    atomically $ do
+      writeTVar is_open False
+      writeTQueue send_queue "SHUTDOWN"
     case nodeWorkDir of
       Just p -> for_ jss $ \js -> removeFile $ p </> js
       _ -> pure ()
   pure JSSession
     { closeJSSession = _close,
-      sendData = atomically . writeTQueue send_queue,
+      sendData = \buf -> atomically $ do
+        f <- readTVar is_open
+        if f then writeTQueue send_queue buf else throwSTM SessionClosed,
       nodeStdIn = _m_stdin,
       nodeStdOut = _m_stdout,
       nodeStdErr = _m_stderr
