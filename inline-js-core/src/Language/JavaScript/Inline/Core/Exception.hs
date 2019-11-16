@@ -19,6 +19,7 @@ data InlineJSException
   | EvalException
       { evalError :: LBS.ByteString
       }
+  | SessionClosed
   deriving (Show)
 
 instance Exception InlineJSException

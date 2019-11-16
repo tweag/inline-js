@@ -12,7 +12,7 @@ module Language.JavaScript.Inline.Core
     bufferToString,
     jsonParse,
     jsonStringify,
-    JSVal (..),
+    JSVal,
     deRefJSVal,
     freeJSVal,
     takeJSVal,
