@@ -173,6 +173,6 @@ sendMsg :: (Request req, Response resp) => JSSession -> req -> IO (IO resp)
 sendMsg JSSession {..} msg = do
   mv <- newEmptyMVar
   sp <- newStablePtr mv
-  sendData $ encodeRequest sp msg
+  sendData (encodeRequest sp msg) `onException` freeStablePtr sp
   once $
     takeMVar mv >>= decodeResponse
