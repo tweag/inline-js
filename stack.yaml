@@ -1,7 +1,7 @@
-resolver: lts-14.14
+resolver: lts-14.15
 packages:
   - inline-js
   - inline-js-core
 nix:
   packages:
-    - nodejs-12_x
+    - nodejs-13_x
