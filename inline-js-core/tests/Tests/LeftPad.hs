@@ -9,7 +9,7 @@ import qualified Data.ByteString.Lazy as LBS
 import Distribution.Simple.Utils
 import Distribution.Verbosity
 import Language.JavaScript.Inline.Core
-import qualified Paths_inline_js
+import qualified Paths_inline_js_core
 import System.Directory
 import System.FilePath
 import System.Process
@@ -18,7 +18,7 @@ import Test.Tasty.HUnit
 
 tests :: IO TestTree
 tests = do
-  datadir <- Paths_inline_js.getDataDir
+  datadir <- Paths_inline_js_core.getDataDir
   tmpdir <- getTemporaryDirectory
   pure $
     testGroup

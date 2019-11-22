@@ -9,7 +9,7 @@ where
 import Control.Monad
 import qualified Data.ByteString.Lazy as LBS
 import Language.JavaScript.Inline.Core
-import qualified Paths_inline_js
+import qualified Paths_inline_js_core
 import System.FilePath
 import Test.QuickCheck.Monadic
 import Test.Tasty
@@ -20,7 +20,7 @@ genLBS = LBS.pack <$> vectorOf 1024 arbitrary
 
 tests :: IO TestTree
 tests = do
-  datadir <- Paths_inline_js.getDataDir
+  datadir <- Paths_inline_js_core.getDataDir
   pure $
     testGroup
       "Echo"
