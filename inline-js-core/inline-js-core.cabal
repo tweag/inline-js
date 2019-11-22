@@ -1,4 +1,4 @@
-cabal-version:  2.2
+cabal-version:  2.4
 name:           inline-js-core
 version:        0.0.1
 category:       Web
@@ -15,12 +15,34 @@ extra-source-files:
     LICENSE
 data-files:
     jsbits/*.js
+    testdata/*.mjs
+    testdata/*.tar
+    testdata/*.wasm
 
 source-repository head
   type: git
   location: https://github.com/tweag/inline-js
 
+common deps
+  autogen-modules:
+      Paths_inline_js_core
+  build-depends:
+      base
+    , binary
+    , bytestring
+    , deepseq
+    , directory
+    , filepath
+    , ghc-prim
+    , process
+    , stm
+  default-language: Haskell2010
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wnoncanonical-monad-instances
+  other-modules:
+      Paths_inline_js_core
+
 library
+  import: deps
   exposed-modules:
       Language.JavaScript.Inline.Core
   other-modules:
@@ -32,22 +54,30 @@ library
       Language.JavaScript.Inline.Core.Message.Eval
       Language.JavaScript.Inline.Core.NodeVersion
       Language.JavaScript.Inline.Core.Session
-      Paths_inline_js_core
-  autogen-modules:
-      Paths_inline_js_core
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wnoncanonical-monad-instances
+
+test-suite inline-js-core-tests
+  import: deps
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Tests.Echo
+      Tests.Evaluation
+      Tests.LeftPad
+      Tests.PingPong
+      Tests.Wasm
+  hs-source-dirs:
+      tests
+  ghc-options: -threaded -rtsopts
   build-depends:
-      base
-    , binary
-    , bytestring
-    , containers
-    , deepseq
-    , directory
-    , filepath
-    , ghc-prim
-    , process
-    , stm
+      aeson
+    , Cabal
+    , inline-js-core
+    , QuickCheck
+    , smallcheck
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
+    , tasty-smallcheck
     , text
-  default-language: Haskell2010

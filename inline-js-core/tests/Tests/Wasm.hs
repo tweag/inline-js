@@ -9,7 +9,7 @@ import Data.Aeson
 import qualified Data.ByteString.Lazy as LBS
 import Data.String
 import Language.JavaScript.Inline.Core
-import qualified Paths_inline_js
+import qualified Paths_inline_js_core
 import System.FilePath
 import Test.SmallCheck.Series
 import Test.Tasty
@@ -22,7 +22,7 @@ fib n
 
 tests :: IO TestTree
 tests = do
-  datadir <- Paths_inline_js.getDataDir
+  datadir <- Paths_inline_js_core.getDataDir
   fib_buf <- LBS.readFile $ datadir </> "testdata" </> "fib.wasm"
   pure $ testProperty "WebAssembly" $ over (generate $ const [1 .. 24]) $ \i ->
     monadic $ withJSSession defJSSessionOpts $ \s -> do
