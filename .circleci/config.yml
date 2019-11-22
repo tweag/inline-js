@@ -38,6 +38,7 @@ jobs:
 
             node-fetcher --channel v8-canary --path ~/node --verbose
             stack --no-terminal test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+            rm -rf ~/node/*
 
             node-fetcher --channel v8 --path ~/node --verbose
             stack --no-terminal test inline-js-core:inline-js-core-tests --test-arguments="-j2"
@@ -105,6 +106,7 @@ jobs:
 
             node-fetcher --channel v8-canary --path ~/node --verbose
             cabal new-run inline-js-core:inline-js-core-tests -- -j2
+            rm -rf ~/node/*
 
             node-fetcher --channel v8 --path ~/node --verbose
             cabal new-run inline-js-core:inline-js-core-tests -- -j2
