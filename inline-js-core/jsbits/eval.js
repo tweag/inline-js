@@ -50,10 +50,8 @@ async function handleHostMessage(msg_buf) {
             displayErrors: true,
             importModuleDynamically: spec => import(spec)
           };
-        const eval_result = vm.runInThisContext(msg_content, eval_options),
-          promise = Promise.resolve(
-            eval_result === undefined ? null : eval_result
-          ),
+        const eval_code = `(async () => (${msg_content}))()`;
+        const promise = vm.runInThisContext(eval_code, eval_options),
           promise_result = await promise;
         postHostMessage(
           msg_id,

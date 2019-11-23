@@ -34,17 +34,12 @@ tests =
                 ),
                 (eval s "require('process').version", notError),
                 (eval s "BOOM", isError),
-                ( eval s "let x = 6*7; JSON.stringify(null)",
-                  successfullyReturns Null
-                ),
-                (eval s "JSON.stringify(x)", successfullyReturns $ Number 42),
+                (eval s "JSON.stringify(null)", successfullyReturns Null),
                 ( eval s "JSON.stringify(\"left\" + \"pad\")",
                   successfullyReturns $ String "leftpad"
                 ),
                 (eval s "Promise.reject('BOOM')", isError),
-                ( eval s "Promise.resolve(JSON.stringify(x))",
-                  successfullyReturns $ Number 42
-                )
+                (eval s "Promise.resolve('42')", successfullyReturns $ Number 42)
               ]
       ]
 
