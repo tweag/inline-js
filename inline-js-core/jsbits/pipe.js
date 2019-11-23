@@ -26,14 +26,15 @@ exports.pipeRead = async (fd, buf, length) => {
 };
 
 exports.pipeWrite = async (fd, buf) => {
+  const buf_length = buf.byteLength ? buf.byteLength : buf.length;
   await write_lock.take();
   let total_bytes_written = 0;
-  while (total_bytes_written < buf.length) {
+  while (total_bytes_written < buf_length) {
     const { bytesWritten } = await write_func(
       fd,
       buf,
       total_bytes_written,
-      buf.length - total_bytes_written,
+      buf_length - total_bytes_written,
       null
     );
     total_bytes_written += bytesWritten;

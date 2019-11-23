@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StrictData #-}
@@ -152,7 +151,7 @@ newJSSession JSSessionOpts {..} = do
   _close <- once $ do
     atomically $ do
       writeTVar is_open False
-      writeTQueue send_queue "SHUTDOWN"
+      writeTQueue send_queue LBS.empty
     case nodeWorkDir of
       Just p -> for_ jss $ \js -> removeFile $ p </> js
       _ -> pure ()
