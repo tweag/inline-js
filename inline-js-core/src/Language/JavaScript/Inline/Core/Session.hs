@@ -24,6 +24,7 @@ import Control.Monad
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
+import Data.Maybe
 import Data.Word
 import Foreign.Ptr
 import Foreign.StablePtr
@@ -63,7 +64,7 @@ data JSSessionOpts
 {-# NOINLINE defJSSessionOpts #-}
 defJSSessionOpts :: JSSessionOpts
 defJSSessionOpts = unsafePerformIO $ do
-  _datadir <- Paths_inline_js_core.getDataDir
+  _debug <- isJust <$> getEnv "INLINE_JS_DEBUG"
   pure JSSessionOpts
     { nodePath = "node",
       nodeExtraArgs = [],
@@ -71,7 +72,7 @@ defJSSessionOpts = unsafePerformIO $ do
       nodeExtraEnv = [],
       nodeStdInInherit = False,
       nodeStdOutInherit = False,
-      nodeStdErrInherit = False
+      nodeStdErrInherit = _debug
     }
 
 -- | Represents an active @node@ process and related IPC states.
