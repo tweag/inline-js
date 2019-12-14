@@ -10,8 +10,9 @@ function errorStringify(err) {
 }
 
 process.on("unhandledRejection", err => {
-  process.stderr.write(errorStringify(err));
-  throw err;
+  process.stderr.write(errorStringify(err), () => {
+    process.kill(process.pid, "SIGKILL");
+  });
 });
 
 const decoder = new StringDecoder("utf8"),
