@@ -15,6 +15,12 @@ process.on("unhandledRejection", err => {
   });
 });
 
+process.on("uncaughtException", err => {
+  process.stderr.write(errorStringify(err), () => {
+    process.kill(process.pid, "SIGKILL");
+  });
+});
+
 const decoder = new StringDecoder("utf8"),
   node_read_fd = Number.parseInt(process.argv[process.argv.length - 1]),
   node_write_fd = Number.parseInt(process.argv[process.argv.length - 2]);
