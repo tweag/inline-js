@@ -1,0 +1,73 @@
+name: test-cabal
+
+on:
+  - push
+  - pull_request
+
+jobs:
+
+  test-cabal:
+    name: ${{ matrix.os }}-ghc-${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-18.04
+          - macos-latest
+        ghc:
+          - 8.10.1
+          - 8.8.3
+          - 8.6.5
+          - 8.4.4
+        experimental:
+          - false
+        include:
+          - os: windows-2019
+            ghc: 8.10.1
+            experimental: true
+    steps:
+
+      - name: setup-haskell
+        uses: actions/setup-haskell@v1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: 3.2.0.0
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: build
+        run: |
+          cabal v2-build -j2 inline-js-core:inline-js-core-tests
+
+      - name: setup-node-14
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 14.3.0
+
+      - name: test-node-14
+        run: |
+          node --version
+          cabal v2-run inline-js-core:inline-js-core-tests -- -j2
+
+      - name: setup-node-12
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 12.16.3
+
+      - name: test-node-12
+        run: |
+          node --version
+          cabal v2-run inline-js-core:inline-js-core-tests -- -j2
+
+      - name: setup-node-10
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 10.20.1
+
+      - name: test-node-10
+        run: |
+          node --version
+          cabal v2-run inline-js-core:inline-js-core-tests -- -j2

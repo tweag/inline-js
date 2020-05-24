@@ -1,0 +1,36 @@
+name: build-haddock
+
+on:
+  - push
+  - pull_request
+
+jobs:
+
+  build-haddock:
+    name: build-haddock
+    runs-on: ubuntu-18.04
+    steps:
+
+      - name: setup-haskell
+        uses: actions/setup-haskell@v1
+        with:
+          ghc-version: 8.10.1
+          cabal-version: 3.2.0.0
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: haddock
+        run: |
+          cabal v2-haddock \
+            --haddock-for-hackage \
+            --haddock-hyperlink-source \
+            --haddock-quickjump \
+            -j2 \
+            inline-js-core
+
+      - name: upload-artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: inline-js-core-0.0.1-docs
+          path: dist-newstyle/inline-js-core-0.0.1-docs.tar.gz
