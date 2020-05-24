@@ -1,0 +1,61 @@
+name: test-stack-alpine
+
+on:
+  - push
+  - pull_request
+
+jobs:
+
+  test-stack-alpine:
+    name: alpine-edge
+    runs-on: ubuntu-18.04
+    container:
+      image: alpine:edge
+    steps:
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: test
+        run: |
+          export HOME=/root
+          mkdir -p $HOME/.local/bin
+          mkdir $HOME/.node
+          export PATH=$HOME/.local/bin:$HOME/.node/bin:$PATH
+
+          apk update
+          apk upgrade
+          apk add \
+            alpine-sdk \
+            bash \
+            coreutils \
+            gmp-dev \
+            libffi-dev \
+            ncurses-dev \
+            numactl-dev \
+            perl \
+            xz
+          ln -s /usr/lib/libncursesw.so.6 /usr/lib/libtinfow.so.6
+
+          mkdir $HOME/.stack
+          echo "allow-different-user: true" > $HOME/.stack/config.yaml
+          echo "ghc-build: musl" >> $HOME/.stack/config.yaml
+          curl -L https://github.com/commercialhaskell/stack/releases/download/v2.3.1/stack-2.3.1-linux-x86_64-bin -o $HOME/.local/bin/stack
+          chmod +x $HOME/.local/bin/stack
+
+          stack -j2 build --test --no-run-tests
+
+          rm -rf $HOME/.node/*
+          curl https://unofficial-builds.nodejs.org/download/release/v14.3.0/node-v14.3.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+          rm -rf $HOME/.node/*
+          curl https://unofficial-builds.nodejs.org/download/release/v12.16.3/node-v12.16.3-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+          rm -rf $HOME/.node/*
+          curl https://unofficial-builds.nodejs.org/download/release/v10.20.1/node-v10.20.1-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"

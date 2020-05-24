@@ -1,6 +1,9 @@
 # `inline-js`
 
-[![CircleCI](https://circleci.com/gh/tweag/inline-js/tree/master.svg?style=shield)](https://circleci.com/gh/tweag/inline-js/tree/master)
+![](https://github.com/tweag/inline-js/workflows/test-stack/badge.svg?branch=develop)
+![](https://github.com/tweag/inline-js/workflows/test-cabal/badge.svg?branch=develop)
+![](https://github.com/tweag/inline-js/workflows/test-stack-alpine/badge.svg?branch=develop)
+[![Gitter](https://img.shields.io/gitter/room/tweag/inline-js)](https://gitter.im/tweag/inline-js)
 
 ## Introduction
 

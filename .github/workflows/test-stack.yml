@@ -1,0 +1,63 @@
+name: test-stack
+
+on:
+  - push
+  - pull_request
+
+jobs:
+
+  test-stack:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-18.04
+          - macos-latest
+
+    steps:
+
+      - name: setup-haskell
+        uses: actions/setup-haskell@v1
+        with:
+          stack-version: 2.3.1
+          enable-stack: true
+          stack-no-global: true
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: build
+        run: |
+          stack -j2 build --test --no-run-tests
+
+      - name: setup-node-14
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 14.3.0
+
+      - name: test-node-14
+        run: |
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+      - name: setup-node-12
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 12.16.3
+
+      - name: test-node-12
+        run: |
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+      - name: setup-node-10
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 10.20.1
+
+      - name: test-node-10
+        run: |
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
