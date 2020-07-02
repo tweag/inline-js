@@ -19,9 +19,8 @@ parseNodeVersion s0 = Version vs $ case tag of
 
 isSupportedVersion :: Version -> Bool
 isSupportedVersion v =
-  (v >= makeVersion [14, 0, 0])
-    || (v == makeVersion [13, 14, 0])
-    || (v >= makeVersion [12, 17, 0] && v < makeVersion [13])
+  (v >= makeVersion [12, 0, 0])
+    || (v >= makeVersion [10, 20, 0] && v < makeVersion [11])
 
 checkNodeVersion :: FilePath -> IO ()
 checkNodeVersion p = do
