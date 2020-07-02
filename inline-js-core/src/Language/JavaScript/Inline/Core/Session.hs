@@ -99,7 +99,6 @@ newSession Config {..} = do
               kvDedup $
                 [("INLINE_JS_EXIT_ON_EVAL_ERROR", "1") | nodeExitOnEvalError]
                   <> map ("INLINE_JS_NODE_MODULES",) (maybeToList nodeModules)
-                  <> [("INLINE_JS_ROOT", _root)]
                   <> nodeExtraEnv
                   <> _env,
           std_in = CreatePipe,

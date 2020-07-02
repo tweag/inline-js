@@ -90,7 +90,7 @@ class WorkerContext {
       if (process.env.INLINE_JS_NODE_MODULES) {
         await fs.symlink(
           process.env.INLINE_JS_NODE_MODULES,
-          path.join(process.env.INLINE_JS_ROOT, "node_modules"),
+          path.join(__dirname, "node_modules"),
           "dir"
         );
       }
