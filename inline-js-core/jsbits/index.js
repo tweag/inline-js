@@ -270,7 +270,7 @@ class WorkerContext {
           resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 10);
           err_buf.copy(resp_buf, 18);
         }
-        worker_threads.parentPort.postMessage(resp_buf, [resp_buf.buffer]);
+        worker_threads.parentPort.postMessage(resp_buf);
         break;
       }
       case 1: {

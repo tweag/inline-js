@@ -46,9 +46,8 @@ Supported platforms:
 
 Supported `node` versions:
 
-- `node-v12`, minimum `v12.17.0`
-- `node-v13`, minimum `v13.14.0`
-- `node-v14`, minimum `v14.0.0`
+- `node-v10`, minimum `v10.20.0`
+- `node-v12` and later
 
 See the [CI
 config](https://github.com/tweag/inline-js/blob/master/.github/workflows/pipeline.yml)

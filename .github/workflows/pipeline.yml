@@ -36,52 +36,42 @@ jobs:
         run: |
           cabal v2-build -j2 inline-js-core:inline-js-core-tests
 
-      - name: setup-node-14-latest
+      - name: setup-node-14
         uses: actions/setup-node@v2.0.0
         with:
           node-version: 14.5.0
 
-      - name: test-node-14-latest
+      - name: test-node-14
         run: |
           node --version
           cabal v2-run inline-js-core:inline-js-core-tests -- -j2
 
-      - name: setup-node-14-minimum
-        uses: actions/setup-node@v2.0.0
-        with:
-          node-version: 14.0.0
-
-      - name: test-node-14-minimum
-        run: |
-          node --version
-          cabal v2-run inline-js-core:inline-js-core-tests -- -j2
-
-      - name: setup-node-13-minimum
+      - name: setup-node-13
         uses: actions/setup-node@v2.0.0
         with:
           node-version: 13.14.0
 
-      - name: test-node-13-minimum
+      - name: test-node-13
         run: |
           node --version
           cabal v2-run inline-js-core:inline-js-core-tests -- -j2
 
-      - name: setup-node-12-latest
+      - name: setup-node-12
         uses: actions/setup-node@v2.0.0
         with:
           node-version: 12.18.2
 
-      - name: test-node-12-latest
+      - name: test-node-12
         run: |
           node --version
           cabal v2-run inline-js-core:inline-js-core-tests -- -j2
 
-      - name: setup-node-12-minimum
+      - name: setup-node-10
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 12.17.0
+          node-version: 10.21.0
 
-      - name: test-node-12-minimum
+      - name: test-node-10
         run: |
           node --version
           cabal v2-run inline-js-core:inline-js-core-tests -- -j2
@@ -112,52 +102,42 @@ jobs:
         run: |
           stack -j2 build --test --no-run-tests
 
-      - name: setup-node-14-latest
+      - name: setup-node-14
         uses: actions/setup-node@v2.0.0
         with:
           node-version: 14.5.0
 
-      - name: test-node-14-latest
+      - name: test-node-14
         run: |
           node --version
           stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
 
-      - name: setup-node-14-minimum
-        uses: actions/setup-node@v2.0.0
-        with:
-          node-version: 14.0.0
-
-      - name: test-node-14-minimum
-        run: |
-          node --version
-          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
-
-      - name: setup-node-13-minimum
+      - name: setup-node-13
         uses: actions/setup-node@v2.0.0
         with:
           node-version: 13.14.0
 
-      - name: test-node-13-minimum
+      - name: test-node-13
         run: |
           node --version
           stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
 
-      - name: setup-node-12-latest
+      - name: setup-node-12
         uses: actions/setup-node@v2.0.0
         with:
           node-version: 12.18.2
 
-      - name: test-node-12-latest
+      - name: test-node-12
         run: |
           node --version
           stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
 
-      - name: setup-node-12-miminum
+      - name: setup-node-10
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 12.17.0
+          node-version: 10.21.0
 
-      - name: test-node-12-minimum
+      - name: test-node-10
         run: |
           node --version
           stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
@@ -208,11 +188,6 @@ jobs:
           stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
 
           rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v14.0.0/node-v14.0.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
-          node --version
-          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
-
-          rm -rf $HOME/.node/*
           curl https://unofficial-builds.nodejs.org/download/release/v13.14.0/node-v13.14.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
           stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
@@ -223,7 +198,7 @@ jobs:
           stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
 
           rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v12.17.0/node-v12.17.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          curl https://unofficial-builds.nodejs.org/download/release/v10.21.0/node-v10.21.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
           stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
 
