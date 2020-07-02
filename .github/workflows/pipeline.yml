@@ -288,7 +288,12 @@ jobs:
         run: |
           stack -j2 build --haddock
 
-          if [ ! -z "$NETLIFY_AUTH_TOKEN" ];
+          if [ ! -z "$NETLIFY_AUTH_TOKEN" ]
           then
-            netlify deploy --dir $(stack path --local-doc-root) --message "$GITHUB_REF-$GITHUB_SHA" --prod
+            if [ $(git rev-parse --abbrev-ref HEAD) = "master" ]
+            then
+              netlify deploy --dir $(stack path --local-doc-root) --message "$GITHUB_REF-$GITHUB_SHA" --prod
+            else
+              netlify deploy --dir $(stack path --local-doc-root) --message "$GITHUB_REF-$GITHUB_SHA"
+            fi
           fi
