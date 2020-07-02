@@ -1,0 +1,44 @@
+name: inline-js-core
+version: 0.0.1.0
+category: Web
+stability: alpha
+maintainer: Shao Cheng <cheng.shao@tweag.io>
+copyright: (c) 2018 Tweag I/O
+license: BSD-3-Clause
+github: tweag/inline-js
+
+extra-source-files:
+  - jsbits/**
+  - CHANGELOG.md
+  - LICENSE
+  - README.md
+
+ghc-options: -Wall
+
+dependencies:
+  - Cabal
+  - base
+  - binary
+  - bytestring
+  - containers
+  - directory
+  - filepath
+  - ghc-prim
+  - process
+  - template-haskell
+  - text
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Language.JavaScript.Inline.Core
+
+tests:
+  inline-js-core-tests:
+    source-dirs: tests
+    main: inline-js-core-tests.hs
+    ghc-options: -threaded -rtsopts
+    dependencies:
+      - inline-js-core
+      - tasty
+      - tasty-hunit

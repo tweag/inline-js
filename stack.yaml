@@ -1,0 +1,6 @@
+resolver: nightly-2020-06-29
+packages:
+  - inline-js-core
+nix:
+  packages:
+    - nodejs-14_x

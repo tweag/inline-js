@@ -1,0 +1,294 @@
+name: pipeline
+
+on:
+  - push
+  - pull_request
+
+jobs:
+
+  cabal:
+    name: cabal-${{ matrix.os }}-ghc-${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-20.04
+          - macos-latest
+        ghc:
+          - 8.10.1
+          - 8.8.3
+        include:
+          - os: windows-2019
+            ghc: 8.10.1
+    steps:
+
+      - name: setup-haskell
+        uses: actions/setup-haskell@v1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: 3.2.0.0
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: build
+        run: |
+          cabal v2-build -j2 inline-js-core:inline-js-core-tests
+
+      - name: setup-node-14-latest
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 14.5.0
+
+      - name: test-node-14-latest
+        run: |
+          node --version
+          cabal v2-run inline-js-core:inline-js-core-tests -- -j2
+
+      - name: setup-node-14-minimum
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 14.0.0
+
+      - name: test-node-14-minimum
+        run: |
+          node --version
+          cabal v2-run inline-js-core:inline-js-core-tests -- -j2
+
+      - name: setup-node-13-minimum
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 13.14.0
+
+      - name: test-node-13-minimum
+        run: |
+          node --version
+          cabal v2-run inline-js-core:inline-js-core-tests -- -j2
+
+      - name: setup-node-12-latest
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 12.18.2
+
+      - name: test-node-12-latest
+        run: |
+          node --version
+          cabal v2-run inline-js-core:inline-js-core-tests -- -j2
+
+      - name: setup-node-12-minimum
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 12.17.0
+
+      - name: test-node-12-minimum
+        run: |
+          node --version
+          cabal v2-run inline-js-core:inline-js-core-tests -- -j2
+
+  stack:
+    name: stack-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-20.04
+          - macos-latest
+          - windows-2019
+    steps:
+
+      - name: setup-haskell
+        uses: actions/setup-haskell@v1
+        with:
+          stack-version: 2.3.1
+          enable-stack: true
+          stack-no-global: true
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: build
+        run: |
+          stack -j2 build --test --no-run-tests
+
+      - name: setup-node-14-latest
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 14.5.0
+
+      - name: test-node-14-latest
+        run: |
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+      - name: setup-node-14-minimum
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 14.0.0
+
+      - name: test-node-14-minimum
+        run: |
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+      - name: setup-node-13-minimum
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 13.14.0
+
+      - name: test-node-13-minimum
+        run: |
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+      - name: setup-node-12-latest
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 12.18.2
+
+      - name: test-node-12-latest
+        run: |
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+      - name: setup-node-12-miminum
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 12.17.0
+
+      - name: test-node-12-minimum
+        run: |
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+  stack-alpine:
+    name: stack-alpine
+    runs-on: ubuntu-20.04
+    container:
+      image: alpine:edge
+    steps:
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: test
+        run: |
+          export HOME=/root
+          mkdir -p $HOME/.local/bin
+          mkdir $HOME/.node
+          export PATH=$HOME/.local/bin:$HOME/.node/bin:$PATH
+
+          apk update
+          apk upgrade
+          apk add \
+            alpine-sdk \
+            autoconf \
+            bash \
+            coreutils \
+            gmp-dev \
+            libffi-dev \
+            ncurses-dev \
+            numactl-dev \
+            perl \
+            xz
+          ln -s /usr/lib/libncursesw.so.6 /usr/lib/libtinfow.so.6
+
+          mkdir $HOME/.stack
+          echo "allow-different-user: true" > $HOME/.stack/config.yaml
+          echo "ghc-build: musl" >> $HOME/.stack/config.yaml
+          curl -L https://github.com/commercialhaskell/stack/releases/download/v2.3.1/stack-2.3.1-linux-x86_64-bin -o $HOME/.local/bin/stack
+          chmod +x $HOME/.local/bin/stack
+
+          stack -j2 build --test --no-run-tests
+
+          rm -rf $HOME/.node/*
+          curl https://unofficial-builds.nodejs.org/download/release/v14.5.0/node-v14.5.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+          rm -rf $HOME/.node/*
+          curl https://unofficial-builds.nodejs.org/download/release/v14.0.0/node-v14.0.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+          rm -rf $HOME/.node/*
+          curl https://unofficial-builds.nodejs.org/download/release/v13.14.0/node-v13.14.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+          rm -rf $HOME/.node/*
+          curl https://unofficial-builds.nodejs.org/download/release/v12.18.2/node-v12.18.2-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+          rm -rf $HOME/.node/*
+          curl https://unofficial-builds.nodejs.org/download/release/v12.17.0/node-v12.17.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          node --version
+          stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
+
+  haddock-hackage:
+    name: haddock-hackage
+    runs-on: ubuntu-20.04
+    steps:
+
+      - name: setup-haskell
+        uses: actions/setup-haskell@v1
+        with:
+          ghc-version: 8.10.1
+          cabal-version: 3.2.0.0
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: haddock
+        run: |
+          cabal v2-haddock \
+            --haddock-for-hackage \
+            --haddock-hyperlink-source \
+            --haddock-quickjump \
+            -j2 \
+            inline-js-core
+
+      - name: upload-artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: inline-js-core-0.0.1.0-docs
+          path: dist-newstyle/inline-js-core-0.0.1.0-docs.tar.gz
+
+  docs:
+    name: docs
+    runs-on: ubuntu-20.04
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+    steps:
+
+      - name: setup-haskell
+        uses: actions/setup-haskell@v1
+        with:
+          stack-version: 2.3.1
+          enable-stack: true
+          stack-no-global: true
+
+      - name: setup-node-14
+        uses: actions/setup-node@v2.0.0
+        with:
+          node-version: 14.5.0
+
+      - name: setup-deps
+        run: |
+          npm install -g \
+            netlify-cli
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: build
+        run: |
+          stack -j2 build --haddock
+
+          if [ ! -z "$NETLIFY_AUTH_TOKEN" ];
+          then
+            netlify deploy --dir $(stack path --local-doc-root) --message "$GITHUB_REF-$GITHUB_SHA" --prod
+          fi
