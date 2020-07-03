@@ -1,0 +1,25 @@
+name: inline-js
+version: 0.0.1.0
+category: Web
+maintainer: Shao Cheng <cheng.shao@tweag.io>
+copyright: (c) 2018 Tweag I/O
+license: BSD-3-Clause
+github: tweag/inline-js
+synopsis: Call JavaScript from Haskell.
+description: Please see <https://github.com/tweag/inline-js> for details.
+
+extra-source-files:
+  - CHANGELOG.md
+  - LICENSE
+  - README.md
+
+ghc-options: -Wall
+
+dependencies:
+  - aeson
+  - base >= 4.13 && < 5
+  - bytestring
+  - inline-js-core
+
+library:
+  source-dirs: src

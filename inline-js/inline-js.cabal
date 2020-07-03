@@ -1,0 +1,43 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 1ca706e1e28c405fcc8e0e5240976a307ea89ccf7c6d9790dafd7b4a27958ab8
+
+name:           inline-js
+version:        0.0.1.0
+synopsis:       Call JavaScript from Haskell.
+description:    Please see <https://github.com/tweag/inline-js> for details.
+category:       Web
+homepage:       https://github.com/tweag/inline-js#readme
+bug-reports:    https://github.com/tweag/inline-js/issues
+maintainer:     Shao Cheng <cheng.shao@tweag.io>
+copyright:      (c) 2018 Tweag I/O
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    CHANGELOG.md
+    LICENSE
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/tweag/inline-js
+
+library
+  exposed-modules:
+      Language.JavaScript.Inline.Class
+  other-modules:
+      Paths_inline_js
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      aeson
+    , base >=4.13 && <5
+    , bytestring
+    , inline-js-core
+  default-language: Haskell2010
