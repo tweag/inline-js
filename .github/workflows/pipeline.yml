@@ -159,18 +159,15 @@ jobs:
           mkdir $HOME/.node
           export PATH=$HOME/.local/bin:$HOME/.node/bin:$PATH
 
-          apk update
-          apk upgrade
           apk add \
             alpine-sdk \
             autoconf \
             bash \
             coreutils \
             gmp-dev \
+            grep \
             libffi-dev \
             ncurses-dev \
-            numactl-dev \
-            perl \
             xz
           ln -s /usr/lib/libncursesw.so.6 /usr/lib/libtinfow.so.6
 
