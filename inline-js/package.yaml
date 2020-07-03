@@ -21,6 +21,7 @@ dependencies:
   - bytestring
   - inline-js-core
   - language-javascript
+  - template-haskell
 
 library:
   source-dirs: src
