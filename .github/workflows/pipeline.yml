@@ -34,7 +34,11 @@ jobs:
 
       - name: build
         run: |
-          cabal v2-build -j2 inline-js-core:inline-js-core-tests
+          cabal v2-build \
+            --enable-tests \
+            -j2 \
+            inline-js \
+            inline-js-core
 
       - name: setup-node-14
         uses: actions/setup-node@v2.0.0
@@ -215,12 +219,23 @@ jobs:
 
       - name: sdist
         run: |
+          pushd inline-js
+          cabal check
+          popd
+
           pushd inline-js-core
           cabal check
           popd
 
           cabal v2-sdist \
+            inline-js \
             inline-js-core
+
+      - name: upload-artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: inline-js-0.0.1.0.tar.gz
+          path: dist-newstyle/sdist/inline-js-0.0.1.0.tar.gz
 
       - name: upload-artifact
         uses: actions/upload-artifact@v2
@@ -249,7 +264,14 @@ jobs:
             --haddock-hyperlink-source \
             --haddock-quickjump \
             -j2 \
+            inline-js \
             inline-js-core
+
+      - name: upload-artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: inline-js-0.0.1.0-docs.tar.gz
+          path: dist-newstyle/inline-js-0.0.1.0-docs.tar.gz
 
       - name: upload-artifact
         uses: actions/upload-artifact@v2
