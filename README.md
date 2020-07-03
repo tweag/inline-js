@@ -1,6 +1,6 @@
 # `inline-js`: Call JavaScript from Haskell
 
-![](https://github.com/tweag/inline-js/workflows/pipeline/badge.svg?branch=master)
+[![GitHub Actions](https://github.com/tweag/inline-js/workflows/pipeline/badge.svg?branch=master)](https://github.com/tweag/inline-js/actions?query=branch%3Amaster)
 [![Gitter](https://img.shields.io/gitter/room/tweag/inline-js)](https://gitter.im/tweag/inline-js)
 
 ## Implemented features
