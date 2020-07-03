@@ -34,11 +34,7 @@ jobs:
 
       - name: build
         run: |
-          cabal v2-build \
-            --enable-tests \
-            -j2 \
-            inline-js \
-            inline-js-core
+          cabal v2-build --enable-tests -j2 all
 
       - name: setup-node-14
         uses: actions/setup-node@v2.0.0
@@ -228,8 +224,7 @@ jobs:
           popd
 
           cabal v2-sdist \
-            inline-js \
-            inline-js-core
+            all
 
       - name: upload-artifact
         uses: actions/upload-artifact@v2
@@ -264,8 +259,7 @@ jobs:
             --haddock-hyperlink-source \
             --haddock-quickjump \
             -j2 \
-            inline-js \
-            inline-js-core
+            all
 
       - name: upload-artifact
         uses: actions/upload-artifact@v2
