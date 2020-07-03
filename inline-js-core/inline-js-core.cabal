@@ -4,12 +4,13 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8516903dd60ba2ebdcc93a2e2a3e0f8c8d0e8d9ae7c6348e914608d7ae8d8569
+-- hash: 02aeb3f49461b01f750ff2022b9e07acdd6cc99e52b335d87da9ba6ae40616ca
 
 name:           inline-js-core
 version:        0.0.1.0
+synopsis:       Call JavaScript from Haskell.
+description:    Please see <https://github.com/tweag/inline-js> for details.
 category:       Web
-stability:      alpha
 homepage:       https://github.com/tweag/inline-js#readme
 bug-reports:    https://github.com/tweag/inline-js/issues
 maintainer:     Shao Cheng <cheng.shao@tweag.io>
@@ -40,12 +41,14 @@ library
       Language.JavaScript.Inline.Core.Session
       Language.JavaScript.Inline.Core.Utils
       Paths_inline_js_core
+  autogen-modules:
+      Paths_inline_js_core
   hs-source-dirs:
       src
   ghc-options: -Wall
   build-depends:
       Cabal
-    , base
+    , base >=4.13 && <5
     , binary
     , bytestring
     , containers
@@ -67,7 +70,7 @@ test-suite inline-js-core-tests
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
       Cabal
-    , base
+    , base >=4.13 && <5
     , binary
     , bytestring
     , containers
