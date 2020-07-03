@@ -199,8 +199,8 @@ jobs:
           node --version
           stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
 
-  haddock-hackage:
-    name: haddock-hackage
+  haddock:
+    name: haddock
     runs-on: ubuntu-20.04
     steps:
 
