@@ -73,5 +73,11 @@ instance FromEvalResult JSVal where
 
 eval :: forall a. FromEvalResult a => Session -> JSCode -> IO a
 eval s c = do
-  r <- rawEval s $ "(" <> toEvalResult (Proxy @a) <> ")(" <> c <> ")"
+  r <-
+    rawEval s $
+      "Promise.resolve("
+        <> c
+        <> ").then("
+        <> toEvalResult (Proxy @a)
+        <> ")"
   unsafeInterleaveIO $ fromEvalResult =<< evaluate r
