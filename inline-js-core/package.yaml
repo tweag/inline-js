@@ -1,11 +1,12 @@
 name: inline-js-core
 version: 0.0.1.0
 category: Web
-stability: alpha
 maintainer: Shao Cheng <cheng.shao@tweag.io>
 copyright: (c) 2018 Tweag I/O
 license: BSD-3-Clause
 github: tweag/inline-js
+synopsis: Call JavaScript from Haskell.
+description: Please see <https://github.com/tweag/inline-js> for details.
 
 extra-source-files:
   - jsbits/**
@@ -17,7 +18,7 @@ ghc-options: -Wall
 
 dependencies:
   - Cabal
-  - base
+  - base >= 4.13 && < 5
   - binary
   - bytestring
   - containers
@@ -30,6 +31,8 @@ dependencies:
 
 library:
   source-dirs: src
+  generated-other-modules:
+    - Paths_inline_js_core
   exposed-modules:
     - Language.JavaScript.Inline.Core
 

@@ -199,6 +199,35 @@ jobs:
           node --version
           stack test inline-js-core:inline-js-core-tests --test-arguments="-j2"
 
+  sdist:
+    name: sdist
+    runs-on: ubuntu-20.04
+    steps:
+
+      - name: setup-haskell
+        uses: actions/setup-haskell@v1
+        with:
+          ghc-version: 8.10.1
+          cabal-version: 3.2.0.0
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: sdist
+        run: |
+          pushd inline-js-core
+          cabal check
+          popd
+
+          cabal v2-sdist \
+            inline-js-core
+
+      - name: upload-artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: inline-js-core-0.0.1.0.tar.gz
+          path: dist-newstyle/sdist/inline-js-core-0.0.1.0.tar.gz
+
   haddock:
     name: haddock
     runs-on: ubuntu-20.04
@@ -225,7 +254,7 @@ jobs:
       - name: upload-artifact
         uses: actions/upload-artifact@v2
         with:
-          name: inline-js-core-0.0.1.0-docs
+          name: inline-js-core-0.0.1.0-docs.tar.gz
           path: dist-newstyle/inline-js-core-0.0.1.0-docs.tar.gz
 
   docs:
