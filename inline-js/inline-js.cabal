@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7c57957d691c936805202efa9522cb664ced92cf20a18f51a93065fe61019a8f
+-- hash: 395a188b398e14019d869ad33f4975fdf3badece3af0dd2e65e4f9c5887a1bc3
 
 name:           inline-js
 version:        0.0.1.0
@@ -42,4 +42,5 @@ library
     , base >=4.13 && <5
     , bytestring
     , inline-js-core
+    , language-javascript
   default-language: Haskell2010
