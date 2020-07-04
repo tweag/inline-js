@@ -13,10 +13,16 @@ import Data.Proxy
 import Language.JavaScript.Inline.Core
 import System.IO.Unsafe
 
+-- | If a Haskell type @a@ has 'A.ToJSON'/'A.FromJSON' instances, then @Aeson a@
+-- has 'ToJSCode'/'FromEvalResult' instances, and we can use @deriving
+-- (ToJSCode, FromEvalResult) via (Aeson a)@ to generate
+-- 'ToJSCode'/'FromEvalResult' instances for that type.
 newtype Aeson a = Aeson
   { unAeson :: a
   }
 
+-- | To embed a Haskell value into a 'JSCode', its type should be an instance of
+-- 'ToJSCode'.
 class ToJSCode a where
   toJSCode :: a -> JSCode
 
@@ -41,12 +47,19 @@ instance RawEval LBS.ByteString where
 instance RawEval JSVal where
   rawEval = evalJSVal
 
+-- | To decode a Haskell value from an eval result, its type should be an
+-- instance of 'FromEvalResult'.
 class
   (RawEval (EvalResult a)) =>
   FromEvalResult a
   where
+  -- | The raw result type, must be one of '()', 'LBS.ByteString' or 'JSVal'.
   type EvalResult a
+
+  -- | The JavaScript function which encodes a value to the raw result.
   toEvalResult :: Proxy a -> JSCode
+
+  -- | The Haskell function which decodes from the raw result.
   fromEvalResult :: EvalResult a -> IO a
 
 instance FromEvalResult () where
@@ -71,6 +84,7 @@ instance FromEvalResult JSVal where
   toEvalResult _ = "a => a"
   fromEvalResult = pure
 
+-- | The polymorphic eval function.
 eval :: forall a. FromEvalResult a => Session -> JSCode -> IO a
 eval s c = do
   r <-
