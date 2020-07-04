@@ -27,6 +27,8 @@ library:
   source-dirs: src
   generated-other-modules:
     - Paths_inline_js
+  exposed-modules:
+    - Language.JavaScript.Inline
 
 tests:
   inline-js-tests:
