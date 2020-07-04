@@ -35,13 +35,3 @@ library:
     - Paths_inline_js_core
   exposed-modules:
     - Language.JavaScript.Inline.Core
-
-tests:
-  inline-js-core-tests:
-    source-dirs: tests
-    main: inline-js-core-tests.hs
-    ghc-options: -threaded -rtsopts
-    dependencies:
-      - inline-js-core
-      - tasty
-      - tasty-hunit

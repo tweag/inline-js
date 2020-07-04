@@ -27,3 +27,18 @@ library:
   source-dirs: src
   generated-other-modules:
     - Paths_inline_js
+
+tests:
+  inline-js-tests:
+    source-dirs: tests
+    main: inline-js-tests.hs
+    ghc-options: -threaded -rtsopts
+    dependencies:
+      - Cabal
+      - directory
+      - filepath
+      - inline-js
+      - inline-js-core
+      - process
+      - tasty
+      - tasty-hunit

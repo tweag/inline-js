@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3ac2add0a1f35f00e23f6f339b6544a0c8eb1ddd293bced9e56a4af85cd6c7fa
+-- hash: b0bfafe3deca9ebf1ce6412edcd0bcb74e6626e55c9354cd9cec594684919389
 
 name:           inline-js
 version:        0.0.1.0
@@ -44,5 +44,29 @@ library
     , bytestring
     , inline-js-core
     , language-javascript
+    , template-haskell
+  default-language: Haskell2010
+
+test-suite inline-js-tests
+  type: exitcode-stdio-1.0
+  main-is: inline-js-tests.hs
+  other-modules:
+      Paths_inline_js
+  hs-source-dirs:
+      tests
+  ghc-options: -Wall -threaded -rtsopts
+  build-depends:
+      Cabal
+    , aeson
+    , base >=4.13 && <5
+    , bytestring
+    , directory
+    , filepath
+    , inline-js
+    , inline-js-core
+    , language-javascript
+    , process
+    , tasty
+    , tasty-hunit
     , template-haskell
   default-language: Haskell2010
