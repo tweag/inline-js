@@ -1,5 +1,6 @@
 resolver: nightly-2020-06-29
 packages:
+  - inline-js
   - inline-js-core
 nix:
   packages:

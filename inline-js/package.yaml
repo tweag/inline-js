@@ -1,4 +1,4 @@
-name: inline-js-core
+name: inline-js
 version: 0.0.1.0
 category: Web
 maintainer: Shao Cheng <cheng.shao@tweag.io>
@@ -9,7 +9,6 @@ synopsis: Call JavaScript from Haskell.
 description: Please see <https://github.com/tweag/inline-js> for details.
 
 extra-source-files:
-  - jsbits/**
   - CHANGELOG.md
   - LICENSE
   - README.md
@@ -17,21 +16,31 @@ extra-source-files:
 ghc-options: -Wall
 
 dependencies:
-  - Cabal
+  - aeson
   - base >= 4.13 && < 5
-  - binary
   - bytestring
-  - containers
-  - directory
-  - filepath
-  - ghc-prim
-  - process
+  - inline-js-core
+  - language-javascript
   - template-haskell
-  - text
 
 library:
   source-dirs: src
   generated-other-modules:
-    - Paths_inline_js_core
+    - Paths_inline_js
   exposed-modules:
-    - Language.JavaScript.Inline.Core
+    - Language.JavaScript.Inline
+
+tests:
+  inline-js-tests:
+    source-dirs: tests
+    main: inline-js-tests.hs
+    ghc-options: -threaded -rtsopts
+    dependencies:
+      - Cabal
+      - directory
+      - filepath
+      - inline-js
+      - inline-js-core
+      - process
+      - tasty
+      - tasty-hunit
