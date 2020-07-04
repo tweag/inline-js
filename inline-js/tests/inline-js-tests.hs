@@ -1,10 +1,14 @@
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 import Control.Exception
 import Control.Monad
 import Data.Foldable
 import Distribution.Simple.Utils
-import Language.JavaScript.Inline.Core
+import Language.JavaScript.Inline
 import System.Directory
 import System.Exit
 import System.FilePath
@@ -28,7 +32,7 @@ main =
           withDefaultSession $ \s -> do
             let buf = "asdf"
             buf' <- evalBuffer s $ buffer buf
-            buf @=? buf',
+            buf' @?= buf,
         testCase "left-pad" $
           withTmpDir
             ( \p -> do
@@ -47,8 +51,19 @@ main =
                   }
                 $ \s -> do
                   _ <- evaluate =<< evalJSVal s "require('left-pad')"
-                  pure ()
+                  pure (),
+        testCase "expr" $
+          withDefaultSession $ \s -> do
+            let x = I 6
+                y = I 7
+            r <- eval s [expr| $x * $y |]
+            r @?= I 42
       ]
+
+newtype I = I Int
+  deriving (Eq, Show)
+  deriving (ToJSCode) via (Aeson Int)
+  deriving (FromEvalResult) via (Aeson Int)
 
 withSession :: Config -> (Session -> Assertion) -> Assertion
 withSession conf = bracket (newSession conf) closeSession
