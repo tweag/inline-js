@@ -17,56 +17,52 @@ main =
   defaultMain $
     testGroup
       "kitchen-sink"
-      [ assertionWithSession "Session: new/close" $ \_ -> pure (),
-        assertionWithSession "Session: delay" $ \s -> do
-          vs <-
-            replicateM 0x1000 $
-              evalNone s "new Promise((resolve) => setTimeout(resolve, 1000))"
-          for_ vs evaluate,
-        assertionWithSession "Session: roundtrip" $ \s -> do
-          let buf = "asdf"
-          buf' <- evalBuffer s $ buffer buf
-          buf @=? buf',
-        withTmpDir
-          ( \p -> do
-              (ec, _, _) <-
-                readCreateProcessWithExitCode
-                  ((shell "npm install left-pad") {cwd = Just p})
-                  ""
-              case ec of
-                ExitSuccess -> pure ()
-                _ -> fail $ "npm install left-pad failed with " <> show ec
-          )
-          $ \left_pad_get ->
-            withResource
-              ( do
-                  left_pad <- left_pad_get
-                  newSession
-                    defaultConfig
-                      { nodeModules = Just $ left_pad </> "node_modules"
-                      }
-              )
-              closeSession
-              $ \session_get -> testCase "left-pad" $ do
-                s <- session_get
-                _ <- evaluate =<< evalJSVal s "require('left-pad')"
-                pure ()
+      [ testCase "Session: new/close" $ withDefaultSession $ \_ -> pure (),
+        testCase "Session: delay" $
+          withDefaultSession $ \s -> do
+            vs <-
+              replicateM 0x1000 $
+                evalNone s "new Promise((resolve) => setTimeout(resolve, 1000))"
+            for_ vs evaluate,
+        testCase "Session: roundtrip" $
+          withDefaultSession $ \s -> do
+            let buf = "asdf"
+            buf' <- evalBuffer s $ buffer buf
+            buf @=? buf',
+        testCase "left-pad" $
+          withTmpDir
+            ( \p -> do
+                (ec, _, _) <-
+                  readCreateProcessWithExitCode
+                    ((shell "npm install left-pad") {cwd = Just p})
+                    ""
+                case ec of
+                  ExitSuccess -> pure ()
+                  _ -> fail $ "npm install left-pad failed with " <> show ec
+            )
+            $ \left_pad ->
+              withSession
+                defaultConfig
+                  { nodeModules = Just $ left_pad </> "node_modules"
+                  }
+                $ \s -> do
+                  _ <- evaluate =<< evalJSVal s "require('left-pad')"
+                  pure ()
       ]
 
-withSession :: (IO Session -> TestTree) -> TestTree
-withSession = withResource (newSession defaultConfig) closeSession
+withSession :: Config -> (Session -> Assertion) -> Assertion
+withSession conf = bracket (newSession conf) closeSession
 
-assertionWithSession :: TestName -> (Session -> Assertion) -> TestTree
-assertionWithSession name cont =
-  withSession $ \session_get -> testCase name $ cont =<< session_get
+withDefaultSession :: (Session -> Assertion) -> Assertion
+withDefaultSession = withSession defaultConfig
 
-withTmpDir :: (FilePath -> IO ()) -> (IO FilePath -> TestTree) -> TestTree
+withTmpDir :: (FilePath -> IO ()) -> (FilePath -> Assertion) -> Assertion
 withTmpDir pre =
-  withResource
+  bracket
     ( do
-        _tmp <- getTemporaryDirectory
-        _r <- createTempDirectory _tmp "inline-js"
-        pre _r
-        pure _r
+        tmpdir <- getTemporaryDirectory
+        p <- createTempDirectory tmpdir "inline-js"
+        pre p `onException` removePathForcibly p
+        pure p
     )
-    removeDirectoryRecursive
+    removePathForcibly
