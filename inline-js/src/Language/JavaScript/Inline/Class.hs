@@ -14,9 +14,13 @@ import Language.JavaScript.Inline.Core
 import System.IO.Unsafe
 
 -- | If a Haskell type @a@ has 'A.ToJSON'/'A.FromJSON' instances, then @Aeson a@
--- has 'ToJSCode'/'FromEvalResult' instances, and we can use @deriving
--- (ToJSCode, FromEvalResult) via (Aeson a)@ to generate
--- 'ToJSCode'/'FromEvalResult' instances for that type.
+-- has 'ToJSCode'/'FromEvalResult' instances. We can generate
+-- 'ToJSCode'/'FromEvalResult' instances for type @a@ via:
+--
+-- 1. @deriving (ToJSCode, FromEvalResult) via (Aeson a)@, using the
+--    @DerivingVia@ extension
+-- 2. @deriving (ToJSCode, FromEvalResult)@, using the
+--    @GeneralizedNewtypeDeriving@ extension
 newtype Aeson a = Aeson
   { unAeson :: a
   }
@@ -84,7 +88,10 @@ instance FromEvalResult JSVal where
   toEvalResult _ = "a => a"
   fromEvalResult = pure
 
--- | The polymorphic eval function.
+-- | The polymorphic eval function. Similar to the eval functions in
+-- "Language.JavaScript.Inline.Core", 'eval' performs /asynchronous/ evaluation
+-- and returns a thunk. Forcing the thunk will block until the result is
+-- returned from @node@ and decoded.
 eval :: forall a. FromEvalResult a => Session -> JSCode -> IO a
 eval s c = do
   r <-

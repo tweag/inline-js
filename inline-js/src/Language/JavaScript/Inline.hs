@@ -1,9 +1,16 @@
 module Language.JavaScript.Inline
-  ( module Language.JavaScript.Inline.Core,
+  ( -- * Core functionalities
+    module Language.JavaScript.Inline.Core,
+
+    -- * Haskell/JavaScript data marshaling type classes
     ToJSCode (..),
     FromEvalResult (..),
     Aeson (..),
+
+    -- * Polymorphic eval function
     eval,
+
+    -- * QuasiQuoters for inline JavaScript
     expr,
     block,
   )

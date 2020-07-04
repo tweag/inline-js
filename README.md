@@ -7,12 +7,13 @@
 
 - Manage `node` sessions which run the eval server script for Haskell/JavaScript
   interop
-- Evaluate expressions with `require()`/`import()` support
+- Evaluate expressions with `require()`/`import()` and top-level `await` support
 - Load third party libraries in user-specified `node_modules`
 - Garbage-collected `JSVal` references in Haskell
 - Support `Promise`-based async evaluation
 - Type classes for Haskell/JavaScript data marshaling, with `aeson` support
-- TH quasi-quoters for lifting Haskell bindings into JavaScript code
+- Template Haskell QuasiQuoters for lifting Haskell variables into JavaScript
+  code
 - Doesn't require `node` native addon or third party libraries
 
 ## Planned features
