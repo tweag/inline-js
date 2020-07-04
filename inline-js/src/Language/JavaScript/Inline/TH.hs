@@ -10,6 +10,9 @@ import Language.JavaScript.Inline.Class
 import Language.JavaScript.Inline.Core
 import Language.JavaScript.Parser.Lexer
 
+-- | Generate a 'JSCode' from an inline JavaScript expression. Use @$var@ to
+-- refer to a Haskell variable @var@ (its type should be an 'ToJSCode'
+-- instance). Top-level @await@ is supported.
 expr :: QuasiQuoter
 expr =
   QuasiQuoter
@@ -19,6 +22,8 @@ expr =
       quoteDec = error "Language.JavaScript.Inline.TH: quoteDec"
     }
 
+-- | Generate a 'JSCode' from an inline JavaScript code block. Use @return@ in
+-- the code block to return the result. Other rules of 'expr' also applies here.
 block :: QuasiQuoter
 block =
   QuasiQuoter
