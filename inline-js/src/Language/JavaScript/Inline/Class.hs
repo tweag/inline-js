@@ -14,9 +14,8 @@ import Data.Proxy
 import Language.JavaScript.Inline.Core
 import System.IO.Unsafe
 
--- | If a Haskell type @a@ has 'A.ToJSON' / 'A.FromJSON' instances, then @Aeson
--- a@ has 'ToJS' / 'FromJS' instances. We can generate 'ToJS' / 'FromJS'
--- instances for type @a@ via:
+-- | If a Haskell type @a@ has 'A.ToJSON' and 'A.FromJSON' instances, then we
+-- can derive 'ToJS' and 'FromJS' instances for it using:
 --
 -- 1. @deriving (ToJS, FromJS) via (Aeson a)@, using the @DerivingVia@ extension
 -- 2. @deriving (ToJS, FromJS)@, using the @GeneralizedNewtypeDeriving@
