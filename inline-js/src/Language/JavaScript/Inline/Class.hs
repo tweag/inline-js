@@ -14,12 +14,11 @@ import Language.JavaScript.Inline.Core
 import System.IO.Unsafe
 
 -- | If a Haskell type @a@ has 'A.ToJSON'/'A.FromJSON' instances, then @Aeson a@
--- has 'ToJS'/'FromEvalResult' instances. We can generate
--- 'ToJS'/'FromEvalResult' instances for type @a@ via:
+-- has 'ToJS'/'FromJS' instances. We can generate 'ToJS'/'FromJS' instances for
+-- type @a@ via:
 --
--- 1. @deriving (ToJS, FromEvalResult) via (Aeson a)@, using the @DerivingVia@
---    extension
--- 2. @deriving (ToJS, FromEvalResult)@, using the @GeneralizedNewtypeDeriving@
+-- 1. @deriving (ToJS, FromJS) via (Aeson a)@, using the @DerivingVia@ extension
+-- 2. @deriving (ToJS, FromJS)@, using the @GeneralizedNewtypeDeriving@
 --    extension
 newtype Aeson a = Aeson
   { unAeson :: a
@@ -52,10 +51,10 @@ instance RawEval JSVal where
   rawEval = evalJSVal
 
 -- | To decode a Haskell value from an eval result, its type should be an
--- instance of 'FromEvalResult'.
+-- instance of 'FromJS'.
 class
   (RawEval (EvalResult a)) =>
-  FromEvalResult a
+  FromJS a
   where
   -- | The raw result type, must be one of '()', 'LBS.ByteString' or 'JSVal'.
   type EvalResult a
@@ -66,24 +65,24 @@ class
   -- | The Haskell function which decodes from the raw result.
   fromEvalResult :: EvalResult a -> IO a
 
-instance FromEvalResult () where
+instance FromJS () where
   type EvalResult () = ()
   toEvalResult _ = "a => a"
   fromEvalResult = pure
 
-instance FromEvalResult LBS.ByteString where
+instance FromJS LBS.ByteString where
   type EvalResult LBS.ByteString = LBS.ByteString
   toEvalResult _ = "a => a"
   fromEvalResult = pure
 
-instance A.FromJSON a => FromEvalResult (Aeson a) where
+instance A.FromJSON a => FromJS (Aeson a) where
   type EvalResult (Aeson a) = LBS.ByteString
   toEvalResult _ = "a => Buffer.from(JSON.stringify(a))"
   fromEvalResult s = case A.eitherDecode' s of
     Left err -> fail err
     Right a -> pure $ Aeson a
 
-instance FromEvalResult JSVal where
+instance FromJS JSVal where
   type EvalResult JSVal = JSVal
   toEvalResult _ = "a => a"
   fromEvalResult = pure
@@ -92,7 +91,7 @@ instance FromEvalResult JSVal where
 -- "Language.JavaScript.Inline.Core", 'eval' performs /asynchronous/ evaluation
 -- and returns a thunk. Forcing the thunk will block until the result is
 -- returned from @node@ and decoded.
-eval :: forall a. FromEvalResult a => Session -> JSExpr -> IO a
+eval :: forall a. FromJS a => Session -> JSExpr -> IO a
 eval s c = do
   r <-
     rawEval s $

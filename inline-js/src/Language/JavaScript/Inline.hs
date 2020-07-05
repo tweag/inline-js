@@ -4,7 +4,7 @@ module Language.JavaScript.Inline
 
     -- * Haskell/JavaScript data marshaling type classes
     ToJS (..),
-    FromEvalResult (..),
+    FromJS (..),
     Aeson (..),
 
     -- * Polymorphic eval function
