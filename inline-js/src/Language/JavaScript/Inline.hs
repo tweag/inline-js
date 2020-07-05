@@ -6,6 +6,7 @@ module Language.JavaScript.Inline
     ToJS (..),
     FromJS (..),
     Aeson (..),
+    EncodedJSON (..),
 
     -- * Polymorphic eval function
     eval,

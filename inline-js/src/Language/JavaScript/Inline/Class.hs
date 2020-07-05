@@ -48,9 +48,10 @@ instance RawFromJS () where
 instance RawFromJS LBS.ByteString where
   rawEval = evalBuffer
 
-newtype JSON = JSON LBS.ByteString
+-- | UTF-8 encoded JSON.
+newtype EncodedJSON = EncodedJSON LBS.ByteString
 
-instance RawFromJS JSON where
+instance RawFromJS EncodedJSON where
   rawEval = coerce evalJSON
 
 instance RawFromJS JSVal where
@@ -62,13 +63,21 @@ class
   (RawFromJS (RawJSType a)) =>
   FromJS a
   where
-  -- | The raw result type, must be one of '()', 'LBS.ByteString' or 'JSVal'.
+  -- | The raw JavaScript type. Must be one of:
+  --
+  -- 1. '()'. The JavaScript eval result is ignored.
+  -- 2. 'LBS.ByteString'. The JavaScript eval result must be an
+  --    @ArrayBufferView@(@Buffer@, @TypedArray@ or @DataView@) or
+  --    @ArrayBuffer@.
+  -- 3. 'EncodedJSON'. The JavaScript eval result must be JSON-encodable via
+  --    @JSON.stringify()@.
+  -- 4. 'JSVal'. The JavaScript eval result can be of any type.
   type RawJSType a
 
-  -- | The JavaScript function which encodes a value to the raw result.
+  -- | The JavaScript function which encodes a value to the raw JavaScript type.
   toRawJSType :: Proxy a -> JSExpr
 
-  -- | The Haskell function which decodes from the raw result.
+  -- | The Haskell function which decodes from the raw JavaScript type.
   fromRawJSType :: RawJSType a -> IO a
 
 instance FromJS () where
@@ -82,7 +91,7 @@ instance FromJS LBS.ByteString where
   fromRawJSType = pure
 
 instance A.FromJSON a => FromJS (Aeson a) where
-  type RawJSType (Aeson a) = JSON
+  type RawJSType (Aeson a) = EncodedJSON
   toRawJSType _ = "a => a"
   fromRawJSType s = case A.eitherDecode' (coerce s) of
     Left err -> fail err
