@@ -49,7 +49,9 @@ instance RawFromJS LBS.ByteString where
   rawEval = evalBuffer
 
 -- | UTF-8 encoded JSON.
-newtype EncodedJSON = EncodedJSON LBS.ByteString
+newtype EncodedJSON = EncodedJSON
+  { unEncodedJSON :: LBS.ByteString
+  }
 
 instance RawFromJS EncodedJSON where
   rawEval = coerce evalJSON
@@ -87,6 +89,11 @@ instance FromJS () where
 
 instance FromJS LBS.ByteString where
   type RawJSType LBS.ByteString = LBS.ByteString
+  toRawJSType _ = "a => a"
+  fromRawJSType = pure
+
+instance FromJS EncodedJSON where
+  type RawJSType EncodedJSON = EncodedJSON
   toRawJSType _ = "a => a"
   fromRawJSType = pure
 
