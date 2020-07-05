@@ -9,6 +9,7 @@ module Language.JavaScript.Inline.Class where
 import Control.Exception
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy as LBS
+import Data.Coerce
 import Data.Proxy
 import Language.JavaScript.Inline.Core
 import System.IO.Unsafe
@@ -47,6 +48,11 @@ instance RawFromJS () where
 instance RawFromJS LBS.ByteString where
   rawEval = evalBuffer
 
+newtype JSON = JSON LBS.ByteString
+
+instance RawFromJS JSON where
+  rawEval = coerce evalJSON
+
 instance RawFromJS JSVal where
   rawEval = evalJSVal
 
@@ -76,9 +82,9 @@ instance FromJS LBS.ByteString where
   fromRawJSType = pure
 
 instance A.FromJSON a => FromJS (Aeson a) where
-  type RawJSType (Aeson a) = LBS.ByteString
-  toRawJSType _ = "a => Buffer.from(JSON.stringify(a))"
-  fromRawJSType s = case A.eitherDecode' s of
+  type RawJSType (Aeson a) = JSON
+  toRawJSType _ = "a => a"
+  fromRawJSType s = case A.eitherDecode' (coerce s) of
     Left err -> fail err
     Right a -> pure $ Aeson a
 
