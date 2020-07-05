@@ -53,38 +53,38 @@ instance RawFromJS JSVal where
 -- | To decode a Haskell value from an eval result, its type should be an
 -- instance of 'FromJS'.
 class
-  (RawFromJS (EvalResult a)) =>
+  (RawFromJS (RawJSType a)) =>
   FromJS a
   where
   -- | The raw result type, must be one of '()', 'LBS.ByteString' or 'JSVal'.
-  type EvalResult a
+  type RawJSType a
 
   -- | The JavaScript function which encodes a value to the raw result.
-  toEvalResult :: Proxy a -> JSExpr
+  toRawJSType :: Proxy a -> JSExpr
 
   -- | The Haskell function which decodes from the raw result.
-  fromJS :: EvalResult a -> IO a
+  fromJS :: RawJSType a -> IO a
 
 instance FromJS () where
-  type EvalResult () = ()
-  toEvalResult _ = "a => a"
+  type RawJSType () = ()
+  toRawJSType _ = "a => a"
   fromJS = pure
 
 instance FromJS LBS.ByteString where
-  type EvalResult LBS.ByteString = LBS.ByteString
-  toEvalResult _ = "a => a"
+  type RawJSType LBS.ByteString = LBS.ByteString
+  toRawJSType _ = "a => a"
   fromJS = pure
 
 instance A.FromJSON a => FromJS (Aeson a) where
-  type EvalResult (Aeson a) = LBS.ByteString
-  toEvalResult _ = "a => Buffer.from(JSON.stringify(a))"
+  type RawJSType (Aeson a) = LBS.ByteString
+  toRawJSType _ = "a => Buffer.from(JSON.stringify(a))"
   fromJS s = case A.eitherDecode' s of
     Left err -> fail err
     Right a -> pure $ Aeson a
 
 instance FromJS JSVal where
-  type EvalResult JSVal = JSVal
-  toEvalResult _ = "a => a"
+  type RawJSType JSVal = JSVal
+  toRawJSType _ = "a => a"
   fromJS = pure
 
 -- | The polymorphic eval function. Similar to the eval functions in
@@ -98,6 +98,6 @@ eval s c = do
       "Promise.resolve("
         <> c
         <> ").then("
-        <> toEvalResult (Proxy @a)
+        <> toRawJSType (Proxy @a)
         <> ")"
   unsafeInterleaveIO $ fromJS =<< evaluate r
