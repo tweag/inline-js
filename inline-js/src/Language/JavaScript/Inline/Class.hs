@@ -14,33 +14,33 @@ import Language.JavaScript.Inline.Core
 import System.IO.Unsafe
 
 -- | If a Haskell type @a@ has 'A.ToJSON'/'A.FromJSON' instances, then @Aeson a@
--- has 'ToJSCode'/'FromEvalResult' instances. We can generate
--- 'ToJSCode'/'FromEvalResult' instances for type @a@ via:
+-- has 'ToJSExpr'/'FromEvalResult' instances. We can generate
+-- 'ToJSExpr'/'FromEvalResult' instances for type @a@ via:
 --
--- 1. @deriving (ToJSCode, FromEvalResult) via (Aeson a)@, using the
+-- 1. @deriving (ToJSExpr, FromEvalResult) via (Aeson a)@, using the
 --    @DerivingVia@ extension
--- 2. @deriving (ToJSCode, FromEvalResult)@, using the
+-- 2. @deriving (ToJSExpr, FromEvalResult)@, using the
 --    @GeneralizedNewtypeDeriving@ extension
 newtype Aeson a = Aeson
   { unAeson :: a
   }
 
--- | To embed a Haskell value into a 'JSCode', its type should be an instance of
--- 'ToJSCode'.
-class ToJSCode a where
-  toJSCode :: a -> JSCode
+-- | To embed a Haskell value into a 'JSExpr', its type should be an instance of
+-- 'ToJSExpr'.
+class ToJSExpr a where
+  toJSExpr :: a -> JSExpr
 
-instance ToJSCode LBS.ByteString where
-  toJSCode = buffer
+instance ToJSExpr LBS.ByteString where
+  toJSExpr = buffer
 
-instance A.ToJSON a => ToJSCode (Aeson a) where
-  toJSCode = json . A.encode . unAeson
+instance A.ToJSON a => ToJSExpr (Aeson a) where
+  toJSExpr = json . A.encode . unAeson
 
-instance ToJSCode JSVal where
-  toJSCode = jsval
+instance ToJSExpr JSVal where
+  toJSExpr = jsval
 
 class RawEval a where
-  rawEval :: Session -> JSCode -> IO a
+  rawEval :: Session -> JSExpr -> IO a
 
 instance RawEval () where
   rawEval = evalNone
@@ -61,7 +61,7 @@ class
   type EvalResult a
 
   -- | The JavaScript function which encodes a value to the raw result.
-  toEvalResult :: Proxy a -> JSCode
+  toEvalResult :: Proxy a -> JSExpr
 
   -- | The Haskell function which decodes from the raw result.
   fromEvalResult :: EvalResult a -> IO a
@@ -92,7 +92,7 @@ instance FromEvalResult JSVal where
 -- "Language.JavaScript.Inline.Core", 'eval' performs /asynchronous/ evaluation
 -- and returns a thunk. Forcing the thunk will block until the result is
 -- returned from @node@ and decoded.
-eval :: forall a. FromEvalResult a => Session -> JSCode -> IO a
+eval :: forall a. FromEvalResult a => Session -> JSExpr -> IO a
 eval s c = do
   r <-
     rawEval s $

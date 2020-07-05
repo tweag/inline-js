@@ -10,8 +10,8 @@ import Language.JavaScript.Inline.Class
 import Language.JavaScript.Inline.Core
 import Language.JavaScript.Parser.Lexer
 
--- | Generate a 'JSCode' from an inline JavaScript expression. Use @$var@ to
--- refer to a Haskell variable @var@ (its type should be an 'ToJSCode'
+-- | Generate a 'JSExpr' from an inline JavaScript expression. Use @$var@ to
+-- refer to a Haskell variable @var@ (its type should be an 'ToJSExpr'
 -- instance). Top-level @await@ is supported.
 expr :: QuasiQuoter
 expr =
@@ -22,7 +22,7 @@ expr =
       quoteDec = error "Language.JavaScript.Inline.TH: quoteDec"
     }
 
--- | Generate a 'JSCode' from an inline JavaScript code block. Use @return@ in
+-- | Generate a 'JSExpr' from an inline JavaScript code block. Use @return@ in
 -- the code block to return the result. Other rules of 'expr' also applies here.
 block :: QuasiQuoter
 block =
@@ -46,7 +46,7 @@ blockQuoter js_code = do
         foldr'
           (\m0 m1 -> [|$(m0) <> $(m1)|])
           [|code ""|]
-          [ [|code $(litE $ stringL $ "const $" <> var <> " = ") <> toJSCode $(varE $ mkName var) <> code "; "|]
+          [ [|code $(litE $ stringL $ "const $" <> var <> " = ") <> toJSExpr $(varE $ mkName var) <> code "; "|]
             | var <- vars
           ]
   [|code "(async () => { " <> $(js_code_header) <> code $(litE $ stringL $ js_code <> " })()")|]

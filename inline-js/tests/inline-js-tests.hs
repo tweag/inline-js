@@ -62,7 +62,7 @@ main =
 
 newtype I = I Int
   deriving (Eq, Show)
-  deriving (ToJSCode, FromEvalResult) via (Aeson Int)
+  deriving (ToJSExpr, FromEvalResult) via (Aeson Int)
 
 withSession :: Config -> (Session -> Assertion) -> Assertion
 withSession conf = bracket (newSession conf) closeSession
