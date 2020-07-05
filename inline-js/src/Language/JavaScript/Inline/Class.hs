@@ -38,22 +38,22 @@ instance A.ToJSON a => ToJS (Aeson a) where
 instance ToJS JSVal where
   toJS = jsval
 
-class RawEval a where
+class RawFromJS a where
   rawEval :: Session -> JSExpr -> IO a
 
-instance RawEval () where
+instance RawFromJS () where
   rawEval = evalNone
 
-instance RawEval LBS.ByteString where
+instance RawFromJS LBS.ByteString where
   rawEval = evalBuffer
 
-instance RawEval JSVal where
+instance RawFromJS JSVal where
   rawEval = evalJSVal
 
 -- | To decode a Haskell value from an eval result, its type should be an
 -- instance of 'FromJS'.
 class
-  (RawEval (EvalResult a)) =>
+  (RawFromJS (EvalResult a)) =>
   FromJS a
   where
   -- | The raw result type, must be one of '()', 'LBS.ByteString' or 'JSVal'.
