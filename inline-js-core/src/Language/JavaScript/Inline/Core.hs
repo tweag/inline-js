@@ -9,7 +9,7 @@ module Language.JavaScript.Inline.Core
     closeSession,
 
     -- * Evaluation requests
-    JSCode,
+    JSExpr,
     JSVal,
     code,
     buffer,
@@ -44,27 +44,27 @@ import Language.JavaScript.Inline.Core.Message hiding
 import Language.JavaScript.Inline.Core.Session
 import System.Directory
 
--- | Convert a 'String' to 'JSCode'. In most cases, using the 'IsString'
+-- | Convert a 'String' to 'JSExpr'. In most cases, using the 'IsString'
 -- instance with the @OverloadedStrings@ extension is more convenient.
-code :: String -> JSCode
+code :: String -> JSExpr
 code = fromString
 
 -- | Embed a 'LBS.ByteString' as a @Buffer@ expression.
-buffer :: LBS.ByteString -> JSCode
-buffer = JSCode . pure . BufferLiteral
+buffer :: LBS.ByteString -> JSExpr
+buffer = JSExpr . pure . BufferLiteral
 
 -- | Embed a 'String' as a @string@ expression.
-string :: String -> JSCode
-string = JSCode . pure . StringLiteral
+string :: String -> JSExpr
+string = JSExpr . pure . StringLiteral
 
 -- | Embed a UTF-8 encoded JSON expression. It will be parsed with
 -- @JSON.parse()@.
-json :: LBS.ByteString -> JSCode
-json = JSCode . pure . JSONLiteral
+json :: LBS.ByteString -> JSExpr
+json = JSExpr . pure . JSONLiteral
 
 -- | Embed a 'JSVal' as an expression.
-jsval :: JSVal -> JSCode
-jsval = JSCode . pure . JSValLiteral
+jsval :: JSVal -> JSExpr
+jsval = JSExpr . pure . JSValLiteral
 
 -- $notes-eval
 --

@@ -9,96 +9,116 @@ module Language.JavaScript.Inline.Class where
 import Control.Exception
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy as LBS
+import Data.Coerce
 import Data.Proxy
 import Language.JavaScript.Inline.Core
 import System.IO.Unsafe
 
--- | If a Haskell type @a@ has 'A.ToJSON'/'A.FromJSON' instances, then @Aeson a@
--- has 'ToJSCode'/'FromEvalResult' instances. We can generate
--- 'ToJSCode'/'FromEvalResult' instances for type @a@ via:
+-- | If a Haskell type @a@ has 'A.ToJSON' and 'A.FromJSON' instances, then we
+-- can derive 'ToJS' and 'FromJS' instances for it using:
 --
--- 1. @deriving (ToJSCode, FromEvalResult) via (Aeson a)@, using the
---    @DerivingVia@ extension
--- 2. @deriving (ToJSCode, FromEvalResult)@, using the
---    @GeneralizedNewtypeDeriving@ extension
+-- 1. @deriving (ToJS, FromJS) via (Aeson a)@, using the @DerivingVia@ extension
+-- 2. @deriving (ToJS, FromJS)@, using the @GeneralizedNewtypeDeriving@
+--    extension
 newtype Aeson a = Aeson
   { unAeson :: a
   }
 
--- | To embed a Haskell value into a 'JSCode', its type should be an instance of
--- 'ToJSCode'.
-class ToJSCode a where
-  toJSCode :: a -> JSCode
+-- | To embed a Haskell value into a 'JSExpr', its type should be an instance of
+-- 'ToJS'.
+class ToJS a where
+  toJS :: a -> JSExpr
 
-instance ToJSCode LBS.ByteString where
-  toJSCode = buffer
+instance ToJS LBS.ByteString where
+  toJS = buffer
 
-instance A.ToJSON a => ToJSCode (Aeson a) where
-  toJSCode = json . A.encode . unAeson
+instance A.ToJSON a => ToJS (Aeson a) where
+  toJS = json . A.encode . unAeson
 
-instance ToJSCode JSVal where
-  toJSCode = jsval
+instance ToJS JSVal where
+  toJS = jsval
 
-class RawEval a where
-  rawEval :: Session -> JSCode -> IO a
+class RawFromJS a where
+  rawEval :: Session -> JSExpr -> IO a
 
-instance RawEval () where
+instance RawFromJS () where
   rawEval = evalNone
 
-instance RawEval LBS.ByteString where
+instance RawFromJS LBS.ByteString where
   rawEval = evalBuffer
 
-instance RawEval JSVal where
+-- | UTF-8 encoded JSON.
+newtype EncodedJSON = EncodedJSON
+  { unEncodedJSON :: LBS.ByteString
+  }
+
+instance RawFromJS EncodedJSON where
+  rawEval = coerce evalJSON
+
+instance RawFromJS JSVal where
   rawEval = evalJSVal
 
 -- | To decode a Haskell value from an eval result, its type should be an
--- instance of 'FromEvalResult'.
+-- instance of 'FromJS'.
 class
-  (RawEval (EvalResult a)) =>
-  FromEvalResult a
+  (RawFromJS (RawJSType a)) =>
+  FromJS a
   where
-  -- | The raw result type, must be one of '()', 'LBS.ByteString' or 'JSVal'.
-  type EvalResult a
+  -- | The raw JavaScript type. Must be one of:
+  --
+  -- 1. '()'. The JavaScript eval result is ignored.
+  -- 2. 'LBS.ByteString'. The JavaScript eval result must be an
+  --    @ArrayBufferView@(@Buffer@, @TypedArray@ or @DataView@) or
+  --    @ArrayBuffer@.
+  -- 3. 'EncodedJSON'. The JavaScript eval result must be JSON-encodable via
+  --    @JSON.stringify()@.
+  -- 4. 'JSVal'. The JavaScript eval result can be of any type.
+  type RawJSType a
 
-  -- | The JavaScript function which encodes a value to the raw result.
-  toEvalResult :: Proxy a -> JSCode
+  -- | The JavaScript function which encodes a value to the raw JavaScript type.
+  toRawJSType :: Proxy a -> JSExpr
 
-  -- | The Haskell function which decodes from the raw result.
-  fromEvalResult :: EvalResult a -> IO a
+  -- | The Haskell function which decodes from the raw JavaScript type.
+  fromRawJSType :: RawJSType a -> IO a
 
-instance FromEvalResult () where
-  type EvalResult () = ()
-  toEvalResult _ = "a => a"
-  fromEvalResult = pure
+instance FromJS () where
+  type RawJSType () = ()
+  toRawJSType _ = "a => a"
+  fromRawJSType = pure
 
-instance FromEvalResult LBS.ByteString where
-  type EvalResult LBS.ByteString = LBS.ByteString
-  toEvalResult _ = "a => a"
-  fromEvalResult = pure
+instance FromJS LBS.ByteString where
+  type RawJSType LBS.ByteString = LBS.ByteString
+  toRawJSType _ = "a => a"
+  fromRawJSType = pure
 
-instance A.FromJSON a => FromEvalResult (Aeson a) where
-  type EvalResult (Aeson a) = LBS.ByteString
-  toEvalResult _ = "a => Buffer.from(JSON.stringify(a))"
-  fromEvalResult s = case A.eitherDecode' s of
+instance FromJS EncodedJSON where
+  type RawJSType EncodedJSON = EncodedJSON
+  toRawJSType _ = "a => a"
+  fromRawJSType = pure
+
+instance A.FromJSON a => FromJS (Aeson a) where
+  type RawJSType (Aeson a) = EncodedJSON
+  toRawJSType _ = "a => a"
+  fromRawJSType s = case A.eitherDecode' (coerce s) of
     Left err -> fail err
     Right a -> pure $ Aeson a
 
-instance FromEvalResult JSVal where
-  type EvalResult JSVal = JSVal
-  toEvalResult _ = "a => a"
-  fromEvalResult = pure
+instance FromJS JSVal where
+  type RawJSType JSVal = JSVal
+  toRawJSType _ = "a => a"
+  fromRawJSType = pure
 
 -- | The polymorphic eval function. Similar to the eval functions in
 -- "Language.JavaScript.Inline.Core", 'eval' performs /asynchronous/ evaluation
 -- and returns a thunk. Forcing the thunk will block until the result is
 -- returned from @node@ and decoded.
-eval :: forall a. FromEvalResult a => Session -> JSCode -> IO a
+eval :: forall a. FromJS a => Session -> JSExpr -> IO a
 eval s c = do
   r <-
     rawEval s $
       "Promise.resolve("
         <> c
         <> ").then("
-        <> toEvalResult (Proxy @a)
+        <> toRawJSType (Proxy @a)
         <> ")"
-  unsafeInterleaveIO $ fromEvalResult =<< evaluate r
+  unsafeInterleaveIO $ fromRawJSType =<< evaluate r

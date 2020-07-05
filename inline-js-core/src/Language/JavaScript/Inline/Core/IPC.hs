@@ -35,8 +35,8 @@ data IPC = IPC
 instance Show IPC where
   show IPC {} = "IPC"
 
--- | Given the 'Handle's for send/recv, this function adds the
--- 'send'/'recv'/'preClose' fields to an 'IPC' value.
+-- | Given the 'Handle's for send/recv, this function adds the 'send' / 'recv' /
+-- 'preClose' fields to an 'IPC' value.
 --
 -- The protocol for preserving message boundaries is simple: first comes the
 -- message header, which is just a little-endian 64-bit unsigned integer,
@@ -60,7 +60,7 @@ ipcFromHandles h_send h_recv ipc =
     }
 
 -- | This function forks the send/recv threads. In the result 'IPC' value, only
--- the 'send'/'closeMsg' fields remain valid and can be used by the user.
+-- the 'send' / 'closeMsg' fields remain valid and can be used by the user.
 --
 -- The send thread repeatedly fetches 'Msg's from a 'Channel' and send to the
 -- remote device; when the 'closeMsg' message is sent, it invokes the 'preClose'

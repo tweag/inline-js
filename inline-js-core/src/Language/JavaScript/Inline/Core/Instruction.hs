@@ -23,7 +23,7 @@ evalWithDecoder ::
   JSReturnType ->
   (Session -> LBS.ByteString -> IO a) ->
   Session ->
-  JSCode ->
+  JSExpr ->
   IO a
 evalWithDecoder _return_type _decoder _session@Session {..} _code =
   do
@@ -55,25 +55,25 @@ evalWithDecoder _return_type _decoder _session@Session {..} _code =
         Left (SomeException _err) -> throwIO _err
         Right _result -> pure _result
 
--- | Evaluates a 'JSCode' and discards the evaluation result.
-evalNone :: Session -> JSCode -> IO ()
+-- | Evaluates a 'JSExpr' and discards the evaluation result.
+evalNone :: Session -> JSExpr -> IO ()
 evalNone = evalWithDecoder ReturnNone $ \_ _ -> pure ()
 
--- | Evaluates a 'JSCode' to a 'LBS.ByteString'. The evaluation result should be
+-- | Evaluates a 'JSExpr' to a 'LBS.ByteString'. The evaluation result should be
 -- an @ArrayBufferView@(@Buffer@, @TypedArray@ or @DataView@) or @ArrayBuffer@.
 -- It can also be a @string@, in which case the UTF-8 encoded result is
 -- returned. Other JavaScript types will result in an 'EvalError'.
-evalBuffer :: Session -> JSCode -> IO LBS.ByteString
+evalBuffer :: Session -> JSExpr -> IO LBS.ByteString
 evalBuffer = evalWithDecoder ReturnBuffer $ \_ _result_buf -> pure _result_buf
 
--- | Evaluate a 'JSCode', call @JSON.stringify()@ on the evaluation result and
+-- | Evaluate a 'JSExpr', call @JSON.stringify()@ on the evaluation result and
 -- return the UTF-8 encoded result.
-evalJSON :: Session -> JSCode -> IO LBS.ByteString
+evalJSON :: Session -> JSExpr -> IO LBS.ByteString
 evalJSON = evalWithDecoder ReturnJSON $ \_ _result_buf -> pure _result_buf
 
--- | Evaluates a 'JSCode' to a 'JSVal'. The evaluation result can be of any
+-- | Evaluates a 'JSExpr' to a 'JSVal'. The evaluation result can be of any
 -- JavaScript type.
-evalJSVal :: Session -> JSCode -> IO JSVal
+evalJSVal :: Session -> JSExpr -> IO JSVal
 evalJSVal = evalWithDecoder ReturnJSVal $ \_session _jsval_id_buf -> do
   _jsval_id <- runGetExact getWord64host _jsval_id_buf
   newJSVal _jsval_id (sessionSend _session $ JSValFree _jsval_id)

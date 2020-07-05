@@ -15,7 +15,7 @@ import Data.String
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Utils
 
-data JSCodeSegment
+data JSExprSegment
   = Code String
   | BufferLiteral LBS.ByteString
   | StringLiteral String
@@ -25,17 +25,17 @@ data JSCodeSegment
 
 -- | Represents a JavaScript expression. Top-level @await@ is supported.
 --
--- Use the 'IsString' instance to convert a 'String' to 'JSCode', and the
--- 'Semigroup' instance for concating 'JSCode'. It's also possible to embed
--- other things into 'JSCode', e.g. a buffer/string literal, JSON value or a
+-- Use the 'IsString' instance to convert a 'String' to 'JSExpr', and the
+-- 'Semigroup' instance for concating 'JSExpr'. It's also possible to embed
+-- other things into 'JSExpr', e.g. a buffer/string literal, JSON value or a
 -- 'JSVal'.
-newtype JSCode = JSCode
-  { unJSCode :: NE.NonEmpty JSCodeSegment
+newtype JSExpr = JSExpr
+  { unJSExpr :: NE.NonEmpty JSExprSegment
   }
   deriving (Semigroup, Show)
 
-instance IsString JSCode where
-  fromString = JSCode . pure . Code
+instance IsString JSExpr where
+  fromString = JSExpr . pure . Code
 
 data JSReturnType
   = ReturnNone
@@ -47,7 +47,7 @@ data JSReturnType
 data MessageHS
   = JSEvalRequest
       { requestId :: Word64,
-        code :: JSCode,
+        code :: JSExpr,
         returnType :: JSReturnType
       }
   | JSValFree Word64
@@ -67,15 +67,15 @@ messageHSPut msg = case msg of
   JSEvalRequest {..} ->
     word8Put 0
       <> word64Put requestId
-      <> word64Put (fromIntegral (NE.length (unJSCode code)) :: Word64)
-      <> foldMap' codeSegmentPut (unJSCode code)
+      <> word64Put (fromIntegral (NE.length (unJSExpr code)) :: Word64)
+      <> foldMap' exprSegmentPut (unJSExpr code)
       <> returnTypePut returnType
     where
-      codeSegmentPut (Code s) = word8Put 0 <> lbsPut (stringToLBS s)
-      codeSegmentPut (BufferLiteral s) = word8Put 1 <> lbsPut s
-      codeSegmentPut (StringLiteral s) = word8Put 2 <> lbsPut (stringToLBS s)
-      codeSegmentPut (JSONLiteral s) = word8Put 3 <> lbsPut s
-      codeSegmentPut (JSValLiteral v) =
+      exprSegmentPut (Code s) = word8Put 0 <> lbsPut (stringToLBS s)
+      exprSegmentPut (BufferLiteral s) = word8Put 1 <> lbsPut s
+      exprSegmentPut (StringLiteral s) = word8Put 2 <> lbsPut (stringToLBS s)
+      exprSegmentPut (JSONLiteral s) = word8Put 3 <> lbsPut s
+      exprSegmentPut (JSValLiteral v) =
         word8Put 4 <> word64Put (unsafeUseJSVal v)
       returnTypePut ReturnNone = word8Put 0
       returnTypePut ReturnBuffer = word8Put 1
