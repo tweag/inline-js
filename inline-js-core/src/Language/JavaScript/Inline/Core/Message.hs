@@ -68,14 +68,14 @@ messageHSPut msg = case msg of
     word8Put 0
       <> word64Put requestId
       <> word64Put (fromIntegral (NE.length (unJSExpr code)) :: Word64)
-      <> foldMap' codeSegmentPut (unJSExpr code)
+      <> foldMap' exprSegmentPut (unJSExpr code)
       <> returnTypePut returnType
     where
-      codeSegmentPut (Code s) = word8Put 0 <> lbsPut (stringToLBS s)
-      codeSegmentPut (BufferLiteral s) = word8Put 1 <> lbsPut s
-      codeSegmentPut (StringLiteral s) = word8Put 2 <> lbsPut (stringToLBS s)
-      codeSegmentPut (JSONLiteral s) = word8Put 3 <> lbsPut s
-      codeSegmentPut (JSValLiteral v) =
+      exprSegmentPut (Code s) = word8Put 0 <> lbsPut (stringToLBS s)
+      exprSegmentPut (BufferLiteral s) = word8Put 1 <> lbsPut s
+      exprSegmentPut (StringLiteral s) = word8Put 2 <> lbsPut (stringToLBS s)
+      exprSegmentPut (JSONLiteral s) = word8Put 3 <> lbsPut s
+      exprSegmentPut (JSValLiteral v) =
         word8Put 4 <> word64Put (unsafeUseJSVal v)
       returnTypePut ReturnNone = word8Put 0
       returnTypePut ReturnBuffer = word8Put 1
