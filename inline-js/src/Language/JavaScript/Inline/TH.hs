@@ -11,8 +11,8 @@ import Language.JavaScript.Inline.Core
 import Language.JavaScript.Parser.Lexer
 
 -- | Generate a 'JSExpr' from an inline JavaScript expression. Use @$var@ to
--- refer to a Haskell variable @var@ (its type should be an 'ToJSExpr'
--- instance). Top-level @await@ is supported.
+-- refer to a Haskell variable @var@ (its type should be an 'ToJS' instance).
+-- Top-level @await@ is supported.
 expr :: QuasiQuoter
 expr =
   QuasiQuoter

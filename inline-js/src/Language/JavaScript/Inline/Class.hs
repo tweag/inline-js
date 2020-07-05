@@ -14,29 +14,29 @@ import Language.JavaScript.Inline.Core
 import System.IO.Unsafe
 
 -- | If a Haskell type @a@ has 'A.ToJSON'/'A.FromJSON' instances, then @Aeson a@
--- has 'ToJSExpr'/'FromEvalResult' instances. We can generate
--- 'ToJSExpr'/'FromEvalResult' instances for type @a@ via:
+-- has 'ToJS'/'FromEvalResult' instances. We can generate
+-- 'ToJS'/'FromEvalResult' instances for type @a@ via:
 --
--- 1. @deriving (ToJSExpr, FromEvalResult) via (Aeson a)@, using the
---    @DerivingVia@ extension
--- 2. @deriving (ToJSExpr, FromEvalResult)@, using the
---    @GeneralizedNewtypeDeriving@ extension
+-- 1. @deriving (ToJS, FromEvalResult) via (Aeson a)@, using the @DerivingVia@
+--    extension
+-- 2. @deriving (ToJS, FromEvalResult)@, using the @GeneralizedNewtypeDeriving@
+--    extension
 newtype Aeson a = Aeson
   { unAeson :: a
   }
 
 -- | To embed a Haskell value into a 'JSExpr', its type should be an instance of
--- 'ToJSExpr'.
-class ToJSExpr a where
+-- 'ToJS'.
+class ToJS a where
   toJSExpr :: a -> JSExpr
 
-instance ToJSExpr LBS.ByteString where
+instance ToJS LBS.ByteString where
   toJSExpr = buffer
 
-instance A.ToJSON a => ToJSExpr (Aeson a) where
+instance A.ToJSON a => ToJS (Aeson a) where
   toJSExpr = json . A.encode . unAeson
 
-instance ToJSExpr JSVal where
+instance ToJS JSVal where
   toJSExpr = jsval
 
 class RawEval a where

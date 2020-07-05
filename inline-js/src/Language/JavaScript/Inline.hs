@@ -3,7 +3,7 @@ module Language.JavaScript.Inline
     module Language.JavaScript.Inline.Core,
 
     -- * Haskell/JavaScript data marshaling type classes
-    ToJSExpr (..),
+    ToJS (..),
     FromEvalResult (..),
     Aeson (..),
 
