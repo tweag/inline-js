@@ -28,16 +28,16 @@ newtype Aeson a = Aeson
 -- | To embed a Haskell value into a 'JSExpr', its type should be an instance of
 -- 'ToJS'.
 class ToJS a where
-  toJSExpr :: a -> JSExpr
+  toJS :: a -> JSExpr
 
 instance ToJS LBS.ByteString where
-  toJSExpr = buffer
+  toJS = buffer
 
 instance A.ToJSON a => ToJS (Aeson a) where
-  toJSExpr = json . A.encode . unAeson
+  toJS = json . A.encode . unAeson
 
 instance ToJS JSVal where
-  toJSExpr = jsval
+  toJS = jsval
 
 class RawEval a where
   rawEval :: Session -> JSExpr -> IO a

@@ -46,7 +46,7 @@ blockQuoter js_code = do
         foldr'
           (\m0 m1 -> [|$(m0) <> $(m1)|])
           [|code ""|]
-          [ [|code $(litE $ stringL $ "const $" <> var <> " = ") <> toJSExpr $(varE $ mkName var) <> code "; "|]
+          [ [|code $(litE $ stringL $ "const $" <> var <> " = ") <> toJS $(varE $ mkName var) <> code "; "|]
             | var <- vars
           ]
   [|code "(async () => { " <> $(js_code_header) <> code $(litE $ stringL $ js_code <> " })()")|]
