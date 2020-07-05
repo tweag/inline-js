@@ -63,29 +63,29 @@ class
   toRawJSType :: Proxy a -> JSExpr
 
   -- | The Haskell function which decodes from the raw result.
-  fromJS :: RawJSType a -> IO a
+  fromRawJSType :: RawJSType a -> IO a
 
 instance FromJS () where
   type RawJSType () = ()
   toRawJSType _ = "a => a"
-  fromJS = pure
+  fromRawJSType = pure
 
 instance FromJS LBS.ByteString where
   type RawJSType LBS.ByteString = LBS.ByteString
   toRawJSType _ = "a => a"
-  fromJS = pure
+  fromRawJSType = pure
 
 instance A.FromJSON a => FromJS (Aeson a) where
   type RawJSType (Aeson a) = LBS.ByteString
   toRawJSType _ = "a => Buffer.from(JSON.stringify(a))"
-  fromJS s = case A.eitherDecode' s of
+  fromRawJSType s = case A.eitherDecode' s of
     Left err -> fail err
     Right a -> pure $ Aeson a
 
 instance FromJS JSVal where
   type RawJSType JSVal = JSVal
   toRawJSType _ = "a => a"
-  fromJS = pure
+  fromRawJSType = pure
 
 -- | The polymorphic eval function. Similar to the eval functions in
 -- "Language.JavaScript.Inline.Core", 'eval' performs /asynchronous/ evaluation
@@ -100,4 +100,4 @@ eval s c = do
         <> ").then("
         <> toRawJSType (Proxy @a)
         <> ")"
-  unsafeInterleaveIO $ fromJS =<< evaluate r
+  unsafeInterleaveIO $ fromRawJSType =<< evaluate r
