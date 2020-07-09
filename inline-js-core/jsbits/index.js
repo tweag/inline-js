@@ -101,7 +101,7 @@ class WorkerContext {
     Object.seal(this);
   }
 
-  decodeJSExpr(buf, p) {
+  decodeAndEvalJSExpr(buf, p, async) {
     const jsval_tmp = [];
     const code_segs_len = Number(buf.readBigUInt64LE(p));
     p += 8;
@@ -168,12 +168,22 @@ class WorkerContext {
           break;
         }
         default: {
-          throw new Error(`decodeJSExpr failed: ${buf}`);
+          throw new Error(`decodeAndEvalJSExpr failed: ${buf}`);
         }
       }
     }
 
-    return { p: p, code: code, jsvalTmp: jsval_tmp };
+    let code_params = "require";
+    for (let i = 0; i < jsval_tmp.length; ++i) {
+      code_params = `${code_params}, __t${i.toString(36)}`;
+    }
+    code = `${async ? "async " : ""}(${code_params}) => (\n${code}\n)`;
+    const result = vm.runInThisContext(code, {
+      lineOffset: -1,
+      importModuleDynamically: (spec) => import(spec),
+    })(require, ...jsval_tmp);
+
+    return { p: p, result: result };
   }
 
   async onParentMessage(buf_msg) {
@@ -188,19 +198,9 @@ class WorkerContext {
         const req_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         try {
-          const r = this.decodeJSExpr(buf_msg, p);
+          const r = this.decodeAndEvalJSExpr(buf_msg, p, true);
           p = r.p;
-
-          let code_params = "require";
-          for (let i = 0; i < r.jsvalTmp.length; ++i) {
-            code_params = `${code_params}, __t${i.toString(36)}`;
-          }
-          const code = `async (${code_params}) => (\n${r.code}\n)`;
-
-          const eval_result = await vm.runInThisContext(code, {
-            lineOffset: -1,
-            importModuleDynamically: (spec) => import(spec),
-          })(require, ...r.jsvalTmp);
+          const eval_result = await r.result;
 
           const return_type = buf_msg.readUInt8(p);
           p += 1;
