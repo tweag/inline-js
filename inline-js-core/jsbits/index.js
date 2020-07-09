@@ -100,6 +100,82 @@ class WorkerContext {
     })();
     Object.seal(this);
   }
+
+  decodeJSExpr(buf, p) {
+    const jsval_tmp = [];
+    const code_segs_len = Number(buf.readBigUInt64LE(p));
+    p += 8;
+    let code = "";
+    for (let i = 0; i < code_segs_len; ++i) {
+      const code_seg_type = buf.readUInt8(p);
+      p += 1;
+      switch (code_seg_type) {
+        case 0: {
+          // Code
+          const code_len = Number(buf.readBigUInt64LE(p));
+          p += 8;
+          code = `${code}${new string_decoder.StringDecoder("utf-8").end(
+            buf.slice(p, p + code_len)
+          )}`;
+          p += code_len;
+          break;
+        }
+        case 1: {
+          // BufferLiteral
+          const buf_len = Number(buf.readBigUInt64LE(p));
+          p += 8;
+          const buf_id = jsval_tmp.push(buf.slice(p, p + buf_len)) - 1;
+          code = `${code}__t${buf_id.toString(36)}`;
+          p += buf_len;
+          break;
+        }
+        case 2: {
+          // StringLiteral
+          const buf_len = Number(buf.readBigUInt64LE(p));
+          p += 8;
+          const str_id =
+            jsval_tmp.push(
+              new string_decoder.StringDecoder("utf-8").end(
+                buf.slice(p, p + buf_len)
+              )
+            ) - 1;
+          code = `${code}__t${str_id.toString(36)}`;
+          p += buf_len;
+          break;
+        }
+        case 3: {
+          // JSONLiteral
+          const buf_len = Number(buf.readBigUInt64LE(p));
+          p += 8;
+          const json_id =
+            jsval_tmp.push(
+              JSON.parse(
+                new string_decoder.StringDecoder("utf-8").end(
+                  buf.slice(p, p + buf_len)
+                )
+              )
+            ) - 1;
+          code = `${code}__t${json_id.toString(36)}`;
+          p += buf_len;
+          break;
+        }
+        case 4: {
+          // JSValLiteral
+          const jsval_id =
+            jsval_tmp.push(this.jsval.get(buf.readBigUInt64LE(p))) - 1;
+          code = `${code}__t${jsval_id.toString(36)}`;
+          p += 8;
+          break;
+        }
+        default: {
+          throw new Error(`decodeJSExpr failed: ${buf}`);
+        }
+      }
+    }
+
+    return { p: p, code: code, jsvalTmp: jsval_tmp };
+  }
+
   async onParentMessage(buf_msg) {
     buf_msg = bufferFromArrayBufferView(buf_msg);
     let p = 0;
@@ -108,93 +184,23 @@ class WorkerContext {
     switch (msg_tag) {
       case 0: {
         // JSEvalRequest
-        const jsval_tmp = [];
         let resp_buf;
         const req_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         try {
-          const code_segs_len = Number(buf_msg.readBigUInt64LE(p));
-          p += 8;
-          let code = "";
-          for (let i = 0; i < code_segs_len; ++i) {
-            const code_seg_type = buf_msg.readUInt8(p);
-            p += 1;
-            switch (code_seg_type) {
-              case 0: {
-                // Code
-                const code_len = Number(buf_msg.readBigUInt64LE(p));
-                p += 8;
-                code = `${code}${new string_decoder.StringDecoder("utf-8").end(
-                  buf_msg.slice(p, p + code_len)
-                )}`;
-                p += code_len;
-                break;
-              }
-              case 1: {
-                // BufferLiteral
-                const buf_len = Number(buf_msg.readBigUInt64LE(p));
-                p += 8;
-                const buf_id =
-                  jsval_tmp.push(buf_msg.slice(p, p + buf_len)) - 1;
-                code = `${code}__t${buf_id.toString(36)}`;
-                p += buf_len;
-                break;
-              }
-              case 2: {
-                // StringLiteral
-                const buf_len = Number(buf_msg.readBigUInt64LE(p));
-                p += 8;
-                const str_id =
-                  jsval_tmp.push(
-                    new string_decoder.StringDecoder("utf-8").end(
-                      buf_msg.slice(p, p + buf_len)
-                    )
-                  ) - 1;
-                code = `${code}__t${str_id.toString(36)}`;
-                p += buf_len;
-                break;
-              }
-              case 3: {
-                // JSONLiteral
-                const buf_len = Number(buf_msg.readBigUInt64LE(p));
-                p += 8;
-                const json_id =
-                  jsval_tmp.push(
-                    JSON.parse(
-                      new string_decoder.StringDecoder("utf-8").end(
-                        buf_msg.slice(p, p + buf_len)
-                      )
-                    )
-                  ) - 1;
-                code = `${code}__t${json_id.toString(36)}`;
-                p += buf_len;
-                break;
-              }
-              case 4: {
-                // JSValLiteral
-                const jsval_id =
-                  jsval_tmp.push(this.jsval.get(buf_msg.readBigUInt64LE(p))) -
-                  1;
-                code = `${code}__t${jsval_id.toString(36)}`;
-                p += 8;
-                break;
-              }
-              default: {
-                throw new Error(`recv: invalid message ${buf_msg}`);
-              }
-            }
-          }
+          const r = this.decodeJSExpr(buf_msg, p);
+          p = r.p;
 
           let code_params = "require";
-          for (let i = 0; i < jsval_tmp.length; ++i) {
+          for (let i = 0; i < r.jsvalTmp.length; ++i) {
             code_params = `${code_params}, __t${i.toString(36)}`;
           }
-          code = `async (${code_params}) => (\n${code}\n)`;
+          const code = `async (${code_params}) => (\n${r.code}\n)`;
 
           const eval_result = await vm.runInThisContext(code, {
             lineOffset: -1,
             importModuleDynamically: (spec) => import(spec),
-          })(require, ...jsval_tmp);
+          })(require, ...r.jsvalTmp);
 
           const return_type = buf_msg.readUInt8(p);
           p += 1;
