@@ -100,19 +100,19 @@ class WorkerContext {
 
   decodeAndEvalJSExpr(buf, p, async) {
     const jsval_tmp = [];
-    const code_segs_len = Number(buf.readBigUInt64LE(p));
+    const expr_segs_len = Number(buf.readBigUInt64LE(p));
     p += 8;
-    let code = "";
-    for (let i = 0; i < code_segs_len; ++i) {
-      const code_seg_type = buf.readUInt8(p);
+    let expr = "";
+    for (let i = 0; i < expr_segs_len; ++i) {
+      const expr_seg_type = buf.readUInt8(p);
       p += 1;
-      switch (code_seg_type) {
+      switch (expr_seg_type) {
         case 0: {
           // Code
-          const code_len = Number(buf.readBigUInt64LE(p));
+          const expr_seg_len = Number(buf.readBigUInt64LE(p));
           p += 8;
-          code = `${code}${this.decoder.end(buf.slice(p, p + code_len))}`;
-          p += code_len;
+          expr = `${expr}${this.decoder.end(buf.slice(p, p + expr_seg_len))}`;
+          p += expr_seg_len;
           break;
         }
         case 1: {
@@ -120,7 +120,7 @@ class WorkerContext {
           const buf_len = Number(buf.readBigUInt64LE(p));
           p += 8;
           const buf_id = jsval_tmp.push(buf.slice(p, p + buf_len)) - 1;
-          code = `${code}__t${buf_id.toString(36)}`;
+          expr = `${expr}__t${buf_id.toString(36)}`;
           p += buf_len;
           break;
         }
@@ -130,7 +130,7 @@ class WorkerContext {
           p += 8;
           const str_id =
             jsval_tmp.push(this.decoder.end(buf.slice(p, p + buf_len))) - 1;
-          code = `${code}__t${str_id.toString(36)}`;
+          expr = `${expr}__t${str_id.toString(36)}`;
           p += buf_len;
           break;
         }
@@ -142,7 +142,7 @@ class WorkerContext {
             jsval_tmp.push(
               JSON.parse(this.decoder.end(buf.slice(p, p + buf_len)))
             ) - 1;
-          code = `${code}__t${json_id.toString(36)}`;
+          expr = `${expr}__t${json_id.toString(36)}`;
           p += buf_len;
           break;
         }
@@ -150,7 +150,7 @@ class WorkerContext {
           // JSValLiteral
           const jsval_id =
             jsval_tmp.push(this.jsval.get(buf.readBigUInt64LE(p))) - 1;
-          code = `${code}__t${jsval_id.toString(36)}`;
+          expr = `${expr}__t${jsval_id.toString(36)}`;
           p += 8;
           break;
         }
@@ -160,12 +160,12 @@ class WorkerContext {
       }
     }
 
-    let code_params = "require";
+    let expr_params = "require";
     for (let i = 0; i < jsval_tmp.length; ++i) {
-      code_params = `${code_params}, __t${i.toString(36)}`;
+      expr_params = `${expr_params}, __t${i.toString(36)}`;
     }
-    code = `${async ? "async " : ""}(${code_params}) => (\n${code}\n)`;
-    const result = vm.runInThisContext(code, {
+    expr = `${async ? "async " : ""}(${expr_params}) => (\n${expr}\n)`;
+    const result = vm.runInThisContext(expr, {
       lineOffset: -1,
       importModuleDynamically: (spec) => import(spec),
     })(require, ...jsval_tmp);
