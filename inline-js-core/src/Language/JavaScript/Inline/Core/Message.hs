@@ -23,7 +23,7 @@ data JSExprSegment
   | JSValLiteral JSVal
   deriving (Show)
 
--- | Represents a JavaScript expression. Top-level @await@ is supported.
+-- | Represents a JavaScript expression.
 --
 -- Use the 'IsString' instance to convert a 'String' to 'JSExpr', and the
 -- 'Semigroup' instance for concating 'JSExpr'. It's also possible to embed
