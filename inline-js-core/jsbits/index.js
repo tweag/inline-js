@@ -29,10 +29,6 @@ class JSValContext {
       throw new Error(`jsval.free(${i}): invalid key`);
     }
   }
-  clear() {
-    this.jsvalMap.clear();
-    this.jsvalLast = 0n;
-  }
 }
 
 class MainContext {
@@ -85,6 +81,7 @@ class MainContext {
 
 class WorkerContext {
   constructor() {
+    this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
     (async () => {
       if (process.env.INLINE_JS_NODE_MODULES) {
@@ -98,7 +95,7 @@ class WorkerContext {
         this.onParentMessage(buf_msg)
       );
     })();
-    Object.seal(this);
+    Object.freeze(this);
   }
 
   decodeAndEvalJSExpr(buf, p, async) {
@@ -114,9 +111,7 @@ class WorkerContext {
           // Code
           const code_len = Number(buf.readBigUInt64LE(p));
           p += 8;
-          code = `${code}${new string_decoder.StringDecoder("utf-8").end(
-            buf.slice(p, p + code_len)
-          )}`;
+          code = `${code}${this.decoder.end(buf.slice(p, p + code_len))}`;
           p += code_len;
           break;
         }
@@ -134,11 +129,7 @@ class WorkerContext {
           const buf_len = Number(buf.readBigUInt64LE(p));
           p += 8;
           const str_id =
-            jsval_tmp.push(
-              new string_decoder.StringDecoder("utf-8").end(
-                buf.slice(p, p + buf_len)
-              )
-            ) - 1;
+            jsval_tmp.push(this.decoder.end(buf.slice(p, p + buf_len))) - 1;
           code = `${code}__t${str_id.toString(36)}`;
           p += buf_len;
           break;
@@ -149,11 +140,7 @@ class WorkerContext {
           p += 8;
           const json_id =
             jsval_tmp.push(
-              JSON.parse(
-                new string_decoder.StringDecoder("utf-8").end(
-                  buf.slice(p, p + buf_len)
-                )
-              )
+              JSON.parse(this.decoder.end(buf.slice(p, p + buf_len)))
             ) - 1;
           code = `${code}__t${json_id.toString(36)}`;
           p += buf_len;
