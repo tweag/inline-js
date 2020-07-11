@@ -106,7 +106,7 @@ class WorkerContext {
     Object.freeze(this);
   }
 
-  decodeAndEvalJSExpr(buf, p, async) {
+  toJS(buf, p, async) {
     const jsval_tmp = [];
     const expr_segs_len = Number(buf.readBigUInt64LE(p));
     p += 8;
@@ -163,7 +163,7 @@ class WorkerContext {
           break;
         }
         default: {
-          throw new Error(`decodeAndEvalJSExpr failed: ${buf}`);
+          throw new Error(`toJS failed: ${buf}`);
         }
       }
     }
@@ -181,6 +181,36 @@ class WorkerContext {
     return { p: p, result: result };
   }
 
+  fromJS(val, val_type) {
+    switch (val_type) {
+      case 0: {
+        // ReturnNone
+        return Buffer.allocUnsafe(0);
+      }
+      case 1: {
+        // ReturnBuffer
+        return Buffer.isBuffer(val)
+          ? val
+          : util.types.isArrayBufferView(val)
+          ? bufferFromArrayBufferView(val)
+          : Buffer.from(val);
+      }
+      case 2: {
+        // ReturnJSON
+        return Buffer.from(JSON.stringify(val), "utf-8");
+      }
+      case 3: {
+        // ReturnJSVal
+        const val_buf = Buffer.allocUnsafe(8);
+        val_buf.writeBigUInt64LE(this.jsval.new(val), 0);
+        return val_buf;
+      }
+      default: {
+        throw new Error(`fromJS: invalid type ${val_type}`);
+      }
+    }
+  }
+
   async onParentMessage(buf_msg) {
     buf_msg = bufferFromArrayBufferView(buf_msg);
     let p = 0;
@@ -193,65 +223,19 @@ class WorkerContext {
         const req_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         try {
-          const r = this.decodeAndEvalJSExpr(buf_msg, p, true);
+          const r = this.toJS(buf_msg, p, true);
           p = r.p;
           const eval_result = await r.result;
 
           const return_type = buf_msg.readUInt8(p);
           p += 1;
-          switch (return_type) {
-            case 0: {
-              // ReturnNone
-              resp_buf = Buffer.allocUnsafe(18);
-              resp_buf.writeUInt8(0, 0);
-              resp_buf.writeBigUInt64LE(req_id, 1);
-              resp_buf.writeUInt8(1, 9);
-              resp_buf.writeBigUInt64LE(0n, 10);
-              break;
-            }
-            case 1: {
-              // ReturnBuffer
-              const eval_result_buf = Buffer.isBuffer(eval_result)
-                ? eval_result
-                : util.types.isArrayBufferView(eval_result)
-                ? bufferFromArrayBufferView(eval_result)
-                : Buffer.from(eval_result);
-              resp_buf = Buffer.allocUnsafe(18 + eval_result_buf.length);
-              resp_buf.writeUInt8(0, 0);
-              resp_buf.writeBigUInt64LE(req_id, 1);
-              resp_buf.writeUInt8(1, 9);
-              resp_buf.writeBigUInt64LE(BigInt(eval_result_buf.length), 10);
-              eval_result_buf.copy(resp_buf, 18);
-              break;
-            }
-            case 2: {
-              // ReturnJSON
-              const eval_result_buf = Buffer.from(
-                JSON.stringify(eval_result),
-                "utf-8"
-              );
-              resp_buf = Buffer.allocUnsafe(18 + eval_result_buf.length);
-              resp_buf.writeUInt8(0, 0);
-              resp_buf.writeBigUInt64LE(req_id, 1);
-              resp_buf.writeUInt8(1, 9);
-              resp_buf.writeBigUInt64LE(BigInt(eval_result_buf.length), 10);
-              eval_result_buf.copy(resp_buf, 18);
-              break;
-            }
-            case 3: {
-              // ReturnJSVal
-              resp_buf = Buffer.allocUnsafe(26);
-              resp_buf.writeUInt8(0, 0);
-              resp_buf.writeBigUInt64LE(req_id, 1);
-              resp_buf.writeUInt8(1, 9);
-              resp_buf.writeBigUInt64LE(8n, 10);
-              resp_buf.writeBigUInt64LE(this.jsval.new(eval_result), 18);
-              break;
-            }
-            default: {
-              throw new Error(`recv: invalid message ${buf_msg}`);
-            }
-          }
+          const eval_result_buf = this.fromJS(eval_result, return_type);
+          resp_buf = Buffer.allocUnsafe(18 + eval_result_buf.length);
+          resp_buf.writeUInt8(0, 0);
+          resp_buf.writeBigUInt64LE(req_id, 1);
+          resp_buf.writeUInt8(1, 9);
+          resp_buf.writeBigUInt64LE(BigInt(eval_result_buf.length), 10);
+          eval_result_buf.copy(resp_buf, 18);
         } catch (err) {
           // EvalError
           const err_str = `${err.stack ? err.stack : err}`;
