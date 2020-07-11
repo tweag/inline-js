@@ -27,8 +27,7 @@ data JSExprSegment
 --
 -- Use the 'IsString' instance to convert a 'String' to 'JSExpr', and the
 -- 'Semigroup' instance for concating 'JSExpr'. It's also possible to embed
--- other things into 'JSExpr', e.g. a buffer/string literal, JSON value or a
--- 'JSVal'.
+-- other things into 'JSExpr', e.g. a buffer literal, JSON value or a 'JSVal'.
 newtype JSExpr = JSExpr
   { unJSExpr :: NE.NonEmpty JSExprSegment
   }
