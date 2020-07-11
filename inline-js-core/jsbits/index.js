@@ -13,21 +13,29 @@ class JSValContext {
     this.jsvalLast = 0n;
     Object.seal(this);
   }
+
   new(x) {
     const i = this.jsvalLast++;
     this.jsvalMap.set(i, x);
     return i;
   }
+
   get(i) {
     if (!this.jsvalMap.has(i)) {
       throw new Error(`jsval.get(${i}): invalid key`);
     }
     return this.jsvalMap.get(i);
   }
+
   free(i) {
     if (!this.jsvalMap.delete(i)) {
       throw new Error(`jsval.free(${i}): invalid key`);
     }
+  }
+
+  clear() {
+    this.jsvalMap.clear();
+    this.jsvalLast = 0n;
   }
 }
 
@@ -275,6 +283,7 @@ class WorkerContext {
       }
       case 2: {
         // Close
+        this.jsval.clear();
         worker_threads.parentPort.unref();
         break;
       }
