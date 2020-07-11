@@ -4,9 +4,9 @@ module Language.JavaScript.Inline.TH where
 
 import Data.Foldable
 import Data.List
+import Data.String
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
-import Language.JavaScript.Inline.Class
 import Language.JavaScript.Inline.Core
 import Language.JavaScript.Parser.Lexer
 
@@ -45,8 +45,8 @@ blockQuoter js_code = do
       js_code_header =
         foldr'
           (\m0 m1 -> [|$(m0) <> $(m1)|])
-          [|code ""|]
-          [ [|code $(litE $ stringL $ "const $" <> var <> " = ") <> toJS $(varE $ mkName var) <> code "; "|]
+          [|fromString ""|]
+          [ [|fromString $(litE $ stringL $ "const $" <> var <> " = ") <> toJS $(varE $ mkName var) <> fromString "; "|]
             | var <- vars
           ]
-  [|code "(async () => { " <> $(js_code_header) <> code $(litE $ stringL $ js_code <> " })()")|]
+  [|fromString "(async () => { " <> $(js_code_header) <> fromString $(litE $ stringL $ js_code <> " })()")|]

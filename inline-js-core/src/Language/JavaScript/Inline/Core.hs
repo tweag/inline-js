@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Language.JavaScript.Inline.Core
   ( -- * Session management
@@ -8,21 +10,16 @@ module Language.JavaScript.Inline.Core
     newSession,
     closeSession,
 
-    -- * Evaluation requests
+    -- * Haskell/JavaScript data marshaling
     JSExpr,
     JSVal,
-    code,
-    buffer,
-    string,
-    json,
-    jsval,
+    EncodedString (..),
+    EncodedJSON (..),
+    ToJS (..),
+    FromJS (..),
 
     -- * Performing evaluation
-    -- $notes-eval
-    evalNone,
-    evalBuffer,
-    evalJSON,
-    evalJSVal,
+    eval,
     importCJS,
     importMJS,
 
@@ -33,45 +30,21 @@ module Language.JavaScript.Inline.Core
   )
 where
 
-import qualified Data.ByteString.Lazy as LBS
-import Data.String
+import Control.Exception
+import Data.Proxy
+import Language.JavaScript.Inline.Core.Class
 import Language.JavaScript.Inline.Core.Exception
-import Language.JavaScript.Inline.Core.Instruction
 import Language.JavaScript.Inline.Core.JSVal
-import Language.JavaScript.Inline.Core.Message hiding
-  ( code,
-  )
+import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
+import Language.JavaScript.Inline.Core.Utils
 import System.Directory
+import System.IO.Unsafe
 
--- | Convert a 'String' to 'JSExpr'. In most cases, using the 'IsString'
--- instance with the @OverloadedStrings@ extension is more convenient.
-code :: String -> JSExpr
-code = fromString
-
--- | Embed a 'LBS.ByteString' as a @Buffer@ expression.
-buffer :: LBS.ByteString -> JSExpr
-buffer = JSExpr . pure . BufferLiteral
-
--- | Embed a 'String' as a @string@ expression.
-string :: String -> JSExpr
-string = JSExpr . pure . StringLiteral
-
--- | Embed a UTF-8 encoded JSON expression. It will be parsed with
--- @JSON.parse()@.
-json :: LBS.ByteString -> JSExpr
-json = JSExpr . pure . JSONLiteral
-
--- | Embed a 'JSVal' as an expression.
-jsval :: JSVal -> JSExpr
-jsval = JSExpr . pure . JSValLiteral
-
--- $notes-eval
---
--- The following functions all perform /asynchronous/ evaluation. When they
--- return, the eval request has been sent to the eval server, but the result may
--- not be sent back yet. The returned value is a thunk, and forcing it to WHNF
--- will block until the result is sent back.
+-- | Evaluate a 'JSExpr' and return the result. Evaluation is /asynchronous/.
+-- When this function returns, the eval request has been sent to the eval
+-- server, but the result may not be sent back yet. The returned value is a
+-- thunk, and forcing it to WHNF will block until the result is sent back.
 --
 -- The caveats of lazy I/O apply here as well. For instance, returning
 -- evaluation result from a @with@-style function may cause a use-after-free
@@ -89,6 +62,16 @@ jsval = JSExpr . pure . JSValLiteral
 -- processing. Therefore if it's a @Promise@, the eval result will be the
 -- resolved value instead of the @Promise@ itself. If the @Promise@ value needs
 -- to be returned, wrap it in another object (e.g. a single-element array).
+eval :: forall a. FromJS a => Session -> JSExpr -> IO a
+eval s c = do
+  r <-
+    rawEval s $
+      "Promise.resolve("
+        <> c
+        <> ").then("
+        <> toRawJSType (Proxy @a)
+        <> ")"
+  unsafeInterleaveIO $ fromRawJSType =<< evaluate r
 
 -- | Import a CommonJS module file and return its @module.exports@ object. The
 -- module file path can be absolute, or relative to the current Haskell process.
@@ -96,7 +79,7 @@ jsval = JSExpr . pure . JSValLiteral
 importCJS :: Session -> FilePath -> IO JSVal
 importCJS s p = do
   p' <- makeAbsolute p
-  evalJSVal s $ "require(" <> string p' <> ")"
+  eval s $ "require(" <> string p' <> ")"
 
 -- | Import an ECMAScript module file and return its module namespace object.
 -- The module file path can be absolute, or relative to the current Haskell
@@ -104,7 +87,10 @@ importCJS s p = do
 importMJS :: Session -> FilePath -> IO JSVal
 importMJS s p = do
   p' <- makeAbsolute p
-  evalJSVal s $
+  eval s $
     "import('url').then(url => import(url.pathToFileURL("
       <> string p'
       <> ")))"
+
+string :: String -> JSExpr
+string = toJS . EncodedString . stringToLBS
