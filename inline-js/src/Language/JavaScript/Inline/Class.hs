@@ -99,7 +99,7 @@ instance FromJS EncodedJSON where
 instance A.FromJSON a => FromJS (Aeson a) where
   type RawJSType (Aeson a) = EncodedJSON
   toRawJSType _ = "a => a"
-  fromRawJSType s = case A.eitherDecode' (coerce s) of
+  fromRawJSType s = case A.eitherDecode' (unEncodedJSON s) of
     Left err -> fail err
     Right a -> pure $ Aeson a
 
