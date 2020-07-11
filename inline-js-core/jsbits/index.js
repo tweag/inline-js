@@ -184,11 +184,11 @@ class WorkerContext {
   fromJS(val, val_type) {
     switch (val_type) {
       case 0: {
-        // ReturnNone
+        // RawNone
         return Buffer.allocUnsafe(0);
       }
       case 1: {
-        // ReturnBuffer
+        // RawBuffer
         return Buffer.isBuffer(val)
           ? val
           : util.types.isArrayBufferView(val)
@@ -196,11 +196,11 @@ class WorkerContext {
           : Buffer.from(val);
       }
       case 2: {
-        // ReturnJSON
+        // RawJSON
         return Buffer.from(JSON.stringify(val), "utf-8");
       }
       case 3: {
-        // ReturnJSVal
+        // RawJSVal
         const val_buf = Buffer.allocUnsafe(8);
         val_buf.writeBigUInt64LE(this.jsval.new(val), 0);
         return val_buf;

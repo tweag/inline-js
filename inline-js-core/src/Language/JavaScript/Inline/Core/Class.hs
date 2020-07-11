@@ -4,13 +4,14 @@
 
 module Language.JavaScript.Inline.Core.Class where
 
+import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
-import Data.Coerce
 import Data.Proxy
 import Language.JavaScript.Inline.Core.Instruction
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
+import Language.JavaScript.Inline.Core.Utils
 
 -- | UTF-8 encoded string.
 newtype EncodedString = EncodedString
@@ -41,22 +42,30 @@ instance ToJS JSVal where
   toJS = JSExpr . pure . JSValLiteral
 
 class RawFromJS a where
-  rawEval :: Session -> JSExpr -> IO a
+  rawType :: Proxy a -> JSRawType
+  rawFromJS :: Session -> LBS.ByteString -> IO a
 
 instance RawFromJS () where
-  rawEval = evalNone
+  rawType _ = RawNone
+  rawFromJS _ _ = pure ()
 
 instance RawFromJS LBS.ByteString where
-  rawEval = evalBuffer
+  rawType _ = RawBuffer
+  rawFromJS _ buf = pure buf
 
 instance RawFromJS EncodedString where
-  rawEval = coerce evalBuffer
+  rawType _ = RawBuffer
+  rawFromJS _ buf = pure $ EncodedString buf
 
 instance RawFromJS EncodedJSON where
-  rawEval = coerce evalJSON
+  rawType _ = RawJSON
+  rawFromJS _ buf = pure $ EncodedJSON buf
 
 instance RawFromJS JSVal where
-  rawEval = evalJSVal
+  rawType _ = RawJSVal
+  rawFromJS _session _jsval_id_buf = do
+    _jsval_id <- runGetExact getWord64host _jsval_id_buf
+    newJSVal _jsval_id (sessionSend _session $ JSValFree _jsval_id)
 
 -- | Haskell types which can be converted from JavaScript.
 class

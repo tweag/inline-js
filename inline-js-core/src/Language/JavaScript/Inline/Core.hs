@@ -34,6 +34,7 @@ import Control.Exception
 import Data.Proxy
 import Language.JavaScript.Inline.Core.Class
 import Language.JavaScript.Inline.Core.Exception
+import Language.JavaScript.Inline.Core.Instruction
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
@@ -65,7 +66,7 @@ import System.IO.Unsafe
 eval :: forall a. FromJS a => Session -> JSExpr -> IO a
 eval s c = do
   r <-
-    rawEval s $
+    evalWithDecoder (rawType (Proxy @(RawJSType a))) rawFromJS s $
       "Promise.resolve("
         <> c
         <> ").then("
