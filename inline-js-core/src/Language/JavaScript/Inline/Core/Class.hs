@@ -12,8 +12,13 @@ import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
 
--- | To embed a Haskell value into a 'JSExpr', its type should be an instance of
--- 'ToJS'.
+-- | UTF-8 encoded JSON.
+newtype EncodedJSON = EncodedJSON
+  { unEncodedJSON :: LBS.ByteString
+  }
+  deriving (Show)
+
+-- | Haskell types which can be converted to JavaScript.
 class ToJS a where
   toJS :: a -> JSExpr
 
@@ -35,38 +40,32 @@ instance RawFromJS () where
 instance RawFromJS LBS.ByteString where
   rawEval = evalBuffer
 
--- | UTF-8 encoded JSON.
-newtype EncodedJSON = EncodedJSON
-  { unEncodedJSON :: LBS.ByteString
-  }
-
 instance RawFromJS EncodedJSON where
   rawEval = coerce evalJSON
 
 instance RawFromJS JSVal where
   rawEval = evalJSVal
 
--- | To decode a Haskell value from an eval result, its type should be an
--- instance of 'FromJS'.
+-- | Haskell types which can be converted from JavaScript.
 class
   (RawFromJS (RawJSType a)) =>
   FromJS a
   where
   -- | The raw JavaScript type. Must be one of:
   --
-  -- 1. '()'. The JavaScript eval result is ignored.
-  -- 2. 'LBS.ByteString'. The JavaScript eval result must be an
-  --    @ArrayBufferView@(@Buffer@, @TypedArray@ or @DataView@) or
-  --    @ArrayBuffer@.
-  -- 3. 'EncodedJSON'. The JavaScript eval result must be JSON-encodable via
+  -- 1. '()'. The JavaScript value is discarded.
+  -- 2. 'LBS.ByteString'. The JavaScript value must be an
+  --    @ArrayBufferView@(@Buffer@, @TypedArray@ or @DataView@), @ArrayBuffer@
+  --    or @string@ (in which case it's UTF-8 encoded).
+  -- 3. 'EncodedJSON'. The JavaScript value must be JSON-encodable via
   --    @JSON.stringify()@.
-  -- 4. 'JSVal'. The JavaScript eval result can be of any type.
+  -- 4. 'JSVal'. The JavaScript value can be of any type.
   type RawJSType a
 
-  -- | The JavaScript function which encodes a value to the raw JavaScript type.
+  -- | A JavaScript function which encodes a value to the raw JavaScript type.
   toRawJSType :: Proxy a -> JSExpr
 
-  -- | The Haskell function which decodes from the raw JavaScript type.
+  -- | A Haskell function which decodes from the raw JavaScript type.
   fromRawJSType :: RawJSType a -> IO a
 
 instance FromJS () where

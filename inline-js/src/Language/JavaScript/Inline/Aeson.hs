@@ -15,6 +15,7 @@ import Language.JavaScript.Inline.Core
 newtype Aeson a = Aeson
   { unAeson :: a
   }
+  deriving (Show)
 
 instance A.ToJSON a => ToJS (Aeson a) where
   toJS = toJS . EncodedJSON . A.encode . unAeson
