@@ -1,12 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Language.JavaScript.Inline.Core.Class where
 
-import Control.Exception
 import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce
 import Data.Proxy
@@ -14,7 +11,6 @@ import Language.JavaScript.Inline.Core.Instruction
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
-import System.IO.Unsafe
 
 -- | To embed a Haskell value into a 'JSExpr', its type should be an instance of
 -- 'ToJS'.
@@ -92,15 +88,3 @@ instance FromJS JSVal where
   type RawJSType JSVal = JSVal
   toRawJSType _ = "a => a"
   fromRawJSType = pure
-
--- | The polymorphic eval function.
-eval :: forall a. FromJS a => Session -> JSExpr -> IO a
-eval s c = do
-  r <-
-    rawEval s $
-      "Promise.resolve("
-        <> c
-        <> ").then("
-        <> toRawJSType (Proxy @a)
-        <> ")"
-  unsafeInterleaveIO $ fromRawJSType =<< evaluate r

@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Language.JavaScript.Inline.Core
   ( -- * Session management
@@ -16,7 +18,6 @@ module Language.JavaScript.Inline.Core
     FromJS (..),
 
     -- * Performing evaluation
-    -- $notes-eval
     eval,
     importCJS,
     importMJS,
@@ -28,6 +29,8 @@ module Language.JavaScript.Inline.Core
   )
 where
 
+import Control.Exception
+import Data.Proxy
 import Language.JavaScript.Inline.Core.Class
 import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.JSVal
@@ -36,17 +39,16 @@ import Language.JavaScript.Inline.Core.Message hiding
   )
 import Language.JavaScript.Inline.Core.Session
 import System.Directory
+import System.IO.Unsafe
 
 -- | Embed a 'String' as a @string@ expression.
 string :: String -> JSExpr
 string = JSExpr . pure . StringLiteral
 
--- $notes-eval
---
--- The following functions all perform /asynchronous/ evaluation. When they
--- return, the eval request has been sent to the eval server, but the result may
--- not be sent back yet. The returned value is a thunk, and forcing it to WHNF
--- will block until the result is sent back.
+-- | Evaluate a 'JSExpr' and return the result. Evaluation is /asynchronous/.
+-- When this function returns, the eval request has been sent to the eval
+-- server, but the result may not be sent back yet. The returned value is a
+-- thunk, and forcing it to WHNF will block until the result is sent back.
 --
 -- The caveats of lazy I/O apply here as well. For instance, returning
 -- evaluation result from a @with@-style function may cause a use-after-free
@@ -64,6 +66,16 @@ string = JSExpr . pure . StringLiteral
 -- processing. Therefore if it's a @Promise@, the eval result will be the
 -- resolved value instead of the @Promise@ itself. If the @Promise@ value needs
 -- to be returned, wrap it in another object (e.g. a single-element array).
+eval :: forall a. FromJS a => Session -> JSExpr -> IO a
+eval s c = do
+  r <-
+    rawEval s $
+      "Promise.resolve("
+        <> c
+        <> ").then("
+        <> toRawJSType (Proxy @a)
+        <> ")"
+  unsafeInterleaveIO $ fromRawJSType =<< evaluate r
 
 -- | Import a CommonJS module file and return its @module.exports@ object. The
 -- module file path can be absolute, or relative to the current Haskell process.
