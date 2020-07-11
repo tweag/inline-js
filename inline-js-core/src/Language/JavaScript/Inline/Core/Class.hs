@@ -4,25 +4,17 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Language.JavaScript.Inline.Class where
+module Language.JavaScript.Inline.Core.Class where
 
 import Control.Exception
-import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce
 import Data.Proxy
-import Language.JavaScript.Inline.Core
+import Language.JavaScript.Inline.Core.Instruction
+import Language.JavaScript.Inline.Core.JSVal
+import Language.JavaScript.Inline.Core.Message
+import Language.JavaScript.Inline.Core.Session
 import System.IO.Unsafe
-
--- | If a Haskell type @a@ has 'A.ToJSON' and 'A.FromJSON' instances, then we
--- can derive 'ToJS' and 'FromJS' instances for it using:
---
--- 1. @deriving (ToJS, FromJS) via (Aeson a)@, using the @DerivingVia@ extension
--- 2. @deriving (ToJS, FromJS)@, using the @GeneralizedNewtypeDeriving@
---    extension
-newtype Aeson a = Aeson
-  { unAeson :: a
-  }
 
 -- | To embed a Haskell value into a 'JSExpr', its type should be an instance of
 -- 'ToJS'.
@@ -30,16 +22,13 @@ class ToJS a where
   toJS :: a -> JSExpr
 
 instance ToJS LBS.ByteString where
-  toJS = buffer
+  toJS = JSExpr . pure . BufferLiteral
 
 instance ToJS EncodedJSON where
-  toJS = json . unEncodedJSON
-
-instance A.ToJSON a => ToJS (Aeson a) where
-  toJS = toJS . EncodedJSON . A.encode . unAeson
+  toJS = JSExpr . pure . BufferLiteral . unEncodedJSON
 
 instance ToJS JSVal where
-  toJS = jsval
+  toJS = JSExpr . pure . JSValLiteral
 
 class RawFromJS a where
   rawEval :: Session -> JSExpr -> IO a
@@ -99,22 +88,12 @@ instance FromJS EncodedJSON where
   toRawJSType _ = "a => a"
   fromRawJSType = pure
 
-instance A.FromJSON a => FromJS (Aeson a) where
-  type RawJSType (Aeson a) = EncodedJSON
-  toRawJSType _ = "a => a"
-  fromRawJSType s = case A.eitherDecode' (unEncodedJSON s) of
-    Left err -> fail err
-    Right a -> pure $ Aeson a
-
 instance FromJS JSVal where
   type RawJSType JSVal = JSVal
   toRawJSType _ = "a => a"
   fromRawJSType = pure
 
--- | The polymorphic eval function. Similar to the eval functions in
--- "Language.JavaScript.Inline.Core", 'eval' performs /asynchronous/ evaluation
--- and returns a thunk. Forcing the thunk will block until the result is
--- returned from @node@ and decoded.
+-- | The polymorphic eval function.
 eval :: forall a. FromJS a => Session -> JSExpr -> IO a
 eval s c = do
   r <-

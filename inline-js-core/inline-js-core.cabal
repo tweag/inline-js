@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f780a27d5164b3a6f0bb56afa636d57bf8f67709d10087dcc18c1ba48ecbab95
+-- hash: c43c00d1e0184e6f21cddddb88e2abb3cb2b1c537850a8acb8676534896e2912
 
 name:           inline-js-core
 version:        0.0.1.0
@@ -32,6 +32,7 @@ library
   exposed-modules:
       Language.JavaScript.Inline.Core
   other-modules:
+      Language.JavaScript.Inline.Core.Class
       Language.JavaScript.Inline.Core.Exception
       Language.JavaScript.Inline.Core.Instruction
       Language.JavaScript.Inline.Core.IPC

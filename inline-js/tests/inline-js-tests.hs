@@ -2,10 +2,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 import Control.Exception
 import Control.Monad
+import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
 import Distribution.Simple.Utils
 import Language.JavaScript.Inline
@@ -26,12 +28,12 @@ main =
           withDefaultSession $ \s -> do
             vs <-
               replicateM 0x1000 $
-                evalNone s "new Promise((resolve) => setTimeout(resolve, 1000))"
+                (eval @()) s "new Promise((resolve) => setTimeout(resolve, 1000))"
             for_ vs evaluate,
         testCase "Session: roundtrip" $
           withDefaultSession $ \s -> do
             let buf = "asdf"
-            buf' <- evalBuffer s $ buffer buf
+            buf' <- (eval @LBS.ByteString) s $ toJS buf
             buf' @?= buf,
         testCase "left-pad" $
           withTmpDir
@@ -50,7 +52,7 @@ main =
                   { nodeModules = Just $ left_pad </> "node_modules"
                   }
                 $ \s -> do
-                  _ <- evaluate =<< evalJSVal s "require('left-pad')"
+                  _ <- evaluate =<< (eval @JSVal) s "require('left-pad')"
                   pure (),
         testCase "expr" $
           withDefaultSession $ \s -> do
