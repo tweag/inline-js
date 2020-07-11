@@ -13,6 +13,7 @@ module Language.JavaScript.Inline.Core
     -- * Haskell/JavaScript data marshaling
     JSExpr,
     JSVal,
+    EncodedString (..),
     EncodedJSON (..),
     ToJS (..),
     FromJS (..),
@@ -34,16 +35,11 @@ import Data.Proxy
 import Language.JavaScript.Inline.Core.Class
 import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.JSVal
-import Language.JavaScript.Inline.Core.Message hiding
-  ( code,
-  )
+import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
+import Language.JavaScript.Inline.Core.Utils
 import System.Directory
 import System.IO.Unsafe
-
--- | Embed a 'String' as a @string@ expression.
-string :: String -> JSExpr
-string = JSExpr . pure . StringLiteral
 
 -- | Evaluate a 'JSExpr' and return the result. Evaluation is /asynchronous/.
 -- When this function returns, the eval request has been sent to the eval
@@ -95,3 +91,6 @@ importMJS s p = do
     "import('url').then(url => import(url.pathToFileURL("
       <> string p'
       <> ")))"
+
+string :: String -> JSExpr
+string = toJS . EncodedString . stringToLBS

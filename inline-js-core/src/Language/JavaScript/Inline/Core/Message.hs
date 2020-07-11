@@ -16,9 +16,9 @@ import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Utils
 
 data JSExprSegment
-  = Code String
+  = Code LBS.ByteString
   | BufferLiteral LBS.ByteString
-  | StringLiteral String
+  | StringLiteral LBS.ByteString
   | JSONLiteral LBS.ByteString
   | JSValLiteral JSVal
   deriving (Show)
@@ -34,7 +34,7 @@ newtype JSExpr = JSExpr
   deriving (Semigroup, Show)
 
 instance IsString JSExpr where
-  fromString = JSExpr . pure . Code
+  fromString = JSExpr . pure . Code . stringToLBS
 
 data JSReturnType
   = ReturnNone
@@ -70,9 +70,9 @@ messageHSPut msg = case msg of
       <> foldMap' exprSegmentPut (unJSExpr code)
       <> returnTypePut returnType
     where
-      exprSegmentPut (Code s) = word8Put 0 <> lbsPut (stringToLBS s)
+      exprSegmentPut (Code s) = word8Put 0 <> lbsPut s
       exprSegmentPut (BufferLiteral s) = word8Put 1 <> lbsPut s
-      exprSegmentPut (StringLiteral s) = word8Put 2 <> lbsPut (stringToLBS s)
+      exprSegmentPut (StringLiteral s) = word8Put 2 <> lbsPut s
       exprSegmentPut (JSONLiteral s) = word8Put 3 <> lbsPut s
       exprSegmentPut (JSValLiteral v) =
         word8Put 4 <> word64Put (unsafeUseJSVal v)

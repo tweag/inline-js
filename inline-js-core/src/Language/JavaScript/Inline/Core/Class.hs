@@ -12,6 +12,12 @@ import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
 
+-- | UTF-8 encoded string.
+newtype EncodedString = EncodedString
+  { unEncodedString :: LBS.ByteString
+  }
+  deriving (Show)
+
 -- | UTF-8 encoded JSON.
 newtype EncodedJSON = EncodedJSON
   { unEncodedJSON :: LBS.ByteString
@@ -24,6 +30,9 @@ class ToJS a where
 
 instance ToJS LBS.ByteString where
   toJS = JSExpr . pure . BufferLiteral
+
+instance ToJS EncodedString where
+  toJS = JSExpr . pure . StringLiteral . unEncodedString
 
 instance ToJS EncodedJSON where
   toJS = JSExpr . pure . BufferLiteral . unEncodedJSON
@@ -39,6 +48,9 @@ instance RawFromJS () where
 
 instance RawFromJS LBS.ByteString where
   rawEval = evalBuffer
+
+instance RawFromJS EncodedString where
+  rawEval = coerce evalBuffer
 
 instance RawFromJS EncodedJSON where
   rawEval = coerce evalJSON
@@ -75,6 +87,11 @@ instance FromJS () where
 
 instance FromJS LBS.ByteString where
   type RawJSType LBS.ByteString = LBS.ByteString
+  toRawJSType _ = "a => a"
+  fromRawJSType = pure
+
+instance FromJS EncodedString where
+  type RawJSType EncodedString = EncodedString
   toRawJSType _ = "a => a"
   fromRawJSType = pure
 
