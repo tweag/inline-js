@@ -32,8 +32,11 @@ class ToJS a where
 instance ToJS LBS.ByteString where
   toJS = buffer
 
+instance ToJS EncodedJSON where
+  toJS = json . unEncodedJSON
+
 instance A.ToJSON a => ToJS (Aeson a) where
-  toJS = json . A.encode . unAeson
+  toJS = toJS . EncodedJSON . A.encode . unAeson
 
 instance ToJS JSVal where
   toJS = jsval
