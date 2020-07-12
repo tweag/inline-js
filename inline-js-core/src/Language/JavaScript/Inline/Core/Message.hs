@@ -52,7 +52,7 @@ data RawJSType
 
 data MessageHS
   = JSEvalRequest
-      { requestId :: Word64,
+      { evalRequestId :: Word64,
         code :: JSExpr,
         returnType :: RawJSType
       }
@@ -72,27 +72,27 @@ messageHSPut :: MessageHS -> Builder
 messageHSPut msg = case msg of
   JSEvalRequest {..} ->
     word8Put 0
-      <> word64Put requestId
-      <> word64Put (fromIntegral (NE.length (unJSExpr code)) :: Word64)
-      <> foldMap' exprSegmentPut (unJSExpr code)
-      <> returnTypePut returnType
-    where
-      exprSegmentPut (Code s) = word8Put 0 <> lbsPut s
-      exprSegmentPut (BufferLiteral s) = word8Put 1 <> lbsPut s
-      exprSegmentPut (StringLiteral s) = word8Put 2 <> lbsPut s
-      exprSegmentPut (JSONLiteral s) = word8Put 3 <> lbsPut s
-      exprSegmentPut (JSValLiteral v) =
-        word8Put 4 <> word64Put (unsafeUseJSVal v)
-      returnTypePut RawNone = word8Put 0
-      returnTypePut RawBuffer = word8Put 1
-      returnTypePut RawJSON = word8Put 2
-      returnTypePut RawJSVal = word8Put 3
-  JSValFree v -> word8Put 1 <> word64Put v
-  Close -> word8Put 2
+      <> word64Put evalRequestId
+      <> exprPut code
+      <> rawTypePut returnType
+  JSValFree v -> word8Put 3 <> word64Put v
+  Close -> word8Put 4
   where
     word8Put = storablePut @Word8
     word64Put = storablePut @Word64
     lbsPut s = storablePut (LBS.length s) <> lazyByteString s
+    exprPut code =
+      word64Put (fromIntegral (NE.length (unJSExpr code)) :: Word64)
+        <> foldMap' exprSegmentPut (unJSExpr code)
+    exprSegmentPut (Code s) = word8Put 0 <> lbsPut s
+    exprSegmentPut (BufferLiteral s) = word8Put 1 <> lbsPut s
+    exprSegmentPut (StringLiteral s) = word8Put 2 <> lbsPut s
+    exprSegmentPut (JSONLiteral s) = word8Put 3 <> lbsPut s
+    exprSegmentPut (JSValLiteral v) = word8Put 4 <> word64Put (unsafeUseJSVal v)
+    rawTypePut RawNone = word8Put 0
+    rawTypePut RawBuffer = word8Put 1
+    rawTypePut RawJSON = word8Put 2
+    rawTypePut RawJSVal = word8Put 3
 
 messageJSGet :: Get MessageJS
 messageJSGet = do
@@ -117,7 +117,7 @@ messageJSGet = do
                 responseContent = Right _result_buf
               }
         _ -> fail $ "messageJSGet: invalid _tag " <> show _tag
-    1 -> FatalError <$> lbsGet
+    2 -> FatalError <$> lbsGet
     _ -> fail $ "messageJSGet: invalid tag " <> show t
   where
     lbsGet = do

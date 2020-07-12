@@ -7,7 +7,6 @@ module Language.JavaScript.Inline.Core.Class where
 import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
 import Data.Proxy
-import Language.JavaScript.Inline.Core.Instruction
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session

@@ -151,3 +151,6 @@ newSession Config {..} = do
         pendingCallbacks = _cbs_ref,
         closeSession = session_close
       }
+
+sessionSend :: Session -> MessageHS -> IO ()
+sessionSend Session {..} msg = send ipc $ toLazyByteString $ messageHSPut msg
