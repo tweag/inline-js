@@ -36,18 +36,25 @@ newtype JSExpr = JSExpr
 instance IsString JSExpr where
   fromString = JSExpr . pure . Code . stringToLBS
 
-data JSReturnType
-  = ReturnNone
-  | ReturnBuffer
-  | ReturnJSON
-  | ReturnJSVal
+-- | To convert a JavaScript value to Haskell, we need to specify its "raw
+-- type", which can be one of the following:
+data RawJSType
+  = -- | The JavaScript value is discarded.
+    RawNone
+  | -- | The JavaScript value is an @ArrayBufferView@, @ArrayBuffer@ or
+    -- @string@.
+    RawBuffer
+  | -- | The JavaScript value can be JSON-encoded via @JSON.stringify()@.
+    RawJSON
+  | -- | The JavaScript value should be managed as a 'JSVal'.
+    RawJSVal
   deriving (Show)
 
 data MessageHS
   = JSEvalRequest
       { requestId :: Word64,
         code :: JSExpr,
-        returnType :: JSReturnType
+        returnType :: RawJSType
       }
   | JSValFree Word64
   | Close
@@ -76,10 +83,10 @@ messageHSPut msg = case msg of
       exprSegmentPut (JSONLiteral s) = word8Put 3 <> lbsPut s
       exprSegmentPut (JSValLiteral v) =
         word8Put 4 <> word64Put (unsafeUseJSVal v)
-      returnTypePut ReturnNone = word8Put 0
-      returnTypePut ReturnBuffer = word8Put 1
-      returnTypePut ReturnJSON = word8Put 2
-      returnTypePut ReturnJSVal = word8Put 3
+      returnTypePut RawNone = word8Put 0
+      returnTypePut RawBuffer = word8Put 1
+      returnTypePut RawJSON = word8Put 2
+      returnTypePut RawJSVal = word8Put 3
   JSValFree v -> word8Put 1 <> word64Put v
   Close -> word8Put 2
   where

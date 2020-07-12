@@ -4,13 +4,14 @@
 
 module Language.JavaScript.Inline.Core.Class where
 
+import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
-import Data.Coerce
 import Data.Proxy
 import Language.JavaScript.Inline.Core.Instruction
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
+import Language.JavaScript.Inline.Core.Utils
 
 -- | UTF-8 encoded string.
 newtype EncodedString = EncodedString
@@ -26,6 +27,8 @@ newtype EncodedJSON = EncodedJSON
 
 -- | Haskell types which can be converted to JavaScript.
 class ToJS a where
+  -- | Encodes a Haskell value to 'JSExpr'. The 'JSExpr' should be synchronous,
+  -- top-level @await@ is prohibited here.
   toJS :: a -> JSExpr
 
 instance ToJS LBS.ByteString where
@@ -40,67 +43,42 @@ instance ToJS EncodedJSON where
 instance ToJS JSVal where
   toJS = JSExpr . pure . JSValLiteral
 
-class RawFromJS a where
-  rawEval :: Session -> JSExpr -> IO a
-
-instance RawFromJS () where
-  rawEval = evalNone
-
-instance RawFromJS LBS.ByteString where
-  rawEval = evalBuffer
-
-instance RawFromJS EncodedString where
-  rawEval = coerce evalBuffer
-
-instance RawFromJS EncodedJSON where
-  rawEval = coerce evalJSON
-
-instance RawFromJS JSVal where
-  rawEval = evalJSVal
-
 -- | Haskell types which can be converted from JavaScript.
-class
-  (RawFromJS (RawJSType a)) =>
-  FromJS a
-  where
-  -- | The raw JavaScript type. Must be one of:
-  --
-  -- 1. '()'. The JavaScript value is discarded.
-  -- 2. 'LBS.ByteString'. The JavaScript value must be an
-  --    @ArrayBufferView@(@Buffer@, @TypedArray@ or @DataView@), @ArrayBuffer@
-  --    or @string@ (in which case it's UTF-8 encoded).
-  -- 3. 'EncodedJSON'. The JavaScript value must be JSON-encodable via
-  --    @JSON.stringify()@.
-  -- 4. 'JSVal'. The JavaScript value can be of any type.
-  type RawJSType a
+class FromJS a where
+  -- | The JavaScript value's 'RawJSType'.
+  rawJSType :: Proxy a -> RawJSType
 
-  -- | A JavaScript function which encodes a value to the raw JavaScript type.
+  -- | A synchronous JavaScript function which encodes a value to its
+  -- 'RawJSType'.
   toRawJSType :: Proxy a -> JSExpr
 
-  -- | A Haskell function which decodes from the raw JavaScript type.
-  fromRawJSType :: RawJSType a -> IO a
+  -- | A Haskell function which decodes the Haskell value from the serialized
+  -- 'RawJSType'.
+  fromJS :: Session -> LBS.ByteString -> IO a
 
 instance FromJS () where
-  type RawJSType () = ()
+  rawJSType _ = RawNone
   toRawJSType _ = "a => a"
-  fromRawJSType = pure
+  fromJS _ _ = pure ()
 
 instance FromJS LBS.ByteString where
-  type RawJSType LBS.ByteString = LBS.ByteString
+  rawJSType _ = RawBuffer
   toRawJSType _ = "a => a"
-  fromRawJSType = pure
+  fromJS _ = pure
 
 instance FromJS EncodedString where
-  type RawJSType EncodedString = EncodedString
+  rawJSType _ = RawBuffer
   toRawJSType _ = "a => a"
-  fromRawJSType = pure
+  fromJS _ = pure . EncodedString
 
 instance FromJS EncodedJSON where
-  type RawJSType EncodedJSON = EncodedJSON
+  rawJSType _ = RawJSON
   toRawJSType _ = "a => a"
-  fromRawJSType = pure
+  fromJS _ = pure . EncodedJSON
 
 instance FromJS JSVal where
-  type RawJSType JSVal = JSVal
+  rawJSType _ = RawJSVal
   toRawJSType _ = "a => a"
-  fromRawJSType = pure
+  fromJS _session _jsval_id_buf = do
+    _jsval_id <- runGetExact getWord64host _jsval_id_buf
+    newJSVal _jsval_id (sessionSend _session $ JSValFree _jsval_id)

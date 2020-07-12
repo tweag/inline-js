@@ -11,7 +11,7 @@ import GHC.Types
 -- $jsval-notes
 --
 -- Lifecycle of a 'JSVal':
---   1. If the 'returnType' is specified as 'ReturnJSVal', the eval server makes
+--   1. If the 'returnType' is specified as 'RawJSVal', the eval server makes
 --      a new 'JSVal' out of the return value and sends it back.
 --   2. The 'JSVal' values can be passed around and later put into a 'JSExpr'
 --      for evaluation.
