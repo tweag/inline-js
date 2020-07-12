@@ -18,7 +18,7 @@ import Language.JavaScript.Inline.Core.Utils
 import System.IO.Unsafe
 
 evalWithDecoder ::
-  JSRawType ->
+  RawJSType ->
   (Session -> LBS.ByteString -> IO a) ->
   Session ->
   JSExpr ->

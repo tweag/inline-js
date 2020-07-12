@@ -21,6 +21,6 @@ instance ToJS r => Export (IO r) where
 instance (FromJS a, Export b) => Export (a -> b) where
   argsToRawJSType _ = toRawJSType (Proxy @a) : argsToRawJSType (Proxy @b)
   export s f (x : xs) = do
-    a <- fromRawJSType =<< rawFromJS s x
+    a <- fromJS s x
     export @b s (f a) xs
   export _ _ _ = fail "Language.JavaScript.Inline.Core.Export: impossible"

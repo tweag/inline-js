@@ -15,6 +15,7 @@ module Language.JavaScript.Inline.Core
     JSVal,
     EncodedString (..),
     EncodedJSON (..),
+    RawJSType (..),
     ToJS (..),
     FromJS (..),
 
@@ -30,7 +31,6 @@ module Language.JavaScript.Inline.Core
   )
 where
 
-import Control.Exception
 import Data.Proxy
 import Language.JavaScript.Inline.Core.Class
 import Language.JavaScript.Inline.Core.Exception
@@ -40,7 +40,6 @@ import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
 import Language.JavaScript.Inline.Core.Utils
 import System.Directory
-import System.IO.Unsafe
 
 -- | Evaluate a 'JSExpr' and return the result. Evaluation is /asynchronous/.
 -- When this function returns, the eval request has been sent to the eval
@@ -64,15 +63,13 @@ import System.IO.Unsafe
 -- resolved value instead of the @Promise@ itself. If the @Promise@ value needs
 -- to be returned, wrap it in another object (e.g. a single-element array).
 eval :: forall a. FromJS a => Session -> JSExpr -> IO a
-eval s c = do
-  r <-
-    evalWithDecoder (rawType (Proxy @(RawJSType a))) rawFromJS s $
-      "Promise.resolve("
-        <> c
-        <> ").then("
-        <> toRawJSType (Proxy @a)
-        <> ")"
-  unsafeInterleaveIO $ fromRawJSType =<< evaluate r
+eval s c =
+  evalWithDecoder (rawJSType (Proxy @a)) fromJS s $
+    "Promise.resolve("
+      <> c
+      <> ").then("
+      <> toRawJSType (Proxy @a)
+      <> ")"
 
 -- | Import a CommonJS module file and return its @module.exports@ object. The
 -- module file path can be absolute, or relative to the current Haskell process.

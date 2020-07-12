@@ -36,7 +36,7 @@ newtype JSExpr = JSExpr
 instance IsString JSExpr where
   fromString = JSExpr . pure . Code . stringToLBS
 
-data JSRawType
+data RawJSType
   = RawNone
   | RawBuffer
   | RawJSON
@@ -47,7 +47,7 @@ data MessageHS
   = JSEvalRequest
       { requestId :: Word64,
         code :: JSExpr,
-        returnType :: JSRawType
+        returnType :: RawJSType
       }
   | JSValFree Word64
   | Close

@@ -21,8 +21,8 @@ instance A.ToJSON a => ToJS (Aeson a) where
   toJS = toJS . EncodedJSON . A.encode . unAeson
 
 instance A.FromJSON a => FromJS (Aeson a) where
-  type RawJSType (Aeson a) = EncodedJSON
+  rawJSType _ = RawJSON
   toRawJSType _ = "a => a"
-  fromRawJSType s = case A.eitherDecode' (unEncodedJSON s) of
+  fromJS _ s = case A.eitherDecode' s of
     Left err -> fail err
     Right a -> pure $ Aeson a

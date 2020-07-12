@@ -41,75 +41,38 @@ instance ToJS EncodedJSON where
 instance ToJS JSVal where
   toJS = JSExpr . pure . JSValLiteral
 
-class RawFromJS a where
-  rawType :: Proxy a -> JSRawType
-  rawFromJS :: Session -> LBS.ByteString -> IO a
-
-instance RawFromJS () where
-  rawType _ = RawNone
-  rawFromJS _ _ = pure ()
-
-instance RawFromJS LBS.ByteString where
-  rawType _ = RawBuffer
-  rawFromJS _ buf = pure buf
-
-instance RawFromJS EncodedString where
-  rawType _ = RawBuffer
-  rawFromJS _ buf = pure $ EncodedString buf
-
-instance RawFromJS EncodedJSON where
-  rawType _ = RawJSON
-  rawFromJS _ buf = pure $ EncodedJSON buf
-
-instance RawFromJS JSVal where
-  rawType _ = RawJSVal
-  rawFromJS _session _jsval_id_buf = do
-    _jsval_id <- runGetExact getWord64host _jsval_id_buf
-    newJSVal _jsval_id (sessionSend _session $ JSValFree _jsval_id)
-
 -- | Haskell types which can be converted from JavaScript.
-class
-  (RawFromJS (RawJSType a)) =>
-  FromJS a
-  where
-  -- | The raw JavaScript type. Must be one of:
-  --
-  -- 1. '()'. The JavaScript value is discarded.
-  -- 2. 'LBS.ByteString'. The JavaScript value must be an
-  --    @ArrayBufferView@(@Buffer@, @TypedArray@ or @DataView@), @ArrayBuffer@
-  --    or @string@ (in which case it's UTF-8 encoded).
-  -- 3. 'EncodedJSON'. The JavaScript value must be JSON-encodable via
-  --    @JSON.stringify()@.
-  -- 4. 'JSVal'. The JavaScript value can be of any type.
-  type RawJSType a
+class FromJS a where
+  rawJSType :: Proxy a -> RawJSType
 
   -- | A JavaScript function which encodes a value to the raw JavaScript type.
   toRawJSType :: Proxy a -> JSExpr
 
-  -- | A Haskell function which decodes from the raw JavaScript type.
-  fromRawJSType :: RawJSType a -> IO a
+  fromJS :: Session -> LBS.ByteString -> IO a
 
 instance FromJS () where
-  type RawJSType () = ()
+  rawJSType _ = RawNone
   toRawJSType _ = "a => a"
-  fromRawJSType = pure
+  fromJS _ _ = pure ()
 
 instance FromJS LBS.ByteString where
-  type RawJSType LBS.ByteString = LBS.ByteString
+  rawJSType _ = RawBuffer
   toRawJSType _ = "a => a"
-  fromRawJSType = pure
+  fromJS _ = pure
 
 instance FromJS EncodedString where
-  type RawJSType EncodedString = EncodedString
+  rawJSType _ = RawBuffer
   toRawJSType _ = "a => a"
-  fromRawJSType = pure
+  fromJS _ = pure . EncodedString
 
 instance FromJS EncodedJSON where
-  type RawJSType EncodedJSON = EncodedJSON
+  rawJSType _ = RawJSON
   toRawJSType _ = "a => a"
-  fromRawJSType = pure
+  fromJS _ = pure . EncodedJSON
 
 instance FromJS JSVal where
-  type RawJSType JSVal = JSVal
+  rawJSType _ = RawJSVal
   toRawJSType _ = "a => a"
-  fromRawJSType = pure
+  fromJS _session _jsval_id_buf = do
+    _jsval_id <- runGetExact getWord64host _jsval_id_buf
+    newJSVal _jsval_id (sessionSend _session $ JSValFree _jsval_id)
