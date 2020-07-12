@@ -27,6 +27,8 @@ newtype EncodedJSON = EncodedJSON
 
 -- | Haskell types which can be converted to JavaScript.
 class ToJS a where
+  -- | Encodes a Haskell value to 'JSExpr'. The 'JSExpr' should be synchronous,
+  -- top-level @await@ is prohibited here.
   toJS :: a -> JSExpr
 
 instance ToJS LBS.ByteString where
@@ -43,11 +45,15 @@ instance ToJS JSVal where
 
 -- | Haskell types which can be converted from JavaScript.
 class FromJS a where
+  -- | The JavaScript value's 'RawJSType'.
   rawJSType :: Proxy a -> RawJSType
 
-  -- | A JavaScript function which encodes a value to the raw JavaScript type.
+  -- | A synchronous JavaScript function which encodes a value to its
+  -- 'RawJSType'.
   toRawJSType :: Proxy a -> JSExpr
 
+  -- | A Haskell function which decodes the Haskell value from the serialized
+  -- 'RawJSType'.
   fromJS :: Session -> LBS.ByteString -> IO a
 
 instance FromJS () where

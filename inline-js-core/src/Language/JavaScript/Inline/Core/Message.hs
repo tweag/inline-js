@@ -36,11 +36,18 @@ newtype JSExpr = JSExpr
 instance IsString JSExpr where
   fromString = JSExpr . pure . Code . stringToLBS
 
+-- | To convert a JavaScript value to Haskell, we need to specify its "raw
+-- type", which can be one of the following:
 data RawJSType
-  = RawNone
-  | RawBuffer
-  | RawJSON
-  | RawJSVal
+  = -- | The JavaScript value is discarded.
+    RawNone
+  | -- | The JavaScript value is an @ArrayBufferView@, @ArrayBuffer@ or
+    -- @string@.
+    RawBuffer
+  | -- | The JavaScript value can be JSON-encoded via @JSON.stringify()@.
+    RawJSON
+  | -- | The JavaScript value should be managed as a 'JSVal'.
+    RawJSVal
   deriving (Show)
 
 data MessageHS
