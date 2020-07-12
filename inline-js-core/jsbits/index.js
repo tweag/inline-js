@@ -79,7 +79,7 @@ class MainContext {
     const err_str = `${err.stack ? err.stack : err}`;
     const err_buf = Buffer.from(err_str, "utf-8");
     const resp_buf = Buffer.allocUnsafe(9 + err_buf.length);
-    resp_buf.writeUInt8(1, 0);
+    resp_buf.writeUInt8(2, 0);
     resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 1);
     err_buf.copy(resp_buf, 9);
     await this.send(resp_buf);
@@ -258,14 +258,14 @@ class WorkerContext {
         worker_threads.parentPort.postMessage(resp_buf);
         break;
       }
-      case 1: {
+      case 3: {
         // JSValFree
         const jsval_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         this.jsval.free(jsval_id);
         break;
       }
-      case 2: {
+      case 4: {
         // Close
         this.jsval.clear();
         worker_threads.parentPort.unref();
@@ -279,7 +279,7 @@ class WorkerContext {
 }
 
 function msgIsClose(buf_msg) {
-  return buf_msg.readUInt8(0) === 2;
+  return buf_msg.readUInt8(0) === 4;
 }
 
 function bufferFromArrayBufferView(a) {
