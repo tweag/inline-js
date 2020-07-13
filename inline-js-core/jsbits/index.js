@@ -91,6 +91,7 @@ class WorkerContext {
   constructor() {
     this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
+    this.hsCtx = new JSValContext();
     (async () => {
       if (process.env.INLINE_JS_NODE_MODULES) {
         await fs.symlink(
@@ -258,6 +259,123 @@ class WorkerContext {
         worker_threads.parentPort.postMessage(resp_buf);
         break;
       }
+      case 1: {
+        // HSExportRequest
+        let resp_buf;
+        const req_id = buf_msg.readBigUInt64LE(p);
+        p += 8;
+        try {
+          const hs_func_id = buf_msg.readBigUInt64LE(p);
+          p += 8;
+          const hs_func_args_len = Number(buf_msg.readBigUInt64LE(p));
+          p += 8;
+          const hs_func_args_type = [];
+          for (let i = 0; i < hs_func_args_len; ++i) {
+            const r = this.toJS(buf_msg, p, false);
+            p = r.p;
+            const raw_type = buf_msg.readUInt8(p);
+            p += 1;
+            hs_func_args_type.push([r.result, raw_type]);
+          }
+
+          const js_func = async (...js_args) => {
+            if (js_args.length !== hs_func_args_len) {
+              throw new Error(
+                `inline-js export function error: arity mismatch, expected ${hs_func_args_len} arguments, got ${js_args.length}`
+              );
+            }
+            const hs_args_buf = [];
+            for (let i = 0; i < hs_func_args_len; ++i) {
+              hs_args_buf.push(
+                this.fromJS(
+                  hs_func_args_type[i][0](js_args[i]),
+                  hs_func_args_type[i][1]
+                )
+              );
+            }
+
+            const hs_eval_req_promise = newPromise();
+            const hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
+            const req_buf = Buffer.allocUnsafe(
+              25 +
+                hs_func_args_len * 8 +
+                hs_args_buf.reduce((acc, hs_arg) => acc + hs_arg.length, 0)
+            );
+            req_buf.writeUInt8(1, 0);
+            req_buf.writeBigUInt64LE(hs_eval_req_id, 1);
+            req_buf.writeBigUInt64LE(hs_func_id, 9);
+            req_buf.writeBigUInt64LE(BigInt(hs_func_args_len), 17);
+            let p = 25;
+            for (const hs_arg of hs_args_buf) {
+              req_buf.writeBigUInt64LE(BigInt(hs_arg.length), p);
+              p += 8;
+              hs_arg.copy(req_buf, p);
+              p += hs_arg.length;
+            }
+
+            worker_threads.parentPort.postMessage(req_buf);
+
+            return hs_eval_req_promise;
+          };
+
+          const js_func_buf = this.fromJS(js_func, 3);
+          resp_buf = Buffer.allocUnsafe(18 + js_func_buf.length);
+          resp_buf.writeUInt8(0, 0);
+          resp_buf.writeBigUInt64LE(req_id, 1);
+          resp_buf.writeUInt8(1, 9);
+          resp_buf.writeBigUInt64LE(BigInt(js_func_buf.length), 10);
+          js_func_buf.copy(resp_buf, 18);
+        } catch (err) {
+          // EvalError
+          const err_str = `${err.stack ? err.stack : err}`;
+          if (process.env.INLINE_JS_EXIT_ON_EVAL_ERROR) {
+            process.stderr.write(
+              `inline-js eval error, exiting node: ${err_str}\n`,
+              () => {
+                process.kill(process.pid, "SIGTERM");
+              }
+            );
+          }
+          const err_buf = Buffer.from(err_str, "utf-8");
+          resp_buf = Buffer.allocUnsafe(18 + err_buf.length);
+          resp_buf.writeUInt8(0, 0);
+          resp_buf.writeBigUInt64LE(req_id, 1);
+          resp_buf.writeUInt8(0, 9);
+          resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 10);
+          err_buf.copy(resp_buf, 18);
+        }
+        worker_threads.parentPort.postMessage(resp_buf);
+        break;
+      }
+      case 2: {
+        // HSEvalResponse
+        const hs_eval_resp_id = buf_msg.readBigUInt64LE(p);
+        p += 8;
+        const hs_eval_resp_promise = this.hsCtx.get(hs_eval_resp_id);
+        this.hsCtx.free(hs_eval_resp_id);
+        const hs_eval_resp_tag = buf_msg.readUInt8(p);
+        p += 1;
+        switch (hs_eval_resp_tag) {
+          case 0: {
+            const err_len = Number(buf_msg.readBigUInt64LE(p));
+            p += 8;
+            err = new Error(this.decoder.end(buf_msg.slice(p, p + err_len)));
+            p += err_len;
+            hs_eval_resp_promise.reject(err);
+            break;
+          }
+          case 1: {
+            const r = this.toJS(buf_msg, p, false);
+            p = r.p;
+            hs_eval_resp_promise.resolve(r.result);
+            break;
+          }
+          default: {
+            throw new Error(`inline-js invalid message ${buf_msg}`);
+          }
+        }
+        break;
+      }
       case 3: {
         // JSValFree
         const jsval_id = buf_msg.readBigUInt64LE(p);
@@ -272,10 +390,21 @@ class WorkerContext {
         break;
       }
       default: {
-        throw new Error(`recv: invalid message ${buf_msg}`);
+        throw new Error(`inline-js invalid message ${buf_msg}`);
       }
     }
   }
+}
+
+function newPromise() {
+  let promise_resolve, promise_reject;
+  const p = new Promise((resolve, reject) => {
+    promise_resolve = resolve;
+    promise_reject = reject;
+  });
+  p.resolve = promise_resolve;
+  p.reject = promise_reject;
+  return p;
 }
 
 function msgIsClose(buf_msg) {

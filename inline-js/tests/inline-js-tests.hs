@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -7,6 +8,7 @@
 
 import Control.Exception
 import Control.Monad
+import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
 import Distribution.Simple.Utils
@@ -59,12 +61,25 @@ main =
             let x = I 6
                 y = I 7
             r <- eval s [expr| $x * $y |]
-            r @?= I 42
+            r @?= I 42,
+        testCase "export" $
+          withDefaultSession $ \s -> do
+            let f :: V -> V -> IO V
+                f (V x) (V y) = pure $ V $ A.Array [x, y]
+            v <- export s f
+            let x = V $ A.String "asdf"
+                y = V $ A.String "233"
+            r <- eval s [expr| $v($x, $y) |]
+            r @?= V (A.Array [A.String "asdf", A.String "233"])
       ]
 
 newtype I = I Int
   deriving (Eq, Show)
   deriving (ToJS, FromJS) via (Aeson Int)
+
+newtype V = V A.Value
+  deriving (Eq, Show)
+  deriving (ToJS, FromJS) via (Aeson A.Value)
 
 withSession :: Config -> (Session -> Assertion) -> Assertion
 withSession conf = bracket (newSession conf) closeSession
