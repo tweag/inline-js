@@ -24,6 +24,9 @@ module Language.JavaScript.Inline.Core
     importCJS,
     importMJS,
 
+    -- * Exporting Haskell functions to JavaScript
+    export,
+
     -- * Exceptions
     NodeVersionUnsupported (..),
     EvalError (..),

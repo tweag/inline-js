@@ -5,6 +5,7 @@
 
 module Language.JavaScript.Inline.Core.Message where
 
+import Control.Monad
 import Data.Binary
 import Data.Binary.Get
 import Data.ByteString.Builder
@@ -52,9 +53,18 @@ data RawJSType
 
 data MessageHS
   = JSEvalRequest
-      { evalRequestId :: Word64,
+      { jsEvalRequestId :: Word64,
         code :: JSExpr,
         returnType :: RawJSType
+      }
+  | HSExportRequest
+      { exportRequestId :: Word64,
+        exportFuncId :: Word64,
+        argsType :: [(JSExpr, RawJSType)]
+      }
+  | HSEvalResponse
+      { hsEvalResponseId :: Word64,
+        hsEvalResponseContent :: Either LBS.ByteString JSExpr
       }
   | JSValFree Word64
   | Close
@@ -62,8 +72,13 @@ data MessageHS
 
 data MessageJS
   = JSEvalResponse
-      { responseId :: Word64,
-        responseContent :: Either LBS.ByteString LBS.ByteString
+      { jsEvalResponseId :: Word64,
+        jsEvalResponseContent :: Either LBS.ByteString LBS.ByteString
+      }
+  | HSEvalRequest
+      { hsEvalRequestId :: Word64,
+        hsEvalRequestFunc :: Word64,
+        args :: [LBS.ByteString]
       }
   | FatalError LBS.ByteString
   deriving (Show)
@@ -72,9 +87,24 @@ messageHSPut :: MessageHS -> Builder
 messageHSPut msg = case msg of
   JSEvalRequest {..} ->
     word8Put 0
-      <> word64Put evalRequestId
+      <> word64Put jsEvalRequestId
       <> exprPut code
       <> rawTypePut returnType
+  HSExportRequest {..} ->
+    word8Put 1
+      <> word64Put exportRequestId
+      <> word64Put exportFuncId
+      <> word64Put (fromIntegral (length argsType))
+      <> foldMap'
+        (\(code, raw_type) -> exprPut code <> rawTypePut raw_type)
+        argsType
+  HSEvalResponse {..} ->
+    word8Put 2
+      <> word64Put hsEvalResponseId
+      <> ( case hsEvalResponseContent of
+             Left err -> word8Put 0 <> lbsPut err
+             Right r -> word8Put 1 <> exprPut r
+         )
   JSValFree v -> word8Put 3 <> word64Put v
   Close -> word8Put 4
   where
@@ -106,17 +136,28 @@ messageJSGet = do
           _err_buf <- lbsGet
           pure
             JSEvalResponse
-              { responseId = _id,
-                responseContent = Left _err_buf
+              { jsEvalResponseId = _id,
+                jsEvalResponseContent = Left _err_buf
               }
         1 -> do
           _result_buf <- lbsGet
           pure
             JSEvalResponse
-              { responseId = _id,
-                responseContent = Right _result_buf
+              { jsEvalResponseId = _id,
+                jsEvalResponseContent = Right _result_buf
               }
         _ -> fail $ "messageJSGet: invalid _tag " <> show _tag
+    1 -> do
+      _id <- getWord64host
+      _func <- getWord64host
+      l <- fromIntegral <$> getWord64host
+      _args <- replicateM l lbsGet
+      pure
+        HSEvalRequest
+          { hsEvalRequestId = _id,
+            hsEvalRequestFunc = _func,
+            args = _args
+          }
     2 -> FatalError <$> lbsGet
     _ -> fail $ "messageJSGet: invalid tag " <> show t
   where

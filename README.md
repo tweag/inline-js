@@ -1,4 +1,4 @@
-# `inline-js`: Call JavaScript from Haskell
+# `inline-js`: Call JavaScript from Haskell, and vice versa!
 
 [![GitHub Actions](https://github.com/tweag/inline-js/workflows/pipeline/badge.svg?branch=master)](https://github.com/tweag/inline-js/actions?query=branch%3Amaster)
 [![Gitter](https://img.shields.io/gitter/room/tweag/inline-js)](https://gitter.im/tweag/inline-js)
@@ -8,6 +8,7 @@
 - Manage `node` sessions which run the eval server script for Haskell/JavaScript
   interop
 - Evaluate expressions with `require()`/`import()` and top-level `await` support
+- Export Haskell functions to async JavaScript functions
 - Load third party libraries in user-specified `node_modules`
 - Garbage-collected `JSVal` references in Haskell
 - Support `Promise`-based async evaluation
@@ -18,7 +19,7 @@
 
 ## Planned features
 
-- Export Haskell functions as async/sync JavaScript functions
+- Export Haskell functions to _synchronous_ JavaScript functions
 - Integrate with TypeScript compiler, generate Haskell code from TypeScript
   `.d.ts` code
 - Integrate with headless browser testing frameworks like

@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
@@ -7,6 +8,7 @@
 
 module Language.JavaScript.Inline.Core.Session where
 
+import Control.Concurrent
 import Control.Exception
 import qualified Data.ByteString as BS
 import Data.ByteString.Builder
@@ -16,6 +18,7 @@ import qualified Data.IntSet as IS
 import Data.Maybe
 import Distribution.Simple.Utils
 import Foreign
+import GHC.IO (catchAny)
 import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.IPC
 import Language.JavaScript.Inline.Core.Message
@@ -105,52 +108,79 @@ newSession Config {..} = do
           std_out = CreatePipe
         }
   _cbs_ref <- newIORef IS.empty
-  let on_recv msg_buf = do
-        msg <- runGetExact messageJSGet msg_buf
-        case msg of
-          JSEvalResponse {..} -> do
-            let sp = word64ToStablePtr responseId
-            atomicModifyIORef' _cbs_ref $
-              \_cbs -> (IS.delete (intFromStablePtr sp) _cbs, ())
-            cb <- deRefStablePtr sp
-            freeStablePtr sp
-            cb responseContent
-          -- todo: should make all subsequent operations invalid immediately
-          -- here, possibly via a session state atomic variable. also cleanup
-          -- tmp dir.
-          FatalError err_buf -> do
-            _cbs <- atomicModifyIORef _cbs_ref (throw SessionClosed,)
-            for_ (IS.toList _cbs) $ \_cb_id -> do
-              let sp = intToStablePtr _cb_id
+  mdo
+    let on_recv msg_buf = do
+          msg <- runGetExact messageJSGet msg_buf
+          case msg of
+            JSEvalResponse {..} -> do
+              let sp = word64ToStablePtr jsEvalResponseId
+              atomicModifyIORef' _cbs_ref $
+                \_cbs -> (IS.delete (intFromStablePtr sp) _cbs, ())
               cb <- deRefStablePtr sp
               freeStablePtr sp
-              cb $ Left err_buf
-      ipc_post_close = do
-        _ <- waitForProcess _ph
-        pure ()
-  _ipc <-
-    ipcFork $
-      ipcFromHandles
-        _wh
-        _rh
-        IPC
-          { send = error "newSession: send",
-            recv = error "newSession: recv",
-            onRecv = on_recv,
-            closeMsg = toLazyByteString $ messageHSPut Close,
-            preClose = error "newSession: preClose",
-            postClose = ipc_post_close
-          }
-  let session_close = do
-        send _ipc $ closeMsg _ipc
-        ipc_post_close
-        removeDirectoryRecursive _root
-  pure
-    Session
-      { ipc = _ipc,
-        pendingCallbacks = _cbs_ref,
-        closeSession = session_close
-      }
+              cb jsEvalResponseContent
+            HSEvalRequest {..} -> do
+              _ <-
+                forkIO $
+                  catchAny
+                    ( do
+                        let sp = word64ToStablePtr hsEvalRequestFunc
+                        f <- deRefStablePtr sp
+                        r <- f args
+                        sessionSend
+                          _session
+                          HSEvalResponse
+                            { hsEvalResponseId = hsEvalRequestId,
+                              hsEvalResponseContent = Right r
+                            }
+                    )
+                    ( \err -> do
+                        let err_buf = stringToLBS $ show err
+                        sessionSend
+                          _session
+                          HSEvalResponse
+                            { hsEvalResponseId = hsEvalRequestId,
+                              hsEvalResponseContent = Left err_buf
+                            }
+                    )
+              pure ()
+            -- todo: should make all subsequent operations invalid immediately
+            -- here, possibly via a session state atomic variable. also cleanup
+            -- tmp dir.
+            FatalError err_buf -> do
+              _cbs <- atomicModifyIORef _cbs_ref (throw SessionClosed,)
+              for_ (IS.toList _cbs) $ \_cb_id -> do
+                let sp = intToStablePtr _cb_id
+                cb <- deRefStablePtr sp
+                freeStablePtr sp
+                cb $ Left err_buf
+        ipc_post_close = do
+          _ <- waitForProcess _ph
+          pure ()
+    _ipc <-
+      ipcFork $
+        ipcFromHandles
+          _wh
+          _rh
+          IPC
+            { send = error "newSession: send",
+              recv = error "newSession: recv",
+              onRecv = on_recv,
+              closeMsg = toLazyByteString $ messageHSPut Close,
+              preClose = error "newSession: preClose",
+              postClose = ipc_post_close
+            }
+    let session_close = do
+          send _ipc $ closeMsg _ipc
+          ipc_post_close
+          removeDirectoryRecursive _root
+        _session =
+          Session
+            { ipc = _ipc,
+              pendingCallbacks = _cbs_ref,
+              closeSession = session_close
+            }
+    pure _session
 
 sessionSend :: Session -> MessageHS -> IO ()
 sessionSend Session {..} msg = send ipc $ toLazyByteString $ messageHSPut msg
