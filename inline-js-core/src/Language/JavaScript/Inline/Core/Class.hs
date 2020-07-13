@@ -37,7 +37,7 @@ instance ToJS EncodedString where
   toJS = JSExpr . pure . StringLiteral . unEncodedString
 
 instance ToJS EncodedJSON where
-  toJS = JSExpr . pure . BufferLiteral . unEncodedJSON
+  toJS = JSExpr . pure . JSONLiteral . unEncodedJSON
 
 instance ToJS JSVal where
   toJS = JSExpr . pure . JSValLiteral
