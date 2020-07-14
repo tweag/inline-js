@@ -25,7 +25,9 @@ module Language.JavaScript.Inline.Core
     importMJS,
 
     -- * Exporting Haskell functions to JavaScript
+    Export,
     export,
+    exportSync,
 
     -- * Exceptions
     NodeVersionUnsupported (..),
@@ -37,6 +39,7 @@ where
 import Data.Proxy
 import Language.JavaScript.Inline.Core.Class
 import Language.JavaScript.Inline.Core.Exception
+import Language.JavaScript.Inline.Core.Export
 import Language.JavaScript.Inline.Core.Instruction
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
@@ -92,6 +95,32 @@ importMJS s p = do
     "import('url').then(url => import(url.pathToFileURL("
       <> string p'
       <> ")))"
+
+-- | Export a Haskell function as a JavaScript async function, and return its
+-- 'JSVal'. Some points to keep in mind:
+--
+-- * The Haskell function itself can call into JavaScript again via 'eval', and
+--   vice versa.
+-- * When called in JavaScript, the Haskell function is run in a forked thread.
+-- * If the Haskell function throws, the JavaScript function will reject with an
+--   @Error@ with the exception string.
+-- * Unlike 'JSVal's returned by 'eval', 'JSVal's returned by 'export' is not
+--   garbage collected, since we don't know when a function is garbage collected
+--   on the @node@ side.
+export :: forall f. Export f => Session -> f -> IO JSVal
+export = exportAsyncOrSync False
+
+-- | Export a Haskell function as a JavaScript sync function. This is quite
+-- heavyweight and in most cases, 'export' is preferrable. 'exportSync' can be
+-- useful in certain scenarios when a sync function is desired, e.g. as
+-- WebAssembly imports.
+--
+-- Unlike 'export', 'exportSync' is not reentrant. When the JavaScript function
+-- is called, it blocks @node@ until the Haskell function produces the result or
+-- throws. If the Haskell function calls into JavaScript again, that call will
+-- be blocked infinitely without warning.
+exportSync :: forall f . Export f => Session -> f -> IO JSVal
+exportSync = exportAsyncOrSync True
 
 string :: String -> JSExpr
 string = toJS . EncodedString . stringToLBS

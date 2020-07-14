@@ -70,6 +70,15 @@ main =
             let x = V $ A.String "asdf"
                 y = V $ A.String "233"
             r <- eval s [expr| $v($x, $y) |]
+            r @?= V (A.Array [A.String "asdf", A.String "233"]),
+        testCase "exportSync" $
+          withDefaultSession $ \s -> do
+            let f :: V -> V -> IO V
+                f (V x) (V y) = pure $ V $ A.Array [x, y]
+            v <- exportSync s f
+            let x = V $ A.String "asdf"
+                y = V $ A.String "233"
+            r <- eval s [expr| $v($x, $y) |]
             r @?= V (A.Array [A.String "asdf", A.String "233"])
       ]
 

@@ -58,12 +58,14 @@ data MessageHS
         returnType :: RawJSType
       }
   | HSExportRequest
-      { exportRequestId :: Word64,
+      { exportIsSync :: Bool,
+        exportRequestId :: Word64,
         exportFuncId :: Word64,
         argsType :: [(JSExpr, RawJSType)]
       }
   | HSEvalResponse
-      { hsEvalResponseId :: Word64,
+      { hsEvalResponseIsSync :: Bool,
+        hsEvalResponseId :: Word64,
         hsEvalResponseContent :: Either LBS.ByteString JSExpr
       }
   | JSValFree Word64
@@ -76,7 +78,8 @@ data MessageJS
         jsEvalResponseContent :: Either LBS.ByteString LBS.ByteString
       }
   | HSEvalRequest
-      { hsEvalRequestId :: Word64,
+      { hsEvalRequestIsSync :: Bool,
+        hsEvalRequestId :: Word64,
         hsEvalRequestFunc :: Word64,
         args :: [LBS.ByteString]
       }
@@ -92,6 +95,7 @@ messageHSPut msg = case msg of
       <> rawTypePut returnType
   HSExportRequest {..} ->
     word8Put 1
+      <> boolPut exportIsSync
       <> word64Put exportRequestId
       <> word64Put exportFuncId
       <> word64Put (fromIntegral (length argsType))
@@ -100,6 +104,7 @@ messageHSPut msg = case msg of
         argsType
   HSEvalResponse {..} ->
     word8Put 2
+      <> boolPut hsEvalResponseIsSync
       <> word64Put hsEvalResponseId
       <> ( case hsEvalResponseContent of
              Left err -> word8Put 0 <> lbsPut err
@@ -108,6 +113,7 @@ messageHSPut msg = case msg of
   JSValFree v -> word8Put 3 <> word64Put v
   Close -> word8Put 4
   where
+    boolPut = word8Put . fromIntegral . fromEnum
     word8Put = storablePut @Word8
     word64Put = storablePut @Word64
     lbsPut s = storablePut (LBS.length s) <> lazyByteString s
@@ -148,13 +154,15 @@ messageJSGet = do
               }
         _ -> fail $ "messageJSGet: invalid _tag " <> show _tag
     1 -> do
+      _is_sync <- toEnum . fromIntegral <$> getWord8
       _id <- getWord64host
       _func <- getWord64host
       l <- fromIntegral <$> getWord64host
       _args <- replicateM l lbsGet
       pure
         HSEvalRequest
-          { hsEvalRequestId = _id,
+          { hsEvalRequestIsSync = _is_sync,
+            hsEvalRequestId = _id,
             hsEvalRequestFunc = _func,
             args = _args
           }

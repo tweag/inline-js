@@ -9,6 +9,10 @@ import Language.JavaScript.Inline.Core.Class
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
 
+-- | The class of Haskell functions which can be exported as JavaScript
+-- functions. The Haskell function type should be @a -> b -> .. -> IO r@, where
+-- the arguments @a@, @b@, etc are 'FromJS' instances, and the result @r@ is
+-- 'ToJS' instance.
 class Export f where
   argsToRawJSType :: Proxy f -> [(JSExpr, RawJSType)]
   monomorphize :: Session -> f -> [LBS.ByteString] -> IO JSExpr
