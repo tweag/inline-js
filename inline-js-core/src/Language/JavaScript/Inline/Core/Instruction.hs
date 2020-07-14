@@ -1,16 +1,13 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Language.JavaScript.Inline.Core.Instruction where
 
-import Control.Concurrent
+import Control.Concurrent.STM
 import Control.Exception
 import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
-import Data.IORef
-import qualified Data.IntSet as IS
 import Data.Proxy
 import Foreign
 import Language.JavaScript.Inline.Core.Exception
@@ -28,19 +25,8 @@ evalWithDecoder ::
   JSExpr ->
   IO a
 evalWithDecoder _return_type _decoder _session@Session {..} _code = do
-  _inbox <- newEmptyMVar
-  let _cb _resp = case _resp of
-        Left _err_buf ->
-          putMVar _inbox $
-            Left $
-              toException
-                EvalError
-                  { evalErrorMessage = stringFromLBS _err_buf
-                  }
-        Right _result_buf -> do
-          _result <- _decoder _session _result_buf
-          putMVar _inbox $ Right _result
-  _sp <- newStablePtr _cb
+  _inbox <- newEmptyTMVarIO
+  _sp <- newStablePtr _inbox
   let _id = word64FromStablePtr _sp
   sessionSend
     _session
@@ -50,47 +36,37 @@ evalWithDecoder _return_type _decoder _session@Session {..} _code = do
         returnType = _return_type
       }
   touch _code
-  atomicModifyIORef' pendingCallbacks $
-    \_cbs -> (IS.insert (intFromStablePtr _sp) _cbs, ())
-  unsafeInterleaveIO $
-    takeMVar _inbox >>= \case
-      Left (SomeException _err) -> throwIO _err
-      Right _result -> pure _result
+  unsafeInterleaveIO $ do
+    _resp <- atomically $ takeTMVar _inbox `orElse` readTMVar fatalErrorInbox
+    freeStablePtr _sp
+    case _resp of
+      Left _err_buf ->
+        throwIO $ EvalError {evalErrorMessage = stringFromLBS _err_buf}
+      Right _result_buf -> _decoder _session _result_buf
 
 exportAsyncOrSync :: forall f. Export f => Bool -> Session -> f -> IO JSVal
 exportAsyncOrSync _is_sync _session@Session {..} f = do
-  _inbox <- newEmptyMVar
+  _inbox <- newEmptyTMVarIO
   let args_type = argsToRawJSType (Proxy @f)
       f' = monomorphize _session f
-      _decoder _jsval_id_buf = do
-        _jsval_id <- runGetExact getWord64host _jsval_id_buf
-        newJSVal _jsval_id (pure ())
-      _cb _resp = case _resp of
-        Left _err_buf ->
-          putMVar _inbox $
-            Left $
-              toException
-                EvalError
-                  { evalErrorMessage = stringFromLBS _err_buf
-                  }
-        Right _result_buf -> do
-          _result <- _decoder _result_buf
-          putMVar _inbox $ Right _result
-  _sp_cb <- newStablePtr _cb
+  _sp_inbox <- newStablePtr _inbox
   _sp_f <- newStablePtr f'
-  let _id_cb = word64FromStablePtr _sp_cb
+  let _id_inbox = word64FromStablePtr _sp_inbox
       _id_f = word64FromStablePtr _sp_f
   sessionSend
     _session
     HSExportRequest
       { exportIsSync = _is_sync,
-        exportRequestId = _id_cb,
+        exportRequestId = _id_inbox,
         exportFuncId = _id_f,
         argsType = args_type
       }
-  atomicModifyIORef' pendingCallbacks $
-    \_cbs -> (IS.insert (intFromStablePtr _sp_cb) _cbs, ())
-  unsafeInterleaveIO $
-    takeMVar _inbox >>= \case
-      Left (SomeException _err) -> throwIO _err
-      Right _result -> pure _result
+  unsafeInterleaveIO $ do
+    _resp <- atomically $ takeTMVar _inbox `orElse` readTMVar fatalErrorInbox
+    freeStablePtr _sp_inbox
+    case _resp of
+      Left _err_buf ->
+        throwIO $ EvalError {evalErrorMessage = stringFromLBS _err_buf}
+      Right _jsval_id_buf -> do
+        _jsval_id <- runGetExact getWord64host _jsval_id_buf
+        newJSVal _jsval_id (pure ())
