@@ -9,8 +9,6 @@ import Control.Concurrent
 import Control.Exception
 import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
-import Data.IORef
-import qualified Data.IntSet as IS
 import Data.Proxy
 import Foreign
 import Language.JavaScript.Inline.Core.Exception
@@ -27,7 +25,7 @@ evalWithDecoder ::
   Session ->
   JSExpr ->
   IO a
-evalWithDecoder _return_type _decoder _session@Session {..} _code = do
+evalWithDecoder _return_type _decoder _session _code = do
   _inbox <- newEmptyMVar
   let _cb _resp = case _resp of
         Left _err_buf ->
@@ -50,15 +48,13 @@ evalWithDecoder _return_type _decoder _session@Session {..} _code = do
         returnType = _return_type
       }
   touch _code
-  atomicModifyIORef' pendingCallbacks $
-    \_cbs -> (IS.insert (intFromStablePtr _sp) _cbs, ())
   unsafeInterleaveIO $
     takeMVar _inbox >>= \case
       Left (SomeException _err) -> throwIO _err
       Right _result -> pure _result
 
 exportAsyncOrSync :: forall f. Export f => Bool -> Session -> f -> IO JSVal
-exportAsyncOrSync _is_sync _session@Session {..} f = do
+exportAsyncOrSync _is_sync _session f = do
   _inbox <- newEmptyMVar
   let args_type = argsToRawJSType (Proxy @f)
       f' = monomorphize _session f
@@ -88,8 +84,6 @@ exportAsyncOrSync _is_sync _session@Session {..} f = do
         exportFuncId = _id_f,
         argsType = args_type
       }
-  atomicModifyIORef' pendingCallbacks $
-    \_cbs -> (IS.insert (intFromStablePtr _sp_cb) _cbs, ())
   unsafeInterleaveIO $
     takeMVar _inbox >>= \case
       Left (SomeException _err) -> throwIO _err

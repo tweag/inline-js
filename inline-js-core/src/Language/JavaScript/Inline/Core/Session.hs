@@ -78,7 +78,6 @@ defaultConfig =
 
 data Session = Session
   { ipc :: IPC,
-    pendingCallbacks :: IORef IS.IntSet,
     -- | After a 'Session' is closed, no more messages can be sent to @node@.
     -- @node@ may still run for some time to allow previous evaluation results
     -- to be sent back.
@@ -184,7 +183,6 @@ newSession Config {..} = do
         _session =
           Session
             { ipc = _ipc,
-              pendingCallbacks = _cbs_ref,
               closeSession = session_close
             }
     pure _session
