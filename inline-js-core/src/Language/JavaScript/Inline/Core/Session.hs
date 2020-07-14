@@ -53,7 +53,10 @@ data Config = Config
     -- | By default, an 'EvalError' only throws for a single return value and
     -- doesn't affect later evaluation. Set this to 'True' if the @node@ process
     -- should terminate immediately upon an 'EvalError'.
-    nodeExitOnEvalError :: Bool
+    nodeExitOnEvalError :: Bool,
+    -- | Size in MiBs of the buffer for passing results of functions exported by
+    -- 'exportSync'. Most users don't need to care about this. Defaults to 1.
+    nodeExportSyncBufferSize :: Int
   }
   deriving (Show)
 
@@ -69,7 +72,8 @@ defaultConfig =
         ],
       nodeExtraEnv = [],
       nodeModules = Nothing,
-      nodeExitOnEvalError = False
+      nodeExitOnEvalError = False,
+      nodeExportSyncBufferSize = 1
     }
 
 data Session = Session
@@ -101,6 +105,7 @@ newSession Config {..} = do
             Just $
               kvDedup $
                 [("INLINE_JS_EXIT_ON_EVAL_ERROR", "1") | nodeExitOnEvalError]
+                  <> [("INLINE_JS_EXPORT_SYNC_BUFFER_SIZE", show nodeExportSyncBufferSize)]
                   <> map ("INLINE_JS_NODE_MODULES",) (maybeToList nodeModules)
                   <> nodeExtraEnv
                   <> _env,
@@ -130,7 +135,8 @@ newSession Config {..} = do
                         sessionSend
                           _session
                           HSEvalResponse
-                            { hsEvalResponseId = hsEvalRequestId,
+                            { hsEvalResponseIsSync = hsEvalRequestIsSync,
+                              hsEvalResponseId = hsEvalRequestId,
                               hsEvalResponseContent = Right r
                             }
                     )
@@ -139,7 +145,8 @@ newSession Config {..} = do
                         sessionSend
                           _session
                           HSEvalResponse
-                            { hsEvalResponseId = hsEvalRequestId,
+                            { hsEvalResponseIsSync = hsEvalRequestIsSync,
+                              hsEvalResponseId = hsEvalRequestId,
                               hsEvalResponseContent = Left err_buf
                             }
                     )

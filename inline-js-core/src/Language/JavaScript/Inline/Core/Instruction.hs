@@ -57,22 +57,8 @@ evalWithDecoder _return_type _decoder _session@Session {..} _code = do
       Left (SomeException _err) -> throwIO _err
       Right _result -> pure _result
 
--- | Export a Haskell function as a JavaScript async function.
---
--- The Haskell function type should be @a -> b -> .. -> IO r@, where the
--- arguments @a@, @b@, etc are 'Language.JavaScript.Inline.Core.Class.FromJS'
--- instances, and the result @r@ is 'Language.JavaScript.Inline.Core.Class.ToJS'
--- instance.
---
--- The resulting JavaScript async function can be called like normal functions,
--- set up as callback, etc. When called, the exported Haskell function is run in
--- a forked thread. If the Haskell function throws, the JavaScript function will
--- reject with an @Error@ containing the Haskell exception string.
---
--- Unlike ordinary 'JSVal's returned by 'Language.JavaScript.Inline.Core.eval',
--- the 'JSVal' of exported function is not garbage collected.
-export :: forall f. Export f => Session -> f -> IO JSVal
-export _session@Session {..} f = do
+exportAsyncOrSync :: forall f. Export f => Bool -> Session -> f -> IO JSVal
+exportAsyncOrSync _is_sync _session@Session {..} f = do
   _inbox <- newEmptyMVar
   let args_type = argsToRawJSType (Proxy @f)
       f' = monomorphize _session f
@@ -97,7 +83,8 @@ export _session@Session {..} f = do
   sessionSend
     _session
     HSExportRequest
-      { exportRequestId = _id_cb,
+      { exportIsSync = _is_sync,
+        exportRequestId = _id_cb,
         exportFuncId = _id_f,
         argsType = args_type
       }

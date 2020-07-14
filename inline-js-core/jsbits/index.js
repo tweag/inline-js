@@ -6,6 +6,7 @@ const string_decoder = require("string_decoder");
 const util = require("util");
 const vm = require("vm");
 const worker_threads = require("worker_threads");
+const { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } = require("constants");
 
 class JSValContext {
   constructor() {
@@ -42,7 +43,17 @@ class JSValContext {
 class MainContext {
   constructor() {
     process.on("uncaughtException", (err) => this.onUncaughtException(err));
-    this.worker = new worker_threads.Worker(__filename, { stdout: true });
+    this.exportSyncArrayBuffer = new SharedArrayBuffer(
+      8 +
+        Number.parseInt(process.env.INLINE_JS_EXPORT_SYNC_BUFFER_SIZE, 10) *
+          0x100000
+    );
+    this.exportSyncMutex = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
+    this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 4);
+    this.worker = new worker_threads.Worker(__filename, {
+      stdout: true,
+      workerData: this.exportSyncArrayBuffer,
+    });
     this.worker.on("message", (buf_msg) => this.onWorkerMessage(buf_msg));
     this.recvLoop();
     Object.freeze(this);
@@ -57,7 +68,14 @@ class MainContext {
         if (buf.length < 8 + len) return;
         const buf_msg = buf.slice(8, 8 + len);
         buf = buf.slice(8 + len);
-        if (msgIsClose(buf_msg)) {
+        if (buf_msg.readUInt8(0) === 2 && buf_msg.readUInt8(1) === 1) {
+          this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 0);
+          buf_msg.copy(this.exportSyncBuffer, 4);
+          Atomics.store(this.exportSyncMutex, 0, 1);
+          Atomics.notify(this.exportSyncMutex, 0);
+          continue;
+        }
+        if (buf_msg.readUInt8(0) === 4) {
           process.stdin.unref();
         }
         this.worker.postMessage(buf_msg);
@@ -89,6 +107,9 @@ class MainContext {
 
 class WorkerContext {
   constructor() {
+    this.exportSyncArrayBuffer = worker_threads.workerData;
+    this.exportSyncMutex = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
+    this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 4);
     this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
     this.hsCtx = new JSValContext();
@@ -262,6 +283,8 @@ class WorkerContext {
       case 1: {
         // HSExportRequest
         let resp_buf;
+        const is_sync = Boolean(buf_msg.readUInt8(p));
+        p += 1;
         const req_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         try {
@@ -278,7 +301,7 @@ class WorkerContext {
             hs_func_args_type.push([r.result, raw_type]);
           }
 
-          const js_func = async (...js_args) => {
+          const js_func = (...js_args) => {
             if (js_args.length !== hs_func_args_len) {
               throw new Error(
                 `inline-js export function error: arity mismatch, expected ${hs_func_args_len} arguments, got ${js_args.length}`
@@ -294,18 +317,26 @@ class WorkerContext {
               );
             }
 
-            const hs_eval_req_promise = newPromise();
-            const hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
             const req_buf = Buffer.allocUnsafe(
-              25 +
+              26 +
                 hs_func_args_len * 8 +
                 hs_args_buf.reduce((acc, hs_arg) => acc + hs_arg.length, 0)
             );
+
+            let hs_eval_req_promise, hs_eval_req_id;
+            if (is_sync) {
+              hs_eval_req_id = 0n;
+            } else {
+              hs_eval_req_promise = newPromise();
+              hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
+            }
+
             req_buf.writeUInt8(1, 0);
-            req_buf.writeBigUInt64LE(hs_eval_req_id, 1);
-            req_buf.writeBigUInt64LE(hs_func_id, 9);
-            req_buf.writeBigUInt64LE(BigInt(hs_func_args_len), 17);
-            let p = 25;
+            req_buf.writeUInt8(Number(is_sync), 1);
+            req_buf.writeBigUInt64LE(hs_eval_req_id, 2);
+            req_buf.writeBigUInt64LE(hs_func_id, 10);
+            req_buf.writeBigUInt64LE(BigInt(hs_func_args_len), 18);
+            let p = 26;
             for (const hs_arg of hs_args_buf) {
               req_buf.writeBigUInt64LE(BigInt(hs_arg.length), p);
               p += 8;
@@ -315,7 +346,38 @@ class WorkerContext {
 
             worker_threads.parentPort.postMessage(req_buf);
 
-            return hs_eval_req_promise;
+            if (is_sync) {
+              Atomics.wait(this.exportSyncMutex, 0, 0);
+              Atomics.store(this.exportSyncMutex, 0, 0);
+              const buf_msg_len = this.exportSyncBuffer.readUInt32LE(0);
+              const buf_msg = Buffer.from(
+                this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
+              );
+              let p = 10;
+              const hs_eval_resp_tag = buf_msg.readUInt8(p);
+              p += 1;
+              switch (hs_eval_resp_tag) {
+                case 0: {
+                  const err_len = Number(buf_msg.readBigUInt64LE(p));
+                  p += 8;
+                  err = new Error(
+                    this.decoder.end(buf_msg.slice(p, p + err_len))
+                  );
+                  p += err_len;
+                  throw err;
+                }
+                case 1: {
+                  const r = this.toJS(buf_msg, p, false);
+                  p = r.p;
+                  return r.result;
+                }
+                default: {
+                  throw new Error(`inline-js invalid message ${buf_msg}`);
+                }
+              }
+            } else {
+              return hs_eval_req_promise;
+            }
           };
 
           const js_func_buf = this.fromJS(js_func, 3);
@@ -349,6 +411,8 @@ class WorkerContext {
       }
       case 2: {
         // HSEvalResponse
+        const is_sync = Boolean(buf_msg.readUInt8(p));
+        p += 1;
         const hs_eval_resp_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         const hs_eval_resp_promise = this.hsCtx.get(hs_eval_resp_id);
@@ -405,10 +469,6 @@ function newPromise() {
   p.resolve = promise_resolve;
   p.reject = promise_reject;
   return p;
-}
-
-function msgIsClose(buf_msg) {
-  return buf_msg.readUInt8(0) === 4;
 }
 
 function bufferFromArrayBufferView(a) {
