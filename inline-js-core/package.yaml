@@ -26,6 +26,7 @@ dependencies:
   - filepath
   - ghc-prim
   - process
+  - stm
   - template-haskell
   - text
 
