@@ -92,15 +92,14 @@ class MainContext {
   onWorkerMessage(buf_msg) {
     this.send(bufferFromArrayBufferView(buf_msg));
   }
-  async onUncaughtException(err) {
+  onUncaughtException(err) {
     const err_str = `${err.stack ? err.stack : err}`;
     const err_buf = Buffer.from(err_str, "utf-8");
     const resp_buf = Buffer.allocUnsafe(9 + err_buf.length);
     resp_buf.writeUInt8(2, 0);
     resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 1);
     err_buf.copy(resp_buf, 9);
-    await this.send(resp_buf);
-    process.exit(1);
+    this.send(resp_buf).finally(() => process.exit(1));
   }
 }
 
