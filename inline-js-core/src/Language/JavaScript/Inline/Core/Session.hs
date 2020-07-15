@@ -47,10 +47,6 @@ data Config = Config
     -- | To @require()@ or @import()@ third-party packages, set this to the
     -- @node_modules@ directory path.
     nodeModules :: Maybe FilePath,
-    -- | By default, an 'EvalError' only throws for a single return value and
-    -- doesn't affect later evaluation. Set this to 'True' if the @node@ process
-    -- should terminate immediately upon an 'EvalError'.
-    nodeExitOnEvalError :: Bool,
     -- | Size in MiBs of the buffer for passing results of functions exported by
     -- 'exportSync'. Most users don't need to care about this. Defaults to 1.
     nodeExportSyncBufferSize :: Int
@@ -69,7 +65,6 @@ defaultConfig =
         ],
       nodeExtraEnv = [],
       nodeModules = Nothing,
-      nodeExitOnEvalError = False,
       nodeExportSyncBufferSize = 1
     }
 
@@ -101,11 +96,10 @@ newSession Config {..} = do
         { env =
             Just $
               kvDedup $
-                [("INLINE_JS_EXIT_ON_EVAL_ERROR", "1") | nodeExitOnEvalError]
-                  <> [ ( "INLINE_JS_EXPORT_SYNC_BUFFER_SIZE",
-                         show nodeExportSyncBufferSize
-                       )
-                     ]
+                [ ( "INLINE_JS_EXPORT_SYNC_BUFFER_SIZE",
+                    show nodeExportSyncBufferSize
+                  )
+                ]
                   <> map ("INLINE_JS_NODE_MODULES",) (maybeToList nodeModules)
                   <> nodeExtraEnv
                   <> _env,

@@ -267,14 +267,6 @@ class WorkerContext {
         } catch (err) {
           // EvalError
           const err_str = `${err.stack ? err.stack : err}`;
-          if (process.env.INLINE_JS_EXIT_ON_EVAL_ERROR) {
-            process.stderr.write(
-              `inline-js eval error, exiting node: ${err_str}\n`,
-              () => {
-                process.kill(process.pid, "SIGTERM");
-              }
-            );
-          }
           const err_buf = Buffer.from(err_str, "utf-8");
           resp_buf = Buffer.allocUnsafe(18 + err_buf.length);
           resp_buf.writeUInt8(0, 0);
@@ -396,14 +388,6 @@ class WorkerContext {
         } catch (err) {
           // EvalError
           const err_str = `${err.stack ? err.stack : err}`;
-          if (process.env.INLINE_JS_EXIT_ON_EVAL_ERROR) {
-            process.stderr.write(
-              `inline-js eval error, exiting node: ${err_str}\n`,
-              () => {
-                process.kill(process.pid, "SIGTERM");
-              }
-            );
-          }
           const err_buf = Buffer.from(err_str, "utf-8");
           resp_buf = Buffer.allocUnsafe(18 + err_buf.length);
           resp_buf.writeUInt8(0, 0);
