@@ -80,4 +80,4 @@ instance FromJS JSVal where
   toRawJSType _ = "a => a"
   fromJS _session _jsval_id_buf = do
     _jsval_id <- runGetExact getWord64host _jsval_id_buf
-    newJSVal _jsval_id (sessionSend _session $ JSValFree _jsval_id)
+    newJSVal True _jsval_id (sessionSend _session $ JSValFree _jsval_id)
