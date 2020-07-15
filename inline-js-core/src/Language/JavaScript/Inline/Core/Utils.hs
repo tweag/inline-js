@@ -24,6 +24,8 @@ import GHC.Exts
 import GHC.Types
 import Language.Haskell.TH.Lib
 import Language.Haskell.TH.Syntax
+import System.Directory
+import System.FilePath
 import System.IO
 import System.IO.Unsafe
 import Type.Reflection
@@ -41,7 +43,10 @@ import Type.Reflection
 -- 'StringPrimL' is possible with GHC 8.10+. We stay with 'StringPrimL' to avoid
 -- breaking GHC 8.8.
 embedFile :: FilePath -> Q Exp
-embedFile p = do
+embedFile p' = do
+  src <- loc_filename <$> location
+  pkg <- runIO $ pkgDir =<< makeAbsolute src
+  let p = pkg </> p'
   addDependentFile p
   s <- runIO $ BS.readFile p
   let len = BS.length s
@@ -49,15 +54,26 @@ embedFile p = do
     unsafePerformIO $
       BS.unsafePackAddressLen len $(litE $ stringPrimL $ BS.unpack s)
     |]
+  where
+    pkgDir p = do
+      let d = takeDirectory p
+      fs <- getDirectoryContents d
+      if any ((== ".cabal") . takeExtension) fs
+        then pure d
+        else pkgDir d
 
 -- | Deduplicate an association list in a left-biased manner; if the same key
 -- appears more than once, the left-most key/value pair is preserved.
 kvDedup :: Ord k => [(k, a)] -> [(k, a)]
 kvDedup = M.toList . M.fromListWith (\_ a -> a)
 
-storableGet :: forall a. Storable a => Get a
-storableGet = readN (sizeOf (undefined :: a)) $
-  \bs -> unsafeDupablePerformIO $ BS.unsafeUseAsCString bs $ peek . castPtr
+storableGet ::
+  forall a.
+  Storable a =>
+  Get a
+storableGet =
+  readN (sizeOf (undefined :: a)) $ \bs ->
+    unsafeDupablePerformIO $ BS.unsafeUseAsCString bs $ peek . castPtr
 
 storablePut :: Storable a => a -> Builder
 storablePut = primFixed storableToF
@@ -93,25 +109,36 @@ hGetExact h len_expected = do
           <> " bytes, got "
           <> show len_actual
 
-runGetExact :: forall a. Typeable a => Get a -> LBS.ByteString -> IO a
-runGetExact g buf = case runGetOrFail g buf of
-  Right (LBS.null -> True, _, r) -> pure r
-  _ -> fail $ "runGetExact failed on type " <> show (typeRep @a)
+runGetExact ::
+  forall a.
+  Typeable a =>
+  Get a ->
+  LBS.ByteString ->
+  IO a
+runGetExact g buf =
+  case runGetOrFail g buf of
+    Right (LBS.null -> True, _, r) -> pure r
+    _ -> fail $ "runGetExact failed on type " <> show (typeRep @a)
 
 {-# NOINLINE touch #-}
 touch :: a -> IO ()
-touch a = IO $ \s0 -> case touch# a s0 of
-  s1 -> (# s1, () #)
+touch a =
+  IO $ \s0 ->
+    case touch# a s0 of
+      s1 -> (# s1, () #)
 
 split :: (a -> Bool) -> [a] -> [[a]]
-split f l = case foldr w [] l of
-  [] : r -> r
-  r -> r
+split f l =
+  case foldr w [] l of
+    [] : r -> r
+    r -> r
   where
     w x acc
-      | f x = case acc of
-        (_ : _) : _ -> [] : acc
-        _ -> acc
-      | otherwise = case acc of
-        [] -> [[x]]
-        xs : acc' -> (x : xs) : acc'
+      | f x =
+        case acc of
+          (_ : _) : _ -> [] : acc
+          _ -> acc
+      | otherwise =
+        case acc of
+          [] -> [[x]]
+          xs : acc' -> (x : xs) : acc'

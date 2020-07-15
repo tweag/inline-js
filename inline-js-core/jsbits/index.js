@@ -6,7 +6,6 @@ const string_decoder = require("string_decoder");
 const util = require("util");
 const vm = require("vm");
 const worker_threads = require("worker_threads");
-const { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } = require("constants");
 
 class JSValContext {
   constructor() {
@@ -93,15 +92,14 @@ class MainContext {
   onWorkerMessage(buf_msg) {
     this.send(bufferFromArrayBufferView(buf_msg));
   }
-  async onUncaughtException(err) {
+  onUncaughtException(err) {
     const err_str = `${err.stack ? err.stack : err}`;
     const err_buf = Buffer.from(err_str, "utf-8");
     const resp_buf = Buffer.allocUnsafe(9 + err_buf.length);
     resp_buf.writeUInt8(2, 0);
     resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 1);
     err_buf.copy(resp_buf, 9);
-    await this.send(resp_buf);
-    process.exit(1);
+    this.send(resp_buf).finally(() => process.exit(1));
   }
 }
 
@@ -133,6 +131,7 @@ class WorkerContext {
     const expr_segs_len = Number(buf.readBigUInt64LE(p));
     p += 8;
     let expr = "";
+    let has_code = false;
     for (let i = 0; i < expr_segs_len; ++i) {
       const expr_seg_type = buf.readUInt8(p);
       p += 1;
@@ -143,6 +142,7 @@ class WorkerContext {
           p += 8;
           expr = `${expr}${this.decoder.end(buf.slice(p, p + expr_seg_len))}`;
           p += expr_seg_len;
+          has_code = has_code || Boolean(expr_seg_len);
           break;
         }
         case 1: {
@@ -190,15 +190,21 @@ class WorkerContext {
       }
     }
 
-    let expr_params = "require";
-    for (let i = 0; i < jsval_tmp.length; ++i) {
-      expr_params = `${expr_params}, __t${i.toString(36)}`;
+    let result;
+
+    if (!has_code && jsval_tmp.length === 1) {
+      result = jsval_tmp[0];
+    } else {
+      let expr_params = "require";
+      for (let i = 0; i < jsval_tmp.length; ++i) {
+        expr_params = `${expr_params}, __t${i.toString(36)}`;
+      }
+      expr = `${async ? "async " : ""}(${expr_params}) => (\n${expr}\n)`;
+      result = vm.runInThisContext(expr, {
+        lineOffset: -1,
+        importModuleDynamically: (spec) => import(spec),
+      })(require, ...jsval_tmp);
     }
-    expr = `${async ? "async " : ""}(${expr_params}) => (\n${expr}\n)`;
-    const result = vm.runInThisContext(expr, {
-      lineOffset: -1,
-      importModuleDynamically: (spec) => import(spec),
-    })(require, ...jsval_tmp);
 
     return { p: p, result: result };
   }

@@ -29,6 +29,9 @@ module Language.JavaScript.Inline.Core
     export,
     exportSync,
 
+    -- * Manual resource management
+    freeJSVal,
+
     -- * Exceptions
     NodeVersionUnsupported (..),
     EvalError (..),
@@ -104,10 +107,11 @@ importMJS s p = do
 -- * When called in JavaScript, the Haskell function is run in a forked thread.
 -- * If the Haskell function throws, the JavaScript function will reject with an
 --   @Error@ with the exception string.
--- * Unlike 'JSVal's returned by 'eval', 'JSVal's returned by 'export' is not
+-- * Unlike 'JSVal's returned by 'eval', 'JSVal's returned by 'export' are not
 --   garbage collected, since we don't know when a function is garbage collected
---   on the @node@ side.
-export :: forall f. Export f => Session -> f -> IO JSVal
+--   on the @node@ side. These 'JSVal's need to be manually freed using
+--   'freeJSVal'.
+export :: Export f => Session -> f -> IO JSVal
 export = exportAsyncOrSync False
 
 -- | Export a Haskell function as a JavaScript sync function. This is quite
@@ -119,7 +123,7 @@ export = exportAsyncOrSync False
 -- is called, it blocks @node@ until the Haskell function produces the result or
 -- throws. If the Haskell function calls into JavaScript again, that call will
 -- be blocked infinitely without warning.
-exportSync :: forall f . Export f => Session -> f -> IO JSVal
+exportSync :: Export f => Session -> f -> IO JSVal
 exportSync = exportAsyncOrSync True
 
 string :: String -> JSExpr

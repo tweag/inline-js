@@ -70,7 +70,8 @@ main =
             let x = V $ A.String "asdf"
                 y = V $ A.String "233"
             r <- eval s [expr| $v($x, $y) |]
-            r @?= V (A.Array [A.String "asdf", A.String "233"]),
+            r @?= V (A.Array [A.String "asdf", A.String "233"])
+            freeJSVal v,
         testCase "exportSync" $
           withDefaultSession $ \s -> do
             let f :: V -> V -> IO V
@@ -80,6 +81,7 @@ main =
                 y = V $ A.String "233"
             r <- eval s [expr| $v($x, $y) |]
             r @?= V (A.Array [A.String "asdf", A.String "233"])
+            freeJSVal v
       ]
 
 newtype I = I Int

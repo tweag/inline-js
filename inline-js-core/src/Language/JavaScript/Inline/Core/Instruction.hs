@@ -69,4 +69,6 @@ exportAsyncOrSync _is_sync _session@Session {..} f = do
         throwIO $ EvalError {evalErrorMessage = stringFromLBS _err_buf}
       Right _jsval_id_buf -> do
         _jsval_id <- runGetExact getWord64host _jsval_id_buf
-        newJSVal _jsval_id (pure ())
+        newJSVal False _jsval_id $ do
+          sessionSend _session $ JSValFree _jsval_id
+          freeStablePtr _sp_f
