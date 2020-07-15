@@ -6,7 +6,6 @@ const string_decoder = require("string_decoder");
 const util = require("util");
 const vm = require("vm");
 const worker_threads = require("worker_threads");
-const { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } = require("constants");
 
 class JSValContext {
   constructor() {
