@@ -2,6 +2,7 @@
 
 [![GitHub Actions](https://github.com/tweag/inline-js/workflows/pipeline/badge.svg?branch=master)](https://github.com/tweag/inline-js/actions?query=branch%3Amaster)
 [![Gitter](https://img.shields.io/gitter/room/tweag/inline-js)](https://gitter.im/tweag/inline-js)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/b2320ec2-8feb-44d6-886a-8cd4728d92ad/deploy-status)](https://inline-js.netlify.app)
 
 ## Implemented features
 
