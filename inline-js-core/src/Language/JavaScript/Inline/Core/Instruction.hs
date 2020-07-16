@@ -10,6 +10,8 @@ import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
 import Data.Proxy
 import Foreign
+import Language.JavaScript.Inline.Core.Class
+import Language.JavaScript.Inline.Core.Dict
 import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.Export
 import Language.JavaScript.Inline.Core.JSVal
@@ -47,7 +49,9 @@ evalWithDecoder _return_type _decoder _session@Session {..} _code = do
 exportAsyncOrSync :: forall f. Export f => Bool -> Session -> f -> IO JSVal
 exportAsyncOrSync _is_sync _session@Session {..} f = do
   _inbox <- newEmptyTMVarIO
-  let args_type = argsToRawJSType (Proxy @f)
+  let args_type =
+        map (\(Dict p) -> (toRawJSType p, rawJSType p)) $
+          exportArgsFromJS (Proxy @f)
       f' = monomorphize _session f
   _sp_inbox <- newStablePtr _inbox
   _sp_f <- newStablePtr f'
