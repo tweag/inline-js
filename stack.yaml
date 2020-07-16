@@ -2,6 +2,7 @@ resolver: nightly-2020-07-12
 packages:
   - inline-js
   - inline-js-core
+  - inline-js-examples
   - inline-js-tests
 nix:
   packages:

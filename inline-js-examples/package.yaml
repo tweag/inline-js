@@ -1,4 +1,4 @@
-name: inline-js-tests
+name: inline-js-examples
 version: 0.0.1.0
 category: Web
 maintainer: Shao Cheng <cheng.shao@tweag.io>
@@ -13,22 +13,11 @@ extra-source-files:
   - LICENSE
   - README.md
 
-ghc-options: -Wall -threaded -rtsopts
+ghc-options: -Wall
 
 dependencies:
-  - Cabal
-  - aeson
   - base >= 4.13 && < 5
-  - bytestring
-  - directory
-  - filepath
   - inline-js
-  - inline-js-examples
-  - process
-  - tasty
-  - tasty-hunit
 
-tests:
-  inline-js-tests:
-    source-dirs: tests
-    main: inline-js-tests.hs
+library:
+  source-dirs: src
