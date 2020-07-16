@@ -17,6 +17,7 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.13 && < 5
+  - bytestring
   - inline-js
 
 library:
