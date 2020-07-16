@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9ee323038c7a3594a925cbcab355a0f26cb4a9628abccd6bff0f34b5cc31a0b0
+-- hash: 0b17b7111eb319490e0c96140991803fff480705bb6eb951ee5b33e194e2cef5
 
 name:           inline-js-tests
 version:        0.0.1.0
@@ -13,7 +13,7 @@ description:    Please see <https://github.com/tweag/inline-js> for details.
 category:       Web
 homepage:       https://github.com/tweag/inline-js#readme
 bug-reports:    https://github.com/tweag/inline-js/issues
-maintainer:     Shao Cheng <cheng.shao@tweag.io>
+maintainer:     Cheng Shao <cheng.shao@tweag.io>
 copyright:      (c) 2018 Tweag I/O
 license:        BSD-3-Clause
 license-file:   LICENSE

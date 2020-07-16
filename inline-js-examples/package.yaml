@@ -1,7 +1,7 @@
 name: inline-js-examples
 version: 0.0.1.0
 category: Web
-maintainer: Shao Cheng <cheng.shao@tweag.io>
+maintainer: Cheng Shao <cheng.shao@tweag.io>
 copyright: (c) 2018 Tweag I/O
 license: BSD-3-Clause
 github: tweag/inline-js

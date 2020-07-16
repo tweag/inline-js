@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 94d7673afed232b9e0d6b90987975a4a2f284341d879c68d5c4f3bd99ddc03f4
+-- hash: 015e1e0b9b4050cd421fa45695af6ac1101fb5727d78cdf168e83cf12dd25e79
 
 name:           inline-js-examples
 version:        0.0.1.0
@@ -13,7 +13,7 @@ description:    Please see <https://github.com/tweag/inline-js> for details.
 category:       Web
 homepage:       https://github.com/tweag/inline-js#readme
 bug-reports:    https://github.com/tweag/inline-js/issues
-maintainer:     Shao Cheng <cheng.shao@tweag.io>
+maintainer:     Cheng Shao <cheng.shao@tweag.io>
 copyright:      (c) 2018 Tweag I/O
 license:        BSD-3-Clause
 license-file:   LICENSE
