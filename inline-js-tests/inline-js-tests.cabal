@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 92e2c6d572d28e80d0adbb3489f880821c7ecfd98885856a44a409de89801d99
+-- hash: 9ee323038c7a3594a925cbcab355a0f26cb4a9628abccd6bff0f34b5cc31a0b0
 
 name:           inline-js-tests
 version:        0.0.1.0
@@ -31,6 +31,8 @@ test-suite inline-js-tests
   type: exitcode-stdio-1.0
   main-is: inline-js-tests.hs
   other-modules:
+      Paths_inline_js_tests
+  autogen-modules:
       Paths_inline_js_tests
   hs-source-dirs:
       tests

@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c6fc28204b8b7535811a166b2809863dfa824b71c4d6ea9acc2dfbb8bb63e80f
+-- hash: 07ec5f6ce82d5e3157fa0ac925a8058d835a051b91898952d3843e6bb1b515a5
 
 name:           inline-js-examples
 version:        0.0.1.0
@@ -31,6 +31,8 @@ library
   exposed-modules:
       Language.JavaScript.Inline.Examples.Wasm
   other-modules:
+      Paths_inline_js_examples
+  autogen-modules:
       Paths_inline_js_examples
   hs-source-dirs:
       src

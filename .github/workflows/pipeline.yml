@@ -221,6 +221,10 @@ jobs:
           cabal check
           popd
 
+          pushd inline-js-examples
+          cabal check
+          popd
+
           pushd inline-js-tests
           cabal check
           popd

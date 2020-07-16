@@ -32,3 +32,5 @@ tests:
   inline-js-tests:
     source-dirs: tests
     main: inline-js-tests.hs
+    generated-other-modules:
+      - Paths_inline_js_tests
