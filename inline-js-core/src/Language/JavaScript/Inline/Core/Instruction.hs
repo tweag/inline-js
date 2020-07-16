@@ -52,7 +52,7 @@ exportAsyncOrSync _is_sync _session@Session {..} f = do
   let args_type =
         map (\(Dict p) -> (toRawJSType p, rawJSType p)) $
           exportArgsFromJS (Proxy @f)
-      f' = monomorphize _session f
+      f' = exportMonomorphize _session f
   _sp_inbox <- newStablePtr _inbox
   _sp_f <- newStablePtr f'
   let _id_inbox = word64FromStablePtr _sp_inbox

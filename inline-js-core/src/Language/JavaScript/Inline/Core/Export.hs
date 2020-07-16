@@ -16,17 +16,17 @@ import Language.JavaScript.Inline.Core.Session
 -- 'ToJS' instance.
 class Export f where
   exportArgsFromJS :: Proxy f -> [Dict FromJS]
-  monomorphize :: Session -> f -> [LBS.ByteString] -> IO JSExpr
+  exportMonomorphize :: Session -> f -> [LBS.ByteString] -> IO JSExpr
 
 instance ToJS r => Export (IO r) where
   exportArgsFromJS _ = []
-  monomorphize _ m [] = toJS <$> m
-  monomorphize _ _ _ = fail "Language.JavaScript.Inline.Core.Export: impossible"
+  exportMonomorphize _ m [] = toJS <$> m
+  exportMonomorphize _ _ _ = fail "Language.JavaScript.Inline.Core.Export: impossible"
 
 instance (FromJS a, Export b) => Export (a -> b) where
   exportArgsFromJS _ =
     Dict (Proxy @a) : exportArgsFromJS (Proxy @b)
-  monomorphize s f (x : xs) = do
+  exportMonomorphize s f (x : xs) = do
     a <- fromJS s x
-    monomorphize s (f a) xs
-  monomorphize _ _ _ = fail "Language.JavaScript.Inline.Core.Export: impossible"
+    exportMonomorphize s (f a) xs
+  exportMonomorphize _ _ _ = fail "Language.JavaScript.Inline.Core.Export: impossible"
