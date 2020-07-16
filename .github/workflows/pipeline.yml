@@ -42,7 +42,7 @@ jobs:
       - name: test-node-14
         run: |
           node --version
-          cabal v2-run inline-js:inline-js-tests -- -j2
+          cabal v2-run inline-js-tests:inline-js-tests -- -j2
 
       - name: setup-node-13
         uses: actions/setup-node@v2.0.0
@@ -52,7 +52,7 @@ jobs:
       - name: test-node-13
         run: |
           node --version
-          cabal v2-run inline-js:inline-js-tests -- -j2
+          cabal v2-run inline-js-tests:inline-js-tests -- -j2
 
       - name: setup-node-12
         uses: actions/setup-node@v2.0.0
@@ -62,7 +62,7 @@ jobs:
       - name: test-node-12
         run: |
           node --version
-          cabal v2-run inline-js:inline-js-tests -- -j2
+          cabal v2-run inline-js-tests:inline-js-tests -- -j2
 
       - name: setup-node-10
         uses: actions/setup-node@v2.0.0
@@ -72,7 +72,7 @@ jobs:
       - name: test-node-10
         run: |
           node --version
-          cabal v2-run inline-js:inline-js-tests -- -j2
+          cabal v2-run inline-js-tests:inline-js-tests -- -j2
 
   stack:
     name: stack-${{ matrix.os }}
@@ -108,7 +108,7 @@ jobs:
       - name: test-node-14
         run: |
           node --version
-          stack test inline-js --test-arguments="-j2"
+          stack test inline-js-tests --test-arguments="-j2"
 
       - name: setup-node-13
         uses: actions/setup-node@v2.0.0
@@ -118,7 +118,7 @@ jobs:
       - name: test-node-13
         run: |
           node --version
-          stack test inline-js --test-arguments="-j2"
+          stack test inline-js-tests --test-arguments="-j2"
 
       - name: setup-node-12
         uses: actions/setup-node@v2.0.0
@@ -128,7 +128,7 @@ jobs:
       - name: test-node-12
         run: |
           node --version
-          stack test inline-js --test-arguments="-j2"
+          stack test inline-js-tests --test-arguments="-j2"
 
       - name: setup-node-10
         uses: actions/setup-node@v2.0.0
@@ -138,7 +138,7 @@ jobs:
       - name: test-node-10
         run: |
           node --version
-          stack test inline-js --test-arguments="-j2"
+          stack test inline-js-tests --test-arguments="-j2"
 
   stack-alpine:
     name: stack-alpine
@@ -180,22 +180,22 @@ jobs:
           rm -rf $HOME/.node/*
           curl https://unofficial-builds.nodejs.org/download/release/v14.5.0/node-v14.5.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
-          stack test inline-js --test-arguments="-j2"
+          stack test inline-js-tests --test-arguments="-j2"
 
           rm -rf $HOME/.node/*
           curl https://unofficial-builds.nodejs.org/download/release/v13.14.0/node-v13.14.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
-          stack test inline-js --test-arguments="-j2"
+          stack test inline-js-tests --test-arguments="-j2"
 
           rm -rf $HOME/.node/*
           curl https://unofficial-builds.nodejs.org/download/release/v12.18.2/node-v12.18.2-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
-          stack test inline-js --test-arguments="-j2"
+          stack test inline-js-tests --test-arguments="-j2"
 
           rm -rf $HOME/.node/*
           curl https://unofficial-builds.nodejs.org/download/release/v10.21.0/node-v10.21.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
-          stack test inline-js --test-arguments="-j2"
+          stack test inline-js-tests --test-arguments="-j2"
 
   sdist:
     name: sdist
@@ -218,6 +218,10 @@ jobs:
           popd
 
           pushd inline-js-core
+          cabal check
+          popd
+
+          pushd inline-js-tests
           cabal check
           popd
 

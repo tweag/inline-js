@@ -1,3 +1,4 @@
 packages:
   inline-js
   inline-js-core
+  inline-js-tests

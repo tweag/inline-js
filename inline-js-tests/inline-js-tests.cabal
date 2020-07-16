@@ -4,9 +4,9 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7f9c9a091136dc2fbd83df9a46b743e908c0e61ba223ffd78a128f89dfaa3602
+-- hash: 7507848db38f393f8e78e9d1415e8c475342132b7c054935524c11814782190e
 
-name:           inline-js
+name:           inline-js-tests
 version:        0.0.1.0
 synopsis:       Call JavaScript from Haskell.
 description:    Please see <https://github.com/tweag/inline-js> for details.
@@ -27,23 +27,24 @@ source-repository head
   type: git
   location: https://github.com/tweag/inline-js
 
-library
-  exposed-modules:
-      Language.JavaScript.Inline
+test-suite inline-js-tests
+  type: exitcode-stdio-1.0
+  main-is: inline-js-tests.hs
   other-modules:
-      Language.JavaScript.Inline.Aeson
-      Language.JavaScript.Inline.TH
-      Paths_inline_js
-  autogen-modules:
-      Paths_inline_js
+      Paths_inline_js_tests
   hs-source-dirs:
-      src
-  ghc-options: -Wall
+      tests
+  ghc-options: -Wall -threaded -rtsopts
   build-depends:
-      aeson
+      Cabal
+    , aeson
     , base >=4.13 && <5
     , bytestring
+    , directory
+    , filepath
+    , inline-js
     , inline-js-core
-    , language-javascript
-    , template-haskell
+    , process
+    , tasty
+    , tasty-hunit
   default-language: Haskell2010
