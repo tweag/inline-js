@@ -11,7 +11,6 @@ import Data.Binary.Get
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
-import qualified Data.List.NonEmpty as NE
 import Data.String
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Utils
@@ -30,9 +29,9 @@ data JSExprSegment
 -- 'Semigroup' instance for concating 'JSExpr'. It's also possible to embed
 -- other things into 'JSExpr', e.g. a buffer literal, JSON value or a 'JSVal'.
 newtype JSExpr = JSExpr
-  { unJSExpr :: NE.NonEmpty JSExprSegment
+  { unJSExpr :: [JSExprSegment]
   }
-  deriving (Semigroup, Show)
+  deriving (Semigroup, Monoid, Show)
 
 instance IsString JSExpr where
   fromString = JSExpr . pure . Code . stringToLBS
@@ -118,7 +117,7 @@ messageHSPut msg = case msg of
     word64Put = storablePut @Word64
     lbsPut s = storablePut (LBS.length s) <> lazyByteString s
     exprPut code =
-      word64Put (fromIntegral (NE.length (unJSExpr code)) :: Word64)
+      word64Put (fromIntegral (length (unJSExpr code)) :: Word64)
         <> foldMap' exprSegmentPut (unJSExpr code)
     exprSegmentPut (Code s) = word8Put 0 <> lbsPut s
     exprSegmentPut (BufferLiteral s) = word8Put 1 <> lbsPut s
