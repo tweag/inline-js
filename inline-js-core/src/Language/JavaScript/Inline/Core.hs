@@ -20,6 +20,10 @@ module Language.JavaScript.Inline.Core
     importCJS,
     importMJS,
 
+    -- * Importing JavaScript functions to Haskell
+    Import,
+    importJSFunc,
+
     -- * Exporting Haskell functions to JavaScript
     Export,
     export,
@@ -38,6 +42,7 @@ where
 import Language.JavaScript.Inline.Core.Class
 import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.Export
+import Language.JavaScript.Inline.Core.Import
 import Language.JavaScript.Inline.Core.Instruction
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message

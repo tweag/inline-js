@@ -62,6 +62,12 @@ main =
                 y = I 7
             r <- eval s [expr| $x * $y |]
             r @?= I 42,
+        testCase "import" $
+          withDefaultSession $ \s -> do
+            v <- eval s [expr| (x, y) => x * y |]
+            let f = importJSFunc s v
+            r <- f (I 6) (I 7)
+            r @?= I 42,
         testCase "export" $
           withDefaultSession $ \s -> do
             let f :: V -> V -> IO V
