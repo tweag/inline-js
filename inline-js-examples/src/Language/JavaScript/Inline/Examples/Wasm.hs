@@ -83,3 +83,8 @@ wasmCompile _session _module_buf =
 wasmInstantiate :: Session -> JSVal -> JSVal -> IO JSVal
 wasmInstantiate _session _module _import_obj =
   eval _session [expr| WebAssembly.instantiate($_module, $_import_obj) |]
+
+exportGet :: Import f => Session -> JSVal -> String -> IO f
+exportGet _session _instance (Aeson -> _export_name) = do
+  _export_js_func <- eval _session [expr| $_instance.exports[$_export_name] |]
+  pure $ importJSFunc _session _export_js_func
