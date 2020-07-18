@@ -10,13 +10,13 @@ module Language.JavaScript.Inline.Core.Session where
 
 import Control.Concurrent
 import Control.Concurrent.STM
+import Control.Exception
 import qualified Data.ByteString as BS
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
 import Data.Maybe
 import Distribution.Simple.Utils
 import Foreign
-import GHC.IO (catchAny)
 import Language.JavaScript.Inline.Core.IPC
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.NodeVersion
@@ -117,21 +117,21 @@ newSession Config {..} = do
               atomically $ putTMVar _inbox jsEvalResponseContent
             HSEvalRequest {..} -> do
               _ <-
-                forkIO $
-                  catchAny
-                    ( do
-                        let sp = word64ToStablePtr hsEvalRequestFunc
-                        f <- deRefStablePtr sp
-                        r <- f args
-                        sessionSend
-                          _session
-                          HSEvalResponse
-                            { hsEvalResponseIsSync = hsEvalRequestIsSync,
-                              hsEvalResponseId = hsEvalRequestId,
-                              hsEvalResponseContent = Right r
-                            }
-                    )
-                    ( \err -> do
+                forkFinally
+                  ( do
+                      let sp = word64ToStablePtr hsEvalRequestFunc
+                      f <- deRefStablePtr sp
+                      r <- f args
+                      sessionSend
+                        _session
+                        HSEvalResponse
+                          { hsEvalResponseIsSync = hsEvalRequestIsSync,
+                            hsEvalResponseId = hsEvalRequestId,
+                            hsEvalResponseContent = Right r
+                          }
+                  )
+                  ( \case
+                      Left (SomeException err) -> do
                         let err_buf = stringToLBS $ show err
                         sessionSend
                           _session
@@ -140,7 +140,8 @@ newSession Config {..} = do
                               hsEvalResponseId = hsEvalRequestId,
                               hsEvalResponseContent = Left err_buf
                             }
-                    )
+                      Right () -> pure ()
+                  )
               pure ()
             -- todo: should make all subsequent operations invalid immediately
             -- here, possibly via a session state atomic variable. also cleanup
