@@ -45,7 +45,7 @@ blockQuoter js_code = do
       js_code_header =
         foldr'
           (\m0 m1 -> [|$(m0) <> $(m1)|])
-          [|fromString ""|]
+          [|(mempty :: JSExpr)|]
           [ [|fromString $(litE $ stringL $ "const $" <> var <> " = ") <> toJS $(varE $ mkName var) <> fromString "; "|]
             | var <- vars
           ]
