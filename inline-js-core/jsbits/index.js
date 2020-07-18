@@ -266,14 +266,7 @@ class WorkerContext {
           eval_result_buf.copy(resp_buf, 18);
         } catch (err) {
           // EvalError
-          const err_str = `${err.stack ? err.stack : err}`;
-          const err_buf = Buffer.from(err_str, "utf-8");
-          resp_buf = Buffer.allocUnsafe(18 + err_buf.length);
-          resp_buf.writeUInt8(0, 0);
-          resp_buf.writeBigUInt64LE(req_id, 1);
-          resp_buf.writeUInt8(0, 9);
-          resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 10);
-          err_buf.copy(resp_buf, 18);
+          resp_buf = this.onEvalError(req_id, err);
         }
         worker_threads.parentPort.postMessage(resp_buf);
         break;
@@ -387,14 +380,7 @@ class WorkerContext {
           js_func_buf.copy(resp_buf, 18);
         } catch (err) {
           // EvalError
-          const err_str = `${err.stack ? err.stack : err}`;
-          const err_buf = Buffer.from(err_str, "utf-8");
-          resp_buf = Buffer.allocUnsafe(18 + err_buf.length);
-          resp_buf.writeUInt8(0, 0);
-          resp_buf.writeBigUInt64LE(req_id, 1);
-          resp_buf.writeUInt8(0, 9);
-          resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 10);
-          err_buf.copy(resp_buf, 18);
+          resp_buf = this.onEvalError(req_id, err);
         }
         worker_threads.parentPort.postMessage(resp_buf);
         break;
@@ -447,6 +433,18 @@ class WorkerContext {
         throw new Error(`inline-js invalid message ${buf_msg}`);
       }
     }
+  }
+
+  onEvalError(req_id, err) {
+    const err_str = `${err.stack ? err.stack : err}`;
+    const err_buf = Buffer.from(err_str, "utf-8");
+    const resp_buf = Buffer.allocUnsafe(18 + err_buf.length);
+    resp_buf.writeUInt8(0, 0);
+    resp_buf.writeBigUInt64LE(req_id, 1);
+    resp_buf.writeUInt8(0, 9);
+    resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 10);
+    err_buf.copy(resp_buf, 18);
+    return resp_buf;
   }
 }
 
