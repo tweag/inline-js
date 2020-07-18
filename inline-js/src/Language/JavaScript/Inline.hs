@@ -8,6 +8,8 @@ module Language.JavaScript.Inline
     -- * QuasiQuoters for inline JavaScript
     expr,
     block,
+    exprAsync,
+    blockAsync,
   )
 where
 
