@@ -12,7 +12,6 @@ import Language.JavaScript.Parser.Lexer
 
 -- | Generate a 'JSExpr' from an inline JavaScript expression. Use @$var@ to
 -- refer to a Haskell variable @var@ (its type should be an 'ToJS' instance).
--- Top-level @await@ is supported.
 expr :: QuasiQuoter
 expr =
   QuasiQuoter
@@ -49,4 +48,4 @@ blockQuoter js_code = do
           [ [|fromString $(litE $ stringL $ "const $" <> var <> " = ") <> toJS $(varE $ mkName var) <> fromString "; "|]
             | var <- vars
           ]
-  [|fromString "(async () => { " <> $(js_code_header) <> fromString $(litE $ stringL $ js_code <> " })()")|]
+  [|fromString "(() => { " <> $(js_code_header) <> fromString $(litE $ stringL $ js_code <> " })()")|]

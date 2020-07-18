@@ -126,7 +126,7 @@ class WorkerContext {
     Object.freeze(this);
   }
 
-  toJS(buf, p, async) {
+  toJS(buf, p) {
     const jsval_tmp = [];
     const expr_segs_len = Number(buf.readBigUInt64LE(p));
     p += 8;
@@ -199,7 +199,7 @@ class WorkerContext {
       for (let i = 0; i < jsval_tmp.length; ++i) {
         expr_params = `${expr_params}, __t${i.toString(36)}`;
       }
-      expr = `${async ? "async " : ""}(${expr_params}) => (\n${expr}\n)`;
+      expr = `(${expr_params}) => (\n${expr}\n)`;
       result = vm.runInThisContext(expr, {
         lineOffset: -1,
         importModuleDynamically: (spec) => import(spec),
@@ -251,7 +251,7 @@ class WorkerContext {
         const req_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         try {
-          const r = this.toJS(buf_msg, p, true);
+          const r = this.toJS(buf_msg, p);
           p = r.p;
           const eval_result = await r.result;
 
@@ -292,7 +292,7 @@ class WorkerContext {
           p += 8;
           const hs_func_args_type = [];
           for (let i = 0; i < hs_func_args_len; ++i) {
-            const r = this.toJS(buf_msg, p, false);
+            const r = this.toJS(buf_msg, p);
             p = r.p;
             const raw_type = buf_msg.readUInt8(p);
             p += 1;
@@ -365,7 +365,7 @@ class WorkerContext {
                   throw err;
                 }
                 case 1: {
-                  const r = this.toJS(buf_msg, p, false);
+                  const r = this.toJS(buf_msg, p);
                   p = r.p;
                   return r.result;
                 }
@@ -419,7 +419,7 @@ class WorkerContext {
             break;
           }
           case 1: {
-            const r = this.toJS(buf_msg, p, false);
+            const r = this.toJS(buf_msg, p);
             p = r.p;
             hs_eval_resp_promise.resolve(r.result);
             break;
