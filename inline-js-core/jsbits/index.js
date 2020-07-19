@@ -15,7 +15,7 @@ class JSValContext {
   }
 
   new(x) {
-    const i = this.jsvalLast++;
+    const i = ++this.jsvalLast;
     this.jsvalMap.set(i, x);
     return i;
   }
@@ -30,6 +30,12 @@ class JSValContext {
   free(i) {
     if (!this.jsvalMap.delete(i)) {
       throw new Error(`jsval.free(${i}): invalid key`);
+    }
+    if (i === this.jsvalLast) {
+      --this.jsvalLast;
+      while (!this.jsvalMap.has(this.jsvalLast) && this.jsvalMap.size > 0) {
+        --this.jsvalLast;
+      }
     }
   }
 
