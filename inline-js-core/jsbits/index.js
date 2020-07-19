@@ -63,6 +63,7 @@ class MainContext {
     this.recvLoop();
     Object.freeze(this);
   }
+
   recvLoop() {
     let buf = Buffer.allocUnsafe(0);
     process.stdin.on("data", (c) => {
@@ -87,6 +88,7 @@ class MainContext {
       }
     });
   }
+
   send(buf_msg) {
     return new Promise((resolve, reject) => {
       const buf_send = Buffer.allocUnsafe(8 + buf_msg.length);
@@ -95,9 +97,11 @@ class MainContext {
       process.stdout.write(buf_send, (err) => (err ? reject(err) : resolve()));
     });
   }
+
   onWorkerMessage(buf_msg) {
     this.send(bufferFromArrayBufferView(buf_msg));
   }
+
   onUncaughtException(err) {
     const err_str = `${err.stack ? err.stack : err}`;
     const err_buf = Buffer.from(err_str, "utf-8");
@@ -151,6 +155,7 @@ class WorkerContext {
           has_code = has_code || Boolean(expr_seg_len);
           break;
         }
+
         case 1: {
           // BufferLiteral
           const buf_len = Number(buf.readBigUInt64LE(p));
@@ -160,6 +165,7 @@ class WorkerContext {
           p += buf_len;
           break;
         }
+
         case 2: {
           // StringLiteral
           const buf_len = Number(buf.readBigUInt64LE(p));
@@ -170,6 +176,7 @@ class WorkerContext {
           p += buf_len;
           break;
         }
+
         case 3: {
           // JSONLiteral
           const buf_len = Number(buf.readBigUInt64LE(p));
@@ -182,6 +189,7 @@ class WorkerContext {
           p += buf_len;
           break;
         }
+
         case 4: {
           // JSValLiteral
           const jsval_id =
@@ -190,6 +198,7 @@ class WorkerContext {
           p += 8;
           break;
         }
+
         default: {
           throw new Error(`toJS failed: ${buf}`);
         }
@@ -221,6 +230,7 @@ class WorkerContext {
         // RawNone
         return Buffer.allocUnsafe(0);
       }
+
       case 1: {
         // RawBuffer
         return Buffer.isBuffer(val)
@@ -229,16 +239,19 @@ class WorkerContext {
           ? bufferFromArrayBufferView(val)
           : Buffer.from(val);
       }
+
       case 2: {
         // RawJSON
         return Buffer.from(JSON.stringify(val), "utf-8");
       }
+
       case 3: {
         // RawJSVal
         const val_buf = Buffer.allocUnsafe(8);
         val_buf.writeBigUInt64LE(this.jsval.new(val), 0);
         return val_buf;
       }
+
       default: {
         throw new Error(`fromJS: invalid type ${val_type}`);
       }
@@ -277,6 +290,7 @@ class WorkerContext {
         worker_threads.parentPort.postMessage(resp_buf);
         break;
       }
+
       case 1: {
         // HSExportRequest
         let resp_buf;
@@ -363,11 +377,13 @@ class WorkerContext {
                   p += err_len;
                   throw err;
                 }
+
                 case 1: {
                   const r = this.toJS(buf_msg, p);
                   p = r.p;
                   return r.result;
                 }
+
                 default: {
                   throw new Error(`inline-js invalid message ${buf_msg}`);
                 }
@@ -391,6 +407,7 @@ class WorkerContext {
         worker_threads.parentPort.postMessage(resp_buf);
         break;
       }
+
       case 2: {
         // HSEvalResponse
         const is_sync = Boolean(buf_msg.readUInt8(p));
@@ -410,18 +427,21 @@ class WorkerContext {
             hs_eval_resp_promise.reject(err);
             break;
           }
+
           case 1: {
             const r = this.toJS(buf_msg, p);
             p = r.p;
             hs_eval_resp_promise.resolve(r.result);
             break;
           }
+
           default: {
             throw new Error(`inline-js invalid message ${buf_msg}`);
           }
         }
         break;
       }
+
       case 3: {
         // JSValFree
         const jsval_id = buf_msg.readBigUInt64LE(p);
@@ -429,12 +449,14 @@ class WorkerContext {
         this.jsval.free(jsval_id);
         break;
       }
+
       case 4: {
         // Close
         this.jsval.clear();
         worker_threads.parentPort.unref();
         break;
       }
+
       default: {
         throw new Error(`inline-js invalid message ${buf_msg}`);
       }
