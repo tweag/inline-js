@@ -47,7 +47,7 @@ class MainContext {
         Number.parseInt(process.env.INLINE_JS_EXPORT_SYNC_BUFFER_SIZE, 10) *
           0x100000
     );
-    this.exportSyncMutex = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
+    this.exportSyncFlag = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
     this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 4);
     this.worker = new worker_threads.Worker(__filename, {
       stdout: true,
@@ -70,8 +70,8 @@ class MainContext {
         if (buf_msg.readUInt8(0) === 2 && buf_msg.readUInt8(1) === 1) {
           this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 0);
           buf_msg.copy(this.exportSyncBuffer, 4);
-          Atomics.store(this.exportSyncMutex, 0, 1);
-          Atomics.notify(this.exportSyncMutex, 0);
+          Atomics.store(this.exportSyncFlag, 0, 1);
+          Atomics.notify(this.exportSyncFlag, 0);
           continue;
         }
         if (buf_msg.readUInt8(0) === 4) {
@@ -106,7 +106,7 @@ class MainContext {
 class WorkerContext {
   constructor() {
     this.exportSyncArrayBuffer = worker_threads.workerData;
-    this.exportSyncMutex = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
+    this.exportSyncFlag = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
     this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 4);
     this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
@@ -338,12 +338,12 @@ class WorkerContext {
             worker_threads.parentPort.postMessage(req_buf);
 
             if (is_sync) {
-              Atomics.wait(this.exportSyncMutex, 0, 0);
-              Atomics.store(this.exportSyncMutex, 0, 0);
+              Atomics.wait(this.exportSyncFlag, 0, 0);
               const buf_msg_len = this.exportSyncBuffer.readUInt32LE(0);
               const buf_msg = Buffer.from(
                 this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
               );
+              Atomics.store(this.exportSyncFlag, 0, 0);
               let p = 10;
               const hs_eval_resp_tag = buf_msg.readUInt8(p);
               p += 1;
