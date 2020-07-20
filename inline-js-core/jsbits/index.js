@@ -31,10 +31,15 @@ class JSValContext {
     if (!this.jsvalMap.delete(i)) {
       throw new Error(`jsval.free(${i}): invalid key`);
     }
+
     if (i === this.jsvalLast) {
-      --this.jsvalLast;
-      while (!this.jsvalMap.has(this.jsvalLast) && this.jsvalMap.size > 0) {
+      if (this.jsvalMap.size > 0) {
         --this.jsvalLast;
+        while (!this.jsvalMap.has(this.jsvalLast)) {
+          --this.jsvalLast;
+        }
+      } else {
+        this.jsvalLast = 0n;
       }
     }
   }
@@ -319,6 +324,7 @@ class WorkerContext {
                 `inline-js export function error: arity mismatch, expected ${hs_func_args_len} arguments, got ${js_args.length}`
               );
             }
+
             const hs_args_buf = [];
             for (let i = 0; i < hs_func_args_len; ++i) {
               hs_args_buf.push(
