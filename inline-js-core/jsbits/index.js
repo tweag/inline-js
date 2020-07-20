@@ -79,7 +79,10 @@ class MainContext {
         if (buf.length < 8 + len) return;
         const buf_msg = buf.slice(8, 8 + len);
         buf = buf.slice(8 + len);
+
+        Atomics.wait(this.exportSyncFlags, 0, 2);
         const export_sync_state = Atomics.load(this.exportSyncFlags, 0);
+
         if (export_sync_state === 1) {
           this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 0);
           buf_msg.copy(this.exportSyncBuffer, 4);
@@ -87,6 +90,7 @@ class MainContext {
           Atomics.notify(this.exportSyncFlags, 0, 1);
           continue;
         }
+
         if (buf_msg.readUInt8(0) === 4) {
           process.stdin.unref();
         }
@@ -381,6 +385,7 @@ class WorkerContext {
                 this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
               );
               Atomics.store(this.exportSyncFlags, 0, 0);
+
               let p = 10;
               const hs_eval_resp_tag = buf_msg.readUInt8(p);
               p += 1;
