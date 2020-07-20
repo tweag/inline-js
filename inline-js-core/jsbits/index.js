@@ -53,16 +53,16 @@ class JSValContext {
 class MainContext {
   constructor() {
     process.on("uncaughtException", (err) => this.onUncaughtException(err));
-    this.exportSyncArrayBuffer = new SharedArrayBuffer(
+    const exportSyncArrayBuffer = new SharedArrayBuffer(
       8 +
         Number.parseInt(process.env.INLINE_JS_EXPORT_SYNC_BUFFER_SIZE, 10) *
           0x100000
     );
-    this.exportSyncFlags = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
-    this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 4);
+    this.exportSyncFlags = new Int32Array(exportSyncArrayBuffer, 0, 1);
+    this.exportSyncBuffer = Buffer.from(exportSyncArrayBuffer, 4);
     this.worker = new worker_threads.Worker(__filename, {
       stdout: true,
-      workerData: this.exportSyncArrayBuffer,
+      workerData: exportSyncArrayBuffer,
     });
     this.worker.on("message", (buf_msg) => this.onWorkerMessage(buf_msg));
     this.recvLoop();
@@ -121,9 +121,9 @@ class MainContext {
 
 class WorkerContext {
   constructor() {
-    this.exportSyncArrayBuffer = worker_threads.workerData;
-    this.exportSyncFlags = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
-    this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 4);
+    const exportSyncArrayBuffer = worker_threads.workerData;
+    this.exportSyncFlags = new Int32Array(exportSyncArrayBuffer, 0, 1);
+    this.exportSyncBuffer = Buffer.from(exportSyncArrayBuffer, 4);
     this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
     this.hsCtx = new JSValContext();
@@ -265,6 +265,13 @@ class WorkerContext {
   }
 
   async onParentMessage(buf_msg) {
+    const resp_buf = await this.handleParentMessage(buf_msg);
+    if (resp_buf) {
+      worker_threads.parentPort.postMessage(resp_buf);
+    }
+  }
+
+  handleParentMessage(buf_msg) {
     buf_msg = bufferFromArrayBufferView(buf_msg);
     let p = 0;
     const msg_tag = buf_msg.readUInt8(p);
@@ -272,34 +279,38 @@ class WorkerContext {
     switch (msg_tag) {
       case 0: {
         // JSEvalRequest
-        let resp_buf;
         const req_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         try {
           const r = this.toJS(buf_msg, p);
           p = r.p;
-          const eval_result = await r.result;
 
-          const return_type = buf_msg.readUInt8(p);
-          p += 1;
-          const eval_result_buf = this.fromJS(eval_result, return_type);
-          resp_buf = Buffer.allocUnsafe(18 + eval_result_buf.length);
-          resp_buf.writeUInt8(0, 0);
-          resp_buf.writeBigUInt64LE(req_id, 1);
-          resp_buf.writeUInt8(1, 9);
-          resp_buf.writeBigUInt64LE(BigInt(eval_result_buf.length), 10);
-          eval_result_buf.copy(resp_buf, 18);
+          const on_eval_result = (eval_result) => {
+            const return_type = buf_msg.readUInt8(p);
+            p += 1;
+            const eval_result_buf = this.fromJS(eval_result, return_type);
+            const resp_buf = Buffer.allocUnsafe(18 + eval_result_buf.length);
+            resp_buf.writeUInt8(0, 0);
+            resp_buf.writeBigUInt64LE(req_id, 1);
+            resp_buf.writeUInt8(1, 9);
+            resp_buf.writeBigUInt64LE(BigInt(eval_result_buf.length), 10);
+            eval_result_buf.copy(resp_buf, 18);
+            return resp_buf;
+          };
+
+          return isPromise(r.result)
+            ? r.result
+                .then(on_eval_result)
+                .catch((err) => this.onEvalError(req_id, err))
+            : on_eval_result(r.result);
         } catch (err) {
           // EvalError
-          resp_buf = this.onEvalError(req_id, err);
+          return this.onEvalError(req_id, err);
         }
-        worker_threads.parentPort.postMessage(resp_buf);
-        break;
       }
 
       case 1: {
         // HSExportRequest
-        let resp_buf;
         const is_sync = Boolean(buf_msg.readUInt8(p));
         p += 1;
         const req_id = buf_msg.readBigUInt64LE(p);
@@ -405,18 +416,17 @@ class WorkerContext {
           };
 
           const js_func_buf = this.fromJS(js_func, 3);
-          resp_buf = Buffer.allocUnsafe(18 + js_func_buf.length);
+          const resp_buf = Buffer.allocUnsafe(18 + js_func_buf.length);
           resp_buf.writeUInt8(0, 0);
           resp_buf.writeBigUInt64LE(req_id, 1);
           resp_buf.writeUInt8(1, 9);
           resp_buf.writeBigUInt64LE(BigInt(js_func_buf.length), 10);
           js_func_buf.copy(resp_buf, 18);
+          return resp_buf;
         } catch (err) {
           // EvalError
-          resp_buf = this.onEvalError(req_id, err);
+          return this.onEvalError(req_id, err);
         }
-        worker_threads.parentPort.postMessage(resp_buf);
-        break;
       }
 
       case 2: {
@@ -450,7 +460,7 @@ class WorkerContext {
             throw new Error(`inline-js invalid message ${buf_msg}`);
           }
         }
-        break;
+        return;
       }
 
       case 3: {
@@ -458,14 +468,14 @@ class WorkerContext {
         const jsval_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         this.jsval.free(jsval_id);
-        break;
+        return;
       }
 
       case 4: {
         // Close
         this.jsval.clear();
         worker_threads.parentPort.unref();
-        break;
+        return;
       }
 
       default: {
@@ -496,6 +506,10 @@ function newPromise() {
   p.resolve = promise_resolve;
   p.reject = promise_reject;
   return p;
+}
+
+function isPromise(obj) {
+  return obj && typeof obj.then === "function";
 }
 
 function bufferFromArrayBufferView(a) {
