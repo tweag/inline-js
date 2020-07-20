@@ -352,13 +352,8 @@ class WorkerContext {
                 hs_args_buf.reduce((acc, hs_arg) => acc + hs_arg.length, 0)
             );
 
-            let hs_eval_req_promise, hs_eval_req_id;
-            if (is_sync) {
-              hs_eval_req_id = 0n;
-            } else {
-              hs_eval_req_promise = newPromise();
-              hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
-            }
+            const hs_eval_req_promise = newPromise();
+            const hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
 
             req_buf.writeUInt8(1, 0);
             req_buf.writeUInt8(Number(is_sync), 1);
