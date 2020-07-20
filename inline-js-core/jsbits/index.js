@@ -49,12 +49,12 @@ class MainContext {
   constructor() {
     process.on("uncaughtException", (err) => this.onUncaughtException(err));
     this.exportSyncArrayBuffer = new SharedArrayBuffer(
-      12 +
+      8 +
         Number.parseInt(process.env.INLINE_JS_EXPORT_SYNC_BUFFER_SIZE, 10) *
           0x100000
     );
-    this.exportSyncFlags = new Int32Array(this.exportSyncArrayBuffer, 0, 2);
-    this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 8);
+    this.exportSyncFlags = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
+    this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 4);
     this.worker = new worker_threads.Worker(__filename, {
       stdout: true,
       workerData: this.exportSyncArrayBuffer,
@@ -74,14 +74,12 @@ class MainContext {
         if (buf.length < 8 + len) return;
         const buf_msg = buf.slice(8, 8 + len);
         buf = buf.slice(8 + len);
-        mutexLock(this.exportSyncFlags, 0);
-        const export_sync_state = Atomics.load(this.exportSyncFlags, 1);
-        mutexUnlock(this.exportSyncFlags, 0);
+        const export_sync_state = Atomics.load(this.exportSyncFlags, 0);
         if (export_sync_state === 1) {
           this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 0);
           buf_msg.copy(this.exportSyncBuffer, 4);
-          Atomics.store(this.exportSyncFlags, 1, 2);
-          Atomics.notify(this.exportSyncFlags, 1);
+          Atomics.store(this.exportSyncFlags, 0, 2);
+          Atomics.notify(this.exportSyncFlags, 0, 1);
           continue;
         }
         if (buf_msg.readUInt8(0) === 4) {
@@ -119,8 +117,8 @@ class MainContext {
 class WorkerContext {
   constructor() {
     this.exportSyncArrayBuffer = worker_threads.workerData;
-    this.exportSyncFlags = new Int32Array(this.exportSyncArrayBuffer, 0, 2);
-    this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 8);
+    this.exportSyncFlags = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
+    this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 4);
     this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
     this.hsCtx = new JSValContext();
@@ -358,21 +356,19 @@ class WorkerContext {
               p += hs_arg.length;
             }
 
-            if(is_sync) {
-              mutexLock(this.exportSyncFlags, 0);
-              Atomics.store(this.exportSyncFlags, 1, 1);
-              mutexUnlock(this.exportSyncFlags, 0);
+            if (is_sync) {
+              Atomics.store(this.exportSyncFlags, 0, 1);
             }
 
             worker_threads.parentPort.postMessage(req_buf);
 
             if (is_sync) {
-              Atomics.wait(this.exportSyncFlags, 1, 1);
+              Atomics.wait(this.exportSyncFlags, 0, 1);
               const buf_msg_len = this.exportSyncBuffer.readUInt32LE(0);
               const buf_msg = Buffer.from(
                 this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
               );
-              Atomics.store(this.exportSyncFlags, 1, 0);
+              Atomics.store(this.exportSyncFlags, 0, 0);
               let p = 10;
               const hs_eval_resp_tag = buf_msg.readUInt8(p);
               p += 1;
@@ -483,17 +479,6 @@ class WorkerContext {
     err_buf.copy(resp_buf, 18);
     return resp_buf;
   }
-}
-
-function mutexLock(arr, i) {
-  while (Atomics.compareExchange(arr, i, 0, 1) === 1) {
-    Atomics.wait(arr, i, 1);
-  }
-}
-
-function mutexUnlock(arr, i) {
-  Atomics.store(arr, i, 0);
-  Atomics.notify(arr, i, 1);
 }
 
 function newPromise() {
