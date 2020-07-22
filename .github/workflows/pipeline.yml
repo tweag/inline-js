@@ -37,7 +37,7 @@ jobs:
       - name: setup-node-14
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 14.5.0
+          node-version: 14.6.0
 
       - name: test-node-14
         run: |
@@ -67,7 +67,7 @@ jobs:
       - name: setup-node-10
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 10.21.0
+          node-version: 10.22.0
 
       - name: test-node-10
         run: |
@@ -103,7 +103,7 @@ jobs:
       - name: setup-node-14
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 14.5.0
+          node-version: 14.6.0
 
       - name: test-node-14
         run: |
@@ -133,7 +133,7 @@ jobs:
       - name: setup-node-10
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 10.21.0
+          node-version: 10.22.0
 
       - name: test-node-10
         run: |
@@ -178,7 +178,7 @@ jobs:
           stack -j2 build --test --no-run-tests
 
           rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v14.5.0/node-v14.5.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          curl https://unofficial-builds.nodejs.org/download/release/v14.6.0/node-v14.6.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
           stack test inline-js-tests --test-arguments="-j2"
 
@@ -193,7 +193,7 @@ jobs:
           stack test inline-js-tests --test-arguments="-j2"
 
           rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v10.21.0/node-v10.21.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          curl https://unofficial-builds.nodejs.org/download/release/v10.22.0/node-v10.22.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
           stack test inline-js-tests --test-arguments="-j2"
 
@@ -285,7 +285,7 @@ jobs:
       - name: setup-node-14
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 14.5.0
+          node-version: 14.6.0
 
       - name: setup-deps
         run: |

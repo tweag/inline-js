@@ -1,4 +1,4 @@
-resolver: nightly-2020-07-12
+resolver: nightly-2020-07-21
 packages:
   - inline-js
   - inline-js-core
