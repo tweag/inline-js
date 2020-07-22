@@ -509,7 +509,7 @@ function newPromise() {
 }
 
 function isPromise(obj) {
-  return obj && typeof obj.then === "function";
+  return Boolean(obj) && typeof obj.then === "function";
 }
 
 function bufferFromArrayBufferView(a) {
