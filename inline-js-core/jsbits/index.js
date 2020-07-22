@@ -11,7 +11,6 @@ class JSValContext {
   constructor() {
     this.jsvalMap = new Map();
     this.jsvalLast = 0n;
-    Object.seal(this);
   }
 
   new(x) {
@@ -66,7 +65,6 @@ class MainContext {
     });
     this.worker.on("message", (buf_msg) => this.onWorkerMessage(buf_msg));
     this.recvLoop();
-    Object.freeze(this);
   }
 
   recvLoop() {
@@ -143,7 +141,6 @@ class WorkerContext {
         this.onParentMessage(buf_msg)
       );
     })();
-    Object.freeze(this);
   }
 
   toJS(buf, p) {
