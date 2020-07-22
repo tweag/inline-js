@@ -353,7 +353,9 @@ class WorkerContext {
                 hs_args_buf.reduce((acc, hs_arg) => acc + hs_arg.length, 0)
             );
 
-            const hs_eval_req_promise = newPromise();
+            const hs_eval_req_promise = is_sync
+              ? newPromise().catch(() => {})
+              : newPromise();
             const hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
 
             req_buf.writeUInt8(1, 0);
@@ -500,8 +502,16 @@ function newPromise() {
     promise_resolve = resolve;
     promise_reject = reject;
   });
-  p.resolve = promise_resolve;
-  p.reject = promise_reject;
+  p.resolve = (v) => {
+    p.fulfilled = true;
+    p.value = v;
+    promise_resolve(v);
+  };
+  p.reject = (err) => {
+    p.rejected = true;
+    p.reason = err;
+    p.promise_reject(err);
+  };
   return p;
 }
 
