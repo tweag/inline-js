@@ -171,7 +171,7 @@ class WorkerContext {
           const buf_len = Number(buf.readBigUInt64LE(p));
           p += 8;
           const buf_id = jsval_tmp.push(buf.slice(p, p + buf_len)) - 1;
-          expr = `${expr}__t${buf_id.toString(36)}`;
+          expr = `${expr}__${buf_id}`;
           p += buf_len;
           break;
         }
@@ -182,7 +182,7 @@ class WorkerContext {
           p += 8;
           const str_id =
             jsval_tmp.push(this.decoder.end(buf.slice(p, p + buf_len))) - 1;
-          expr = `${expr}__t${str_id.toString(36)}`;
+          expr = `${expr}__${str_id}`;
           p += buf_len;
           break;
         }
@@ -195,7 +195,7 @@ class WorkerContext {
             jsval_tmp.push(
               JSON.parse(this.decoder.end(buf.slice(p, p + buf_len)))
             ) - 1;
-          expr = `${expr}__t${json_id.toString(36)}`;
+          expr = `${expr}__${json_id}`;
           p += buf_len;
           break;
         }
@@ -204,7 +204,7 @@ class WorkerContext {
           // JSValLiteral
           const jsval_id =
             jsval_tmp.push(this.jsval.get(buf.readBigUInt64LE(p))) - 1;
-          expr = `${expr}__t${jsval_id.toString(36)}`;
+          expr = `${expr}__${jsval_id}`;
           p += 8;
           break;
         }
@@ -222,7 +222,7 @@ class WorkerContext {
     } else {
       let expr_params = "require";
       for (let i = 0; i < jsval_tmp.length; ++i) {
-        expr_params = `${expr_params}, __t${i.toString(36)}`;
+        expr_params = `${expr_params}, __${i}`;
       }
       expr = `(${expr_params}) => (\n${expr}\n)`;
       result = vm.runInThisContext(expr, {
