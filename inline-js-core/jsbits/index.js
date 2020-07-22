@@ -78,16 +78,18 @@ class MainContext {
         const buf_msg = buf.slice(8, 8 + len);
         buf = buf.slice(8 + len);
 
-        Atomics.wait(this.exportSyncFlags, 0, 2);
-        const export_sync_state = Atomics.load(this.exportSyncFlags, 0);
+        mutexLock(this.exportSyncFlags, 0);
 
+        const export_sync_state = this.exportSyncBuffer.readUInt32LE(0);
         if (export_sync_state === 1) {
           this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 4);
           buf_msg.copy(this.exportSyncBuffer, 8);
-          Atomics.store(this.exportSyncFlags, 0, 2);
-          Atomics.notify(this.exportSyncFlags, 0, 1);
+          this.exportSyncBuffer.writeUInt32LE(2, 0);
+          mutexUnlock(this.exportSyncFlags, 0);
           continue;
         }
+
+        mutexUnlock(this.exportSyncFlags, 0);
 
         if (buf_msg.readUInt8(0) === 4) {
           process.stdin.unref();
@@ -353,10 +355,11 @@ class WorkerContext {
                 hs_args_buf.reduce((acc, hs_arg) => acc + hs_arg.length, 0)
             );
 
-            const hs_eval_req_promise = is_sync
-              ? newPromise().catch(() => {})
-              : newPromise();
+            const hs_eval_req_promise = newPromise();
             const hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
+            if (is_sync) {
+              hs_eval_req_promise.catch(() => {});
+            }
 
             req_buf.writeUInt8(1, 0);
             req_buf.writeUInt8(Number(is_sync), 1);
@@ -372,41 +375,53 @@ class WorkerContext {
             }
 
             if (is_sync) {
-              Atomics.store(this.exportSyncFlags, 0, 1);
+              mutexLock(this.exportSyncFlags, 0);
+              this.exportSyncBuffer.writeUInt32LE(1, 0);
+              mutexUnlock(this.exportSyncFlags, 0);
             }
 
             worker_threads.parentPort.postMessage(req_buf);
 
             if (is_sync) {
-              Atomics.wait(this.exportSyncFlags, 0, 1);
-              const buf_msg_len = this.exportSyncBuffer.readUInt32LE(4);
-              const buf_msg = Buffer.from(
-                this.exportSyncBuffer.slice(8, 8 + buf_msg_len)
-              );
-              Atomics.store(this.exportSyncFlags, 0, 0);
+              while (true) {
+                let buf_msg;
 
-              let p = 10;
-              const hs_eval_resp_tag = buf_msg.readUInt8(p);
-              p += 1;
-              switch (hs_eval_resp_tag) {
-                case 0: {
-                  const err_len = Number(buf_msg.readBigUInt64LE(p));
-                  p += 8;
-                  err = new Error(
-                    this.decoder.end(buf_msg.slice(p, p + err_len))
+                while (true) {
+                  mutexLock(this.exportSyncFlags, 0);
+                  const export_sync_state = this.exportSyncBuffer.readUInt32LE(
+                    0
                   );
-                  p += err_len;
-                  throw err;
+                  if (export_sync_state === 2) {
+                    const buf_msg_len = this.exportSyncBuffer.readUInt32LE(4);
+                    buf_msg = Buffer.from(
+                      this.exportSyncBuffer.slice(8, 8 + buf_msg_len)
+                    );
+                    this.exportSyncBuffer.writeUInt32LE(0, 0);
+                    mutexUnlock(this.exportSyncFlags, 0);
+                    break;
+                  } else {
+                    mutexUnlock(this.exportSyncFlags, 0);
+                  }
                 }
 
-                case 1: {
-                  const r = this.toJS(buf_msg, p);
-                  p = r.p;
-                  return r.result;
+                const r = this.handleParentMessage(buf_msg);
+                if (isPromise(r)) {
+                  r.then((resp_buf) => {
+                    if (resp_buf) {
+                      worker_threads.parentPort.postMessage(resp_buf);
+                    }
+                  });
+                } else {
+                  if (r) {
+                    worker_threads.parentPort.postMessage(r);
+                  }
                 }
 
-                default: {
-                  throw new Error(`inline-js invalid message ${buf_msg}`);
+                if (hs_eval_req_promise.fulfilled) {
+                  return hs_eval_req_promise.value;
+                }
+                if (hs_eval_req_promise.rejected) {
+                  throw hs_eval_req_promise.reason;
                 }
               }
             } else {
@@ -494,6 +509,17 @@ class WorkerContext {
     err_buf.copy(resp_buf, 18);
     return resp_buf;
   }
+}
+
+function mutexLock(arr, i) {
+  while (Atomics.compareExchange(arr, i, 0, 1) === 1) {
+    Atomics.wait(arr, i, 1);
+  }
+}
+
+function mutexUnlock(arr, i) {
+  Atomics.store(arr, i, 0);
+  Atomics.notify(arr, i, 1);
 }
 
 function newPromise() {
