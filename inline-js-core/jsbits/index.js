@@ -15,7 +15,7 @@ class JSValContext {
   }
 
   new(x) {
-    const i = this.jsvalLast++;
+    const i = ++this.jsvalLast;
     this.jsvalMap.set(i, x);
     return i;
   }
@@ -31,6 +31,17 @@ class JSValContext {
     if (!this.jsvalMap.delete(i)) {
       throw new Error(`jsval.free(${i}): invalid key`);
     }
+
+    if (i === this.jsvalLast) {
+      if (this.jsvalMap.size > 0) {
+        --this.jsvalLast;
+        while (!this.jsvalMap.has(this.jsvalLast)) {
+          --this.jsvalLast;
+        }
+      } else {
+        this.jsvalLast = 0n;
+      }
+    }
   }
 
   clear() {
@@ -42,21 +53,22 @@ class JSValContext {
 class MainContext {
   constructor() {
     process.on("uncaughtException", (err) => this.onUncaughtException(err));
-    this.exportSyncArrayBuffer = new SharedArrayBuffer(
+    const exportSyncArrayBuffer = new SharedArrayBuffer(
       8 +
         Number.parseInt(process.env.INLINE_JS_EXPORT_SYNC_BUFFER_SIZE, 10) *
           0x100000
     );
-    this.exportSyncMutex = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
-    this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 4);
+    this.exportSyncFlags = new Int32Array(exportSyncArrayBuffer, 0, 1);
+    this.exportSyncBuffer = Buffer.from(exportSyncArrayBuffer, 4);
     this.worker = new worker_threads.Worker(__filename, {
       stdout: true,
-      workerData: this.exportSyncArrayBuffer,
+      workerData: exportSyncArrayBuffer,
     });
     this.worker.on("message", (buf_msg) => this.onWorkerMessage(buf_msg));
     this.recvLoop();
     Object.freeze(this);
   }
+
   recvLoop() {
     let buf = Buffer.allocUnsafe(0);
     process.stdin.on("data", (c) => {
@@ -67,13 +79,18 @@ class MainContext {
         if (buf.length < 8 + len) return;
         const buf_msg = buf.slice(8, 8 + len);
         buf = buf.slice(8 + len);
-        if (buf_msg.readUInt8(0) === 2 && buf_msg.readUInt8(1) === 1) {
+
+        Atomics.wait(this.exportSyncFlags, 0, 2);
+        const export_sync_state = Atomics.load(this.exportSyncFlags, 0);
+
+        if (export_sync_state === 1) {
           this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 0);
           buf_msg.copy(this.exportSyncBuffer, 4);
-          Atomics.store(this.exportSyncMutex, 0, 1);
-          Atomics.notify(this.exportSyncMutex, 0);
+          Atomics.store(this.exportSyncFlags, 0, 2);
+          Atomics.notify(this.exportSyncFlags, 0, 1);
           continue;
         }
+
         if (buf_msg.readUInt8(0) === 4) {
           process.stdin.unref();
         }
@@ -81,6 +98,7 @@ class MainContext {
       }
     });
   }
+
   send(buf_msg) {
     return new Promise((resolve, reject) => {
       const buf_send = Buffer.allocUnsafe(8 + buf_msg.length);
@@ -89,9 +107,11 @@ class MainContext {
       process.stdout.write(buf_send, (err) => (err ? reject(err) : resolve()));
     });
   }
+
   onWorkerMessage(buf_msg) {
     this.send(bufferFromArrayBufferView(buf_msg));
   }
+
   onUncaughtException(err) {
     const err_str = `${err.stack ? err.stack : err}`;
     const err_buf = Buffer.from(err_str, "utf-8");
@@ -105,9 +125,9 @@ class MainContext {
 
 class WorkerContext {
   constructor() {
-    this.exportSyncArrayBuffer = worker_threads.workerData;
-    this.exportSyncMutex = new Int32Array(this.exportSyncArrayBuffer, 0, 1);
-    this.exportSyncBuffer = Buffer.from(this.exportSyncArrayBuffer, 4);
+    const exportSyncArrayBuffer = worker_threads.workerData;
+    this.exportSyncFlags = new Int32Array(exportSyncArrayBuffer, 0, 1);
+    this.exportSyncBuffer = Buffer.from(exportSyncArrayBuffer, 4);
     this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
     this.hsCtx = new JSValContext();
@@ -126,7 +146,7 @@ class WorkerContext {
     Object.freeze(this);
   }
 
-  toJS(buf, p, async) {
+  toJS(buf, p) {
     const jsval_tmp = [];
     const expr_segs_len = Number(buf.readBigUInt64LE(p));
     p += 8;
@@ -145,6 +165,7 @@ class WorkerContext {
           has_code = has_code || Boolean(expr_seg_len);
           break;
         }
+
         case 1: {
           // BufferLiteral
           const buf_len = Number(buf.readBigUInt64LE(p));
@@ -154,6 +175,7 @@ class WorkerContext {
           p += buf_len;
           break;
         }
+
         case 2: {
           // StringLiteral
           const buf_len = Number(buf.readBigUInt64LE(p));
@@ -164,6 +186,7 @@ class WorkerContext {
           p += buf_len;
           break;
         }
+
         case 3: {
           // JSONLiteral
           const buf_len = Number(buf.readBigUInt64LE(p));
@@ -176,6 +199,7 @@ class WorkerContext {
           p += buf_len;
           break;
         }
+
         case 4: {
           // JSValLiteral
           const jsval_id =
@@ -184,6 +208,7 @@ class WorkerContext {
           p += 8;
           break;
         }
+
         default: {
           throw new Error(`toJS failed: ${buf}`);
         }
@@ -199,7 +224,7 @@ class WorkerContext {
       for (let i = 0; i < jsval_tmp.length; ++i) {
         expr_params = `${expr_params}, __t${i.toString(36)}`;
       }
-      expr = `${async ? "async " : ""}(${expr_params}) => (\n${expr}\n)`;
+      expr = `(${expr_params}) => (\n${expr}\n)`;
       result = vm.runInThisContext(expr, {
         lineOffset: -1,
         importModuleDynamically: (spec) => import(spec),
@@ -215,6 +240,7 @@ class WorkerContext {
         // RawNone
         return Buffer.allocUnsafe(0);
       }
+
       case 1: {
         // RawBuffer
         return Buffer.isBuffer(val)
@@ -223,16 +249,19 @@ class WorkerContext {
           ? bufferFromArrayBufferView(val)
           : Buffer.from(val);
       }
+
       case 2: {
         // RawJSON
         return Buffer.from(JSON.stringify(val), "utf-8");
       }
+
       case 3: {
         // RawJSVal
         const val_buf = Buffer.allocUnsafe(8);
         val_buf.writeBigUInt64LE(this.jsval.new(val), 0);
         return val_buf;
       }
+
       default: {
         throw new Error(`fromJS: invalid type ${val_type}`);
       }
@@ -240,6 +269,13 @@ class WorkerContext {
   }
 
   async onParentMessage(buf_msg) {
+    const resp_buf = await this.handleParentMessage(buf_msg);
+    if (resp_buf) {
+      worker_threads.parentPort.postMessage(resp_buf);
+    }
+  }
+
+  handleParentMessage(buf_msg) {
     buf_msg = bufferFromArrayBufferView(buf_msg);
     let p = 0;
     const msg_tag = buf_msg.readUInt8(p);
@@ -247,48 +283,38 @@ class WorkerContext {
     switch (msg_tag) {
       case 0: {
         // JSEvalRequest
-        let resp_buf;
         const req_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         try {
-          const r = this.toJS(buf_msg, p, true);
+          const r = this.toJS(buf_msg, p);
           p = r.p;
-          const eval_result = await r.result;
 
-          const return_type = buf_msg.readUInt8(p);
-          p += 1;
-          const eval_result_buf = this.fromJS(eval_result, return_type);
-          resp_buf = Buffer.allocUnsafe(18 + eval_result_buf.length);
-          resp_buf.writeUInt8(0, 0);
-          resp_buf.writeBigUInt64LE(req_id, 1);
-          resp_buf.writeUInt8(1, 9);
-          resp_buf.writeBigUInt64LE(BigInt(eval_result_buf.length), 10);
-          eval_result_buf.copy(resp_buf, 18);
+          const on_eval_result = (eval_result) => {
+            const return_type = buf_msg.readUInt8(p);
+            p += 1;
+            const eval_result_buf = this.fromJS(eval_result, return_type);
+            const resp_buf = Buffer.allocUnsafe(18 + eval_result_buf.length);
+            resp_buf.writeUInt8(0, 0);
+            resp_buf.writeBigUInt64LE(req_id, 1);
+            resp_buf.writeUInt8(1, 9);
+            resp_buf.writeBigUInt64LE(BigInt(eval_result_buf.length), 10);
+            eval_result_buf.copy(resp_buf, 18);
+            return resp_buf;
+          };
+
+          return isPromise(r.result)
+            ? r.result
+                .then(on_eval_result)
+                .catch((err) => this.onEvalError(req_id, err))
+            : on_eval_result(r.result);
         } catch (err) {
           // EvalError
-          const err_str = `${err.stack ? err.stack : err}`;
-          if (process.env.INLINE_JS_EXIT_ON_EVAL_ERROR) {
-            process.stderr.write(
-              `inline-js eval error, exiting node: ${err_str}\n`,
-              () => {
-                process.kill(process.pid, "SIGTERM");
-              }
-            );
-          }
-          const err_buf = Buffer.from(err_str, "utf-8");
-          resp_buf = Buffer.allocUnsafe(18 + err_buf.length);
-          resp_buf.writeUInt8(0, 0);
-          resp_buf.writeBigUInt64LE(req_id, 1);
-          resp_buf.writeUInt8(0, 9);
-          resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 10);
-          err_buf.copy(resp_buf, 18);
+          return this.onEvalError(req_id, err);
         }
-        worker_threads.parentPort.postMessage(resp_buf);
-        break;
       }
+
       case 1: {
         // HSExportRequest
-        let resp_buf;
         const is_sync = Boolean(buf_msg.readUInt8(p));
         p += 1;
         const req_id = buf_msg.readBigUInt64LE(p);
@@ -300,7 +326,7 @@ class WorkerContext {
           p += 8;
           const hs_func_args_type = [];
           for (let i = 0; i < hs_func_args_len; ++i) {
-            const r = this.toJS(buf_msg, p, false);
+            const r = this.toJS(buf_msg, p);
             p = r.p;
             const raw_type = buf_msg.readUInt8(p);
             p += 1;
@@ -313,6 +339,7 @@ class WorkerContext {
                 `inline-js export function error: arity mismatch, expected ${hs_func_args_len} arguments, got ${js_args.length}`
               );
             }
+
             const hs_args_buf = [];
             for (let i = 0; i < hs_func_args_len; ++i) {
               hs_args_buf.push(
@@ -329,13 +356,8 @@ class WorkerContext {
                 hs_args_buf.reduce((acc, hs_arg) => acc + hs_arg.length, 0)
             );
 
-            let hs_eval_req_promise, hs_eval_req_id;
-            if (is_sync) {
-              hs_eval_req_id = 0n;
-            } else {
-              hs_eval_req_promise = newPromise();
-              hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
-            }
+            const hs_eval_req_promise = newPromise();
+            const hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
 
             req_buf.writeUInt8(1, 0);
             req_buf.writeUInt8(Number(is_sync), 1);
@@ -350,15 +372,20 @@ class WorkerContext {
               p += hs_arg.length;
             }
 
+            if (is_sync) {
+              Atomics.store(this.exportSyncFlags, 0, 1);
+            }
+
             worker_threads.parentPort.postMessage(req_buf);
 
             if (is_sync) {
-              Atomics.wait(this.exportSyncMutex, 0, 0);
-              Atomics.store(this.exportSyncMutex, 0, 0);
+              Atomics.wait(this.exportSyncFlags, 0, 1);
               const buf_msg_len = this.exportSyncBuffer.readUInt32LE(0);
               const buf_msg = Buffer.from(
                 this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
               );
+              Atomics.store(this.exportSyncFlags, 0, 0);
+
               let p = 10;
               const hs_eval_resp_tag = buf_msg.readUInt8(p);
               p += 1;
@@ -372,11 +399,13 @@ class WorkerContext {
                   p += err_len;
                   throw err;
                 }
+
                 case 1: {
-                  const r = this.toJS(buf_msg, p, false);
+                  const r = this.toJS(buf_msg, p);
                   p = r.p;
                   return r.result;
                 }
+
                 default: {
                   throw new Error(`inline-js invalid message ${buf_msg}`);
                 }
@@ -387,34 +416,19 @@ class WorkerContext {
           };
 
           const js_func_buf = this.fromJS(js_func, 3);
-          resp_buf = Buffer.allocUnsafe(18 + js_func_buf.length);
+          const resp_buf = Buffer.allocUnsafe(18 + js_func_buf.length);
           resp_buf.writeUInt8(0, 0);
           resp_buf.writeBigUInt64LE(req_id, 1);
           resp_buf.writeUInt8(1, 9);
           resp_buf.writeBigUInt64LE(BigInt(js_func_buf.length), 10);
           js_func_buf.copy(resp_buf, 18);
+          return resp_buf;
         } catch (err) {
           // EvalError
-          const err_str = `${err.stack ? err.stack : err}`;
-          if (process.env.INLINE_JS_EXIT_ON_EVAL_ERROR) {
-            process.stderr.write(
-              `inline-js eval error, exiting node: ${err_str}\n`,
-              () => {
-                process.kill(process.pid, "SIGTERM");
-              }
-            );
-          }
-          const err_buf = Buffer.from(err_str, "utf-8");
-          resp_buf = Buffer.allocUnsafe(18 + err_buf.length);
-          resp_buf.writeUInt8(0, 0);
-          resp_buf.writeBigUInt64LE(req_id, 1);
-          resp_buf.writeUInt8(0, 9);
-          resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 10);
-          err_buf.copy(resp_buf, 18);
+          return this.onEvalError(req_id, err);
         }
-        worker_threads.parentPort.postMessage(resp_buf);
-        break;
       }
+
       case 2: {
         // HSEvalResponse
         const is_sync = Boolean(buf_msg.readUInt8(p));
@@ -434,35 +448,52 @@ class WorkerContext {
             hs_eval_resp_promise.reject(err);
             break;
           }
+
           case 1: {
-            const r = this.toJS(buf_msg, p, false);
+            const r = this.toJS(buf_msg, p);
             p = r.p;
             hs_eval_resp_promise.resolve(r.result);
             break;
           }
+
           default: {
             throw new Error(`inline-js invalid message ${buf_msg}`);
           }
         }
-        break;
+        return;
       }
+
       case 3: {
         // JSValFree
         const jsval_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         this.jsval.free(jsval_id);
-        break;
+        return;
       }
+
       case 4: {
         // Close
         this.jsval.clear();
         worker_threads.parentPort.unref();
-        break;
+        return;
       }
+
       default: {
         throw new Error(`inline-js invalid message ${buf_msg}`);
       }
     }
+  }
+
+  onEvalError(req_id, err) {
+    const err_str = `${err.stack ? err.stack : err}`;
+    const err_buf = Buffer.from(err_str, "utf-8");
+    const resp_buf = Buffer.allocUnsafe(18 + err_buf.length);
+    resp_buf.writeUInt8(0, 0);
+    resp_buf.writeBigUInt64LE(req_id, 1);
+    resp_buf.writeUInt8(0, 9);
+    resp_buf.writeBigUInt64LE(BigInt(err_buf.length), 10);
+    err_buf.copy(resp_buf, 18);
+    return resp_buf;
   }
 }
 
@@ -475,6 +506,10 @@ function newPromise() {
   p.resolve = promise_resolve;
   p.reject = promise_reject;
   return p;
+}
+
+function isPromise(obj) {
+  return obj && typeof obj.then === "function";
 }
 
 function bufferFromArrayBufferView(a) {

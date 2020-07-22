@@ -10,13 +10,13 @@ module Language.JavaScript.Inline.Core.Session where
 
 import Control.Concurrent
 import Control.Concurrent.STM
+import Control.Exception
 import qualified Data.ByteString as BS
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
 import Data.Maybe
 import Distribution.Simple.Utils
 import Foreign
-import GHC.IO (catchAny)
 import Language.JavaScript.Inline.Core.IPC
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.NodeVersion
@@ -47,10 +47,6 @@ data Config = Config
     -- | To @require()@ or @import()@ third-party packages, set this to the
     -- @node_modules@ directory path.
     nodeModules :: Maybe FilePath,
-    -- | By default, an 'EvalError' only throws for a single return value and
-    -- doesn't affect later evaluation. Set this to 'True' if the @node@ process
-    -- should terminate immediately upon an 'EvalError'.
-    nodeExitOnEvalError :: Bool,
     -- | Size in MiBs of the buffer for passing results of functions exported by
     -- 'exportSync'. Most users don't need to care about this. Defaults to 1.
     nodeExportSyncBufferSize :: Int
@@ -69,7 +65,6 @@ defaultConfig =
         ],
       nodeExtraEnv = [],
       nodeModules = Nothing,
-      nodeExitOnEvalError = False,
       nodeExportSyncBufferSize = 1
     }
 
@@ -101,11 +96,10 @@ newSession Config {..} = do
         { env =
             Just $
               kvDedup $
-                [("INLINE_JS_EXIT_ON_EVAL_ERROR", "1") | nodeExitOnEvalError]
-                  <> [ ( "INLINE_JS_EXPORT_SYNC_BUFFER_SIZE",
-                         show nodeExportSyncBufferSize
-                       )
-                     ]
+                [ ( "INLINE_JS_EXPORT_SYNC_BUFFER_SIZE",
+                    show nodeExportSyncBufferSize
+                  )
+                ]
                   <> map ("INLINE_JS_NODE_MODULES",) (maybeToList nodeModules)
                   <> nodeExtraEnv
                   <> _env,
@@ -123,21 +117,21 @@ newSession Config {..} = do
               atomically $ putTMVar _inbox jsEvalResponseContent
             HSEvalRequest {..} -> do
               _ <-
-                forkIO $
-                  catchAny
-                    ( do
-                        let sp = word64ToStablePtr hsEvalRequestFunc
-                        f <- deRefStablePtr sp
-                        r <- f args
-                        sessionSend
-                          _session
-                          HSEvalResponse
-                            { hsEvalResponseIsSync = hsEvalRequestIsSync,
-                              hsEvalResponseId = hsEvalRequestId,
-                              hsEvalResponseContent = Right r
-                            }
-                    )
-                    ( \err -> do
+                forkFinally
+                  ( do
+                      let sp = word64ToStablePtr hsEvalRequestFunc
+                      f <- deRefStablePtr sp
+                      r <- f args
+                      sessionSend
+                        _session
+                        HSEvalResponse
+                          { hsEvalResponseIsSync = hsEvalRequestIsSync,
+                            hsEvalResponseId = hsEvalRequestId,
+                            hsEvalResponseContent = Right r
+                          }
+                  )
+                  ( \case
+                      Left (SomeException err) -> do
                         let err_buf = stringToLBS $ show err
                         sessionSend
                           _session
@@ -146,7 +140,8 @@ newSession Config {..} = do
                               hsEvalResponseId = hsEvalRequestId,
                               hsEvalResponseContent = Left err_buf
                             }
-                    )
+                      Right () -> pure ()
+                  )
               pure ()
             -- todo: should make all subsequent operations invalid immediately
             -- here, possibly via a session state atomic variable. also cleanup

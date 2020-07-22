@@ -1,6 +1,7 @@
 module Language.JavaScript.Inline.Core.IPC where
 
 import Control.Concurrent
+import Control.Concurrent.STM
 import Data.Binary.Get
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
@@ -62,7 +63,7 @@ ipcFromHandles h_send h_recv ipc =
 -- | This function forks the send/recv threads. In the result 'IPC' value, only
 -- the 'send' / 'closeMsg' fields remain valid and can be used by the user.
 --
--- The send thread repeatedly fetches 'Msg's from a 'Channel' and send to the
+-- The send thread repeatedly fetches 'Msg's from a 'TQueue' and send to the
 -- remote device; when the 'closeMsg' message is sent, it invokes the 'preClose'
 -- callback and exits. The 'send' function in the result 'IPC' is thus
 -- asynchronous; it'll enqueue a 'Msg' and immediately return. We don't bother
@@ -78,9 +79,9 @@ ipcFromHandles h_send h_recv ipc =
 -- users.
 ipcFork :: IPC -> IO IPC
 ipcFork ipc = do
-  chan_send <- newChan
+  queue_send <- newTQueueIO
   let io_send = do
-        msg <- readChan chan_send
+        msg <- atomically $ readTQueue queue_send
         send ipc msg
         if msg == closeMsg ipc then preClose ipc else io_send
   _ <- forkIO io_send
@@ -92,7 +93,7 @@ ipcFork ipc = do
   _ <- forkIO io_recv
   pure
     ipc
-      { send = writeChan chan_send,
+      { send = atomically . writeTQueue queue_send,
         recv = error "fork: recv",
         onRecv = error "fork: onRecv",
         preClose = error "fork: preClose",

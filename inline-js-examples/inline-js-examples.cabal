@@ -4,9 +4,9 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 14dc67d6e9b3140007c2cb8324d3fbc205387df94462dcd004edbb9c0348e70a
+-- hash: 9f6f714054828ed848c01176353fea26cfa5b2266275d7c7df6bdb1cf4256921
 
-name:           inline-js
+name:           inline-js-examples
 version:        0.0.1.0
 synopsis:       Call JavaScript from Haskell.
 description:    Please see <https://github.com/tweag/inline-js> for details.
@@ -29,21 +29,17 @@ source-repository head
 
 library
   exposed-modules:
-      Language.JavaScript.Inline
+      Language.JavaScript.Inline.Examples.Utils
+      Language.JavaScript.Inline.Examples.Wasm
   other-modules:
-      Language.JavaScript.Inline.Aeson
-      Language.JavaScript.Inline.TH
-      Paths_inline_js
+      Paths_inline_js_examples
   autogen-modules:
-      Paths_inline_js
+      Paths_inline_js_examples
   hs-source-dirs:
       src
   ghc-options: -Wall
   build-depends:
-      aeson
-    , base >=4.13 && <5
+      base >=4.13 && <5
     , bytestring
-    , inline-js-core
-    , language-javascript
-    , template-haskell
+    , inline-js
   default-language: Haskell2010

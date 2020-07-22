@@ -1,4 +1,4 @@
-name: inline-js
+name: inline-js-examples
 version: 0.0.1.0
 category: Web
 maintainer: Cheng Shao <cheng.shao@tweag.io>
@@ -16,16 +16,11 @@ extra-source-files:
 ghc-options: -Wall
 
 dependencies:
-  - aeson
   - base >= 4.13 && < 5
   - bytestring
-  - inline-js-core
-  - language-javascript
-  - template-haskell
+  - inline-js
 
 library:
   source-dirs: src
   generated-other-modules:
-    - Paths_inline_js
-  exposed-modules:
-    - Language.JavaScript.Inline
+    - Paths_inline_js_examples

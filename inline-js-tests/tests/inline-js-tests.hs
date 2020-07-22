@@ -33,10 +33,11 @@ main =
                 (eval @()) s "new Promise((resolve) => setTimeout(resolve, 1000))"
             for_ vs evaluate,
         testCase "Session: roundtrip" $
-          withDefaultSession $ \s -> do
-            let buf = "asdf"
-            buf' <- (eval @LBS.ByteString) s $ toJS buf
-            buf' @?= buf,
+          withDefaultSession $ \s ->
+            replicateM_ 0x10 $ do
+              let buf = "asdf"
+              buf' <- (eval @LBS.ByteString) s $ toJS buf
+              buf' @?= buf,
         testCase "left-pad" $
           withTmpDir
             ( \p -> do
@@ -53,17 +54,23 @@ main =
                 defaultConfig
                   { nodeModules = Just $ left_pad </> "node_modules"
                   }
-                $ \s -> do
+                $ \s -> replicateM_ 0x10 $ do
                   _ <- evaluate =<< (eval @JSVal) s "require('left-pad')"
                   pure (),
         testCase "expr" $
-          withDefaultSession $ \s -> do
+          withDefaultSession $ \s -> replicateM_ 0x10 $ do
             let x = I 6
                 y = I 7
             r <- eval s [expr| $x * $y |]
             r @?= I 42,
+        testCase "import" $
+          withDefaultSession $ \s -> replicateM_ 0x10 $ do
+            v <- eval s [expr| (x, y) => x * y |]
+            let f = importJSFunc s v
+            r <- f (I 6) (I 7)
+            r @?= I 42,
         testCase "export" $
-          withDefaultSession $ \s -> do
+          withDefaultSession $ \s -> replicateM_ 0x10 $ do
             let f :: V -> V -> IO V
                 f (V x) (V y) = pure $ V $ A.Array [x, y]
             v <- export s f
@@ -73,7 +80,7 @@ main =
             r @?= V (A.Array [A.String "asdf", A.String "233"])
             freeJSVal v,
         testCase "exportSync" $
-          withDefaultSession $ \s -> do
+          withDefaultSession $ \s -> replicateM_ 0x10 $ do
             let f :: V -> V -> IO V
                 f (V x) (V y) = pure $ V $ A.Array [x, y]
             v <- exportSync s f

@@ -4,11 +4,15 @@
 [![Gitter](https://img.shields.io/gitter/room/tweag/inline-js)](https://gitter.im/tweag/inline-js)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/b2320ec2-8feb-44d6-886a-8cd4728d92ad/deploy-status)](https://inline-js.netlify.app)
 
+## Documentation
+
+[Haddock documentation](https://inline-js.netlify.app) for HEAD is available.
+
 ## Implemented features
 
 - Manage `node` sessions which run the eval server script for Haskell/JavaScript
   interop
-- Evaluate expressions with `require()`/`import()` and top-level `await` support
+- Evaluate expressions with `require()`/`import()` support
 - Export Haskell functions to async/sync JavaScript functions
 - Load third party libraries in user-specified `node_modules`
 - Garbage-collected `JSVal` references in Haskell
@@ -29,14 +33,14 @@
 
 Supported GHC versions:
 
-- `ghc-8.8`, tested with `ghc-8.8.3`
+- `ghc-8.8`, tested with `ghc-8.8.4`
 - `ghc-8.10`, tested with `ghc-8.10.1`
 
 Supported platforms:
 
-- Windows 10 x64, starting from `ghc-8.10`, tested with Windows Server 2019
-- Linux x64, tested with Ubuntu bionic and Alpine edge
-- macOS x64, tested with Catalina
+- Windows 10 x64, tested with Windows Server 2019
+- Linux x64, tested with Ubuntu focal and Alpine edge
+- macOS x64, tested with macOS Catalina
 
 Supported `node` versions:
 
@@ -46,10 +50,6 @@ Supported `node` versions:
 See the [CI
 config](https://github.com/tweag/inline-js/blob/master/.github/workflows/pipeline.yml)
 for details.
-
-## Documentation
-
-[Haddock documentation](https://inline-js.netlify.app) for HEAD is available.
 
 ## Contributors
 

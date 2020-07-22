@@ -4,9 +4,9 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 96b1bb37b74b61b11270f093da0b353b8964526153e38ca331590efff9f57c18
+-- hash: 0b17b7111eb319490e0c96140991803fff480705bb6eb951ee5b33e194e2cef5
 
-name:           inline-js-core
+name:           inline-js-tests
 version:        0.0.1.0
 synopsis:       Call JavaScript from Haskell.
 description:    Please see <https://github.com/tweag/inline-js> for details.
@@ -19,7 +19,6 @@ license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    jsbits/index.js
     CHANGELOG.md
     LICENSE
     README.md
@@ -28,39 +27,26 @@ source-repository head
   type: git
   location: https://github.com/tweag/inline-js
 
-library
-  exposed-modules:
-      Language.JavaScript.Inline.Core
+test-suite inline-js-tests
+  type: exitcode-stdio-1.0
+  main-is: inline-js-tests.hs
   other-modules:
-      Language.JavaScript.Inline.Core.Class
-      Language.JavaScript.Inline.Core.Dict
-      Language.JavaScript.Inline.Core.Exception
-      Language.JavaScript.Inline.Core.Export
-      Language.JavaScript.Inline.Core.Import
-      Language.JavaScript.Inline.Core.Instruction
-      Language.JavaScript.Inline.Core.IPC
-      Language.JavaScript.Inline.Core.JSVal
-      Language.JavaScript.Inline.Core.Message
-      Language.JavaScript.Inline.Core.NodeVersion
-      Language.JavaScript.Inline.Core.Session
-      Language.JavaScript.Inline.Core.Utils
-      Paths_inline_js_core
+      Paths_inline_js_tests
   autogen-modules:
-      Paths_inline_js_core
+      Paths_inline_js_tests
   hs-source-dirs:
-      src
-  ghc-options: -Wall
+      tests
+  ghc-options: -Wall -threaded -rtsopts
   build-depends:
       Cabal
+    , aeson
     , base >=4.13 && <5
-    , binary
     , bytestring
-    , containers
     , directory
     , filepath
-    , ghc-prim
+    , inline-js
+    , inline-js-examples
     , process
-    , stm
-    , template-haskell
-    , text
+    , tasty
+    , tasty-hunit
   default-language: Haskell2010

@@ -6,6 +6,7 @@ module Language.JavaScript.Inline.Core.Export where
 import qualified Data.ByteString.Lazy as LBS
 import Data.Proxy
 import Language.JavaScript.Inline.Core.Class
+import Language.JavaScript.Inline.Core.Dict
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
 
@@ -14,18 +15,18 @@ import Language.JavaScript.Inline.Core.Session
 -- the arguments @a@, @b@, etc are 'FromJS' instances, and the result @r@ is
 -- 'ToJS' instance.
 class Export f where
-  argsToRawJSType :: Proxy f -> [(JSExpr, RawJSType)]
-  monomorphize :: Session -> f -> [LBS.ByteString] -> IO JSExpr
+  exportArgsFromJS :: Proxy f -> [Dict FromJS]
+  exportMonomorphize :: Session -> f -> [LBS.ByteString] -> IO JSExpr
 
 instance ToJS r => Export (IO r) where
-  argsToRawJSType _ = []
-  monomorphize _ m [] = toJS <$> m
-  monomorphize _ _ _ = fail "Language.JavaScript.Inline.Core.Export: impossible"
+  exportArgsFromJS _ = []
+  exportMonomorphize _ m [] = toJS <$> m
+  exportMonomorphize _ _ _ = fail "Language.JavaScript.Inline.Core.Export: impossible"
 
 instance (FromJS a, Export b) => Export (a -> b) where
-  argsToRawJSType _ =
-    (toRawJSType (Proxy @a), rawJSType (Proxy @a)) : argsToRawJSType (Proxy @b)
-  monomorphize s f (x : xs) = do
+  exportArgsFromJS _ =
+    Dict (Proxy @a) : exportArgsFromJS (Proxy @b)
+  exportMonomorphize s f (x : xs) = do
     a <- fromJS s x
-    monomorphize s (f a) xs
-  monomorphize _ _ _ = fail "Language.JavaScript.Inline.Core.Export: impossible"
+    exportMonomorphize s (f a) xs
+  exportMonomorphize _ _ _ = fail "Language.JavaScript.Inline.Core.Export: impossible"
