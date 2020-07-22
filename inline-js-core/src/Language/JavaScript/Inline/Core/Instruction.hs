@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings, RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -18,8 +19,8 @@ import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
 import Language.JavaScript.Inline.Core.Utils
-import System.IO.Unsafe
 import System.Directory
+import System.IO.Unsafe
 
 evalWithDecoder ::
   RawJSType ->
