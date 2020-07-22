@@ -53,7 +53,7 @@ class MainContext {
   constructor() {
     process.on("uncaughtException", (err) => this.onUncaughtException(err));
     const exportSyncArrayBuffer = new SharedArrayBuffer(
-      8 +
+      12 +
         Number.parseInt(process.env.INLINE_JS_EXPORT_SYNC_BUFFER_SIZE, 10) *
           0x100000
     );
@@ -82,8 +82,8 @@ class MainContext {
         const export_sync_state = Atomics.load(this.exportSyncFlags, 0);
 
         if (export_sync_state === 1) {
-          this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 0);
-          buf_msg.copy(this.exportSyncBuffer, 4);
+          this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 4);
+          buf_msg.copy(this.exportSyncBuffer, 8);
           Atomics.store(this.exportSyncFlags, 0, 2);
           Atomics.notify(this.exportSyncFlags, 0, 1);
           continue;
@@ -379,9 +379,9 @@ class WorkerContext {
 
             if (is_sync) {
               Atomics.wait(this.exportSyncFlags, 0, 1);
-              const buf_msg_len = this.exportSyncBuffer.readUInt32LE(0);
+              const buf_msg_len = this.exportSyncBuffer.readUInt32LE(4);
               const buf_msg = Buffer.from(
-                this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
+                this.exportSyncBuffer.slice(8, 8 + buf_msg_len)
               );
               Atomics.store(this.exportSyncFlags, 0, 0);
 
@@ -510,7 +510,7 @@ function newPromise() {
   p.reject = (err) => {
     p.rejected = true;
     p.reason = err;
-    p.promise_reject(err);
+    promise_reject(err);
   };
   return p;
 }
