@@ -148,12 +148,16 @@ export = exportAsyncOrSync False
 
 -- | Export a Haskell function as a JavaScript sync function. This is quite
 -- heavyweight and in most cases, 'export' is preferrable. 'exportSync' can be
--- useful in certain scenarios when a sync function is desired, e.g. as
--- WebAssembly imports.
+-- useful in certain scenarios when a sync function is desired, e.g. converting
+-- a Haskell function to a WebAssembly import.
 --
--- Unlike 'export', 'exportSync' is not reentrant. When the JavaScript function
--- is called, it blocks @node@ until the Haskell function produces the result or
--- throws. If the Haskell function calls into JavaScript again, that call will
--- be blocked infinitely without warning.
+-- Unlike 'export', 'exportSync' has limited reentrancy:
+--
+-- * The Haskell function may calculate the return value based on the result of
+--   calling into JavaScript again, but only synchronous code is supported in
+--   this case.
+-- * The exported JavaScript sync function must not invoke other exported
+--   JavaScript sync functions, either directly or indirectly(Haskell calling
+--   into JavaScript again).
 exportSync :: Export f => Session -> f -> IO JSVal
 exportSync = exportAsyncOrSync True
