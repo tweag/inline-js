@@ -22,7 +22,7 @@ jobs:
     steps:
 
       - name: setup-haskell
-        uses: actions/setup-haskell@v1
+        uses: TerrorJack/setup-haskell@fix-8.8.4
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: 3.2.0.0
@@ -87,7 +87,7 @@ jobs:
     steps:
 
       - name: setup-haskell
-        uses: actions/setup-haskell@v1
+        uses: TerrorJack/setup-haskell@fix-8.8.4
         with:
           stack-version: 2.3.1
           enable-stack: true
@@ -203,7 +203,7 @@ jobs:
     steps:
 
       - name: setup-haskell
-        uses: actions/setup-haskell@v1
+        uses: TerrorJack/setup-haskell@fix-8.8.4
         with:
           ghc-version: 8.10.1
           cabal-version: 3.2.0.0
@@ -244,7 +244,7 @@ jobs:
     steps:
 
       - name: setup-haskell
-        uses: actions/setup-haskell@v1
+        uses: TerrorJack/setup-haskell@fix-8.8.4
         with:
           ghc-version: 8.10.1
           cabal-version: 3.2.0.0
@@ -276,7 +276,7 @@ jobs:
     steps:
 
       - name: setup-haskell
-        uses: actions/setup-haskell@v1
+        uses: TerrorJack/setup-haskell@fix-8.8.4
         with:
           stack-version: 2.3.1
           enable-stack: true
