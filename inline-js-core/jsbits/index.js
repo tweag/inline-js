@@ -78,6 +78,10 @@ class MainContext {
         const buf_msg = buf.slice(8, 8 + len);
         buf = buf.slice(8 + len);
 
+        if (buf_msg.readUInt8(0) === 4) {
+          process.stdin.unref();
+        }
+
         Atomics.wait(this.exportSyncFlag, 0, 2);
         const export_sync_flag = Atomics.load(this.exportSyncFlag, 0);
 
@@ -87,10 +91,6 @@ class MainContext {
           Atomics.store(this.exportSyncFlag, 0, 2);
           Atomics.notify(this.exportSyncFlag, 0, 1);
           continue;
-        }
-
-        if (buf_msg.readUInt8(0) === 4) {
-          process.stdin.unref();
         }
 
         this.worker.postMessage(buf_msg);
