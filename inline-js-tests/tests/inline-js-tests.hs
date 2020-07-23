@@ -82,7 +82,7 @@ main =
         testCase "exportSync" $
           withDefaultSession $ \s -> replicateM_ 0x10 $ do
             let f :: V -> V -> IO V
-                f (V x) (V y) = pure $ V $ A.Array [x, y]
+                f x y = eval s [expr| [$x, $y] |]
             v <- exportSync s f
             let x = V $ A.String "asdf"
                 y = V $ A.String "233"

@@ -53,11 +53,11 @@ class MainContext {
   constructor() {
     process.on("uncaughtException", (err) => this.onUncaughtException(err));
     const exportSyncArrayBuffer = new SharedArrayBuffer(
-      12 +
+      8 +
         Number.parseInt(process.env.INLINE_JS_EXPORT_SYNC_BUFFER_SIZE, 10) *
           0x100000
     );
-    this.exportSyncFlags = new Int32Array(exportSyncArrayBuffer, 0, 1);
+    this.exportSyncFlag = new Int32Array(exportSyncArrayBuffer, 0, 1);
     this.exportSyncBuffer = Buffer.from(exportSyncArrayBuffer, 4);
     this.worker = new worker_threads.Worker(__filename, {
       stdout: true,
@@ -78,22 +78,21 @@ class MainContext {
         const buf_msg = buf.slice(8, 8 + len);
         buf = buf.slice(8 + len);
 
-        mutexLock(this.exportSyncFlags, 0);
+        Atomics.wait(this.exportSyncFlag, 0, 2);
+        const export_sync_flag = Atomics.load(this.exportSyncFlag, 0);
 
-        const export_sync_state = this.exportSyncBuffer.readUInt32LE(0);
-        if (export_sync_state === 1) {
-          this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 4);
-          buf_msg.copy(this.exportSyncBuffer, 8);
-          this.exportSyncBuffer.writeUInt32LE(2, 0);
-          mutexUnlock(this.exportSyncFlags, 0);
+        if (export_sync_flag === 1) {
+          this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 0);
+          buf_msg.copy(this.exportSyncBuffer, 4);
+          Atomics.store(this.exportSyncFlag, 0, 2);
+          Atomics.notify(this.exportSyncFlag, 0, 1);
           continue;
         }
-
-        mutexUnlock(this.exportSyncFlags, 0);
 
         if (buf_msg.readUInt8(0) === 4) {
           process.stdin.unref();
         }
+
         this.worker.postMessage(buf_msg);
       }
     });
@@ -126,7 +125,7 @@ class MainContext {
 class WorkerContext {
   constructor() {
     const exportSyncArrayBuffer = worker_threads.workerData;
-    this.exportSyncFlags = new Int32Array(exportSyncArrayBuffer, 0, 1);
+    this.exportSyncFlag = new Int32Array(exportSyncArrayBuffer, 0, 1);
     this.exportSyncBuffer = Buffer.from(exportSyncArrayBuffer, 4);
     this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
@@ -375,36 +374,30 @@ class WorkerContext {
             }
 
             if (is_sync) {
-              mutexLock(this.exportSyncFlags, 0);
-              this.exportSyncBuffer.writeUInt32LE(1, 0);
-              mutexUnlock(this.exportSyncFlags, 0);
+              Atomics.store(this.exportSyncFlag, 0, 1);
             }
 
             worker_threads.parentPort.postMessage(req_buf);
 
             if (is_sync) {
               while (true) {
-                let buf_msg;
-
-                while (true) {
-                  mutexLock(this.exportSyncFlags, 0);
-                  const export_sync_state = this.exportSyncBuffer.readUInt32LE(
-                    0
-                  );
-                  if (export_sync_state === 2) {
-                    const buf_msg_len = this.exportSyncBuffer.readUInt32LE(4);
-                    buf_msg = Buffer.from(
-                      this.exportSyncBuffer.slice(8, 8 + buf_msg_len)
-                    );
-                    this.exportSyncBuffer.writeUInt32LE(0, 0);
-                    mutexUnlock(this.exportSyncFlags, 0);
-                    break;
-                  } else {
-                    mutexUnlock(this.exportSyncFlags, 0);
-                  }
-                }
+                Atomics.wait(this.exportSyncFlag, 0, 1);
+                const buf_msg_len = this.exportSyncBuffer.readUInt32LE(0);
+                const buf_msg = Buffer.from(
+                  this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
+                );
 
                 const r = this.handleParentMessage(buf_msg);
+
+                Atomics.store(
+                  this.exportSyncFlag,
+                  0,
+                  hs_eval_req_promise.fulfilled || hs_eval_req_promise.rejected
+                    ? 0
+                    : 1
+                );
+                Atomics.notify(this.exportSyncFlag, 0, 1);
+
                 if (isPromise(r)) {
                   r.then((resp_buf) => {
                     if (resp_buf) {
@@ -509,17 +502,6 @@ class WorkerContext {
     err_buf.copy(resp_buf, 18);
     return resp_buf;
   }
-}
-
-function mutexLock(arr, i) {
-  while (Atomics.compareExchange(arr, i, 0, 1) === 1) {
-    Atomics.wait(arr, i, 1);
-  }
-}
-
-function mutexUnlock(arr, i) {
-  Atomics.store(arr, i, 0);
-  Atomics.notify(arr, i, 1);
 }
 
 function newPromise() {

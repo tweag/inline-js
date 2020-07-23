@@ -72,9 +72,9 @@ evalWithDecoder _return_type _decoder _session@Session {..} _code = do
 eval :: forall a. FromJS a => Session -> JSExpr -> IO a
 eval s c =
   evalWithDecoder (rawJSType (Proxy @a)) fromJS s $
-    "Promise.resolve("
+    "((x, f) => (Boolean(x) && typeof x.then === 'function') ? x.then(f) : f(x))("
       <> c
-      <> ").then("
+      <> ", "
       <> toRawJSType (Proxy @a)
       <> ")"
 
