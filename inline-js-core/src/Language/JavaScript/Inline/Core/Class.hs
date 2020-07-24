@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -7,6 +8,7 @@ module Language.JavaScript.Inline.Core.Class where
 import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
 import Data.Proxy
+import Data.String
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
@@ -16,18 +18,21 @@ import Language.JavaScript.Inline.Core.Utils
 newtype EncodedString = EncodedString
   { unEncodedString :: LBS.ByteString
   }
-  deriving (Show)
+  deriving (Show, IsString)
 
 -- | UTF-8 encoded JSON.
 newtype EncodedJSON = EncodedJSON
   { unEncodedJSON :: LBS.ByteString
   }
-  deriving (Show)
+  deriving (Show, IsString)
 
 -- | Haskell types which can be converted to JavaScript.
 class ToJS a where
   -- | Encodes a Haskell value to 'JSExpr'.
   toJS :: a -> JSExpr
+
+instance ToJS () where
+  toJS _ = "undefined"
 
 instance ToJS LBS.ByteString where
   toJS = JSExpr . pure . BufferLiteral
@@ -56,7 +61,7 @@ class FromJS a where
 
 instance FromJS () where
   rawJSType _ = RawNone
-  toRawJSType _ = "a => a"
+  toRawJSType _ = "() => undefined"
   fromJS _ _ = pure ()
 
 instance FromJS LBS.ByteString where
