@@ -7,6 +7,7 @@ module Language.JavaScript.Inline.Examples.Stream where
 
 import Control.Exception
 import qualified Data.ByteString.Lazy as LBS
+import Data.Foldable
 import Language.JavaScript.Inline
 import Language.JavaScript.Inline.Examples.Utils.LazyIO
 
@@ -19,6 +20,7 @@ lazyStream _session _stream = do
     export
       _session
       (lazyOnError . toException . userError . show @EncodedString)
+  lazySetFinalizer $ for_ [_on_data, _on_end, _on_error] freeJSVal
   eval @()
     _session
     [block|

@@ -128,8 +128,8 @@ exportAsyncOrSync _is_sync _session@Session {..} f = do
       Right _jsval_id_buf -> do
         _jsval_id <- runGetExact getWord64host _jsval_id_buf
         newJSVal False _jsval_id $ do
-          sessionSend _session $ JSValFree _jsval_id
           freeStablePtr _sp_f
+          sessionSend _session $ JSValFree _jsval_id
 
 -- | Export a Haskell function as a JavaScript async function, and return its
 -- 'JSVal'. Some points to keep in mind:
