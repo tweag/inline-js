@@ -16,7 +16,6 @@ extra-source-files:
 ghc-options: -Wall -threaded -rtsopts
 
 dependencies:
-  - Cabal
   - aeson
   - base >= 4.13 && < 5
   - bytestring
@@ -25,8 +24,10 @@ dependencies:
   - inline-js
   - inline-js-examples
   - process
+  - splitmix
   - tasty
   - tasty-hunit
+  - temporary
 
 tests:
   inline-js-tests:

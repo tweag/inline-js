@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9f6f714054828ed848c01176353fea26cfa5b2266275d7c7df6bdb1cf4256921
+-- hash: 984be4683a1f47b1ff48e1e1f76e84fc11e815ab78c11a66aaabd2ba19e54762
 
 name:           inline-js-examples
 version:        0.0.1.0
@@ -29,7 +29,9 @@ source-repository head
 
 library
   exposed-modules:
+      Language.JavaScript.Inline.Examples.Stream
       Language.JavaScript.Inline.Examples.Utils
+      Language.JavaScript.Inline.Examples.Utils.LazyIO
       Language.JavaScript.Inline.Examples.Wasm
   other-modules:
       Paths_inline_js_examples
@@ -42,4 +44,6 @@ library
       base >=4.13 && <5
     , bytestring
     , inline-js
+    , stm
+    , stm-chans
   default-language: Haskell2010

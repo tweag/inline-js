@@ -11,14 +11,19 @@ import Control.Monad
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
-import Distribution.Simple.Utils
+import Foreign
 import Language.JavaScript.Inline
+import Language.JavaScript.Inline.Examples.Stream
 import System.Directory
 import System.Exit
 import System.FilePath
+import System.IO
+import System.IO.Temp
 import System.Process
+import System.Random.SplitMix
 import Test.Tasty
 import Test.Tasty.HUnit
+import Data.String
 
 main :: IO ()
 main =
@@ -82,13 +87,27 @@ main =
         testCase "exportSync" $
           withDefaultSession $ \s -> replicateM_ 0x10 $ do
             let f :: V -> V -> IO V
-                f (V x) (V y) = pure $ V $ A.Array [x, y]
+                f x y = eval s [expr| [$x, $y] |]
             v <- exportSync s f
             let x = V $ A.String "asdf"
                 y = V $ A.String "233"
             r <- eval s [expr| $v($x, $y) |]
             r @?= V (A.Array [A.String "asdf", A.String "233"])
-            freeJSVal v
+            freeJSVal v,
+        testCase "stream" $
+          withDefaultSession $ \s ->
+            bracket (randomFile 0x100000) removeFile $ \p -> do
+              let js_path = fromString @EncodedString p
+              js_stream <-
+                eval
+                  s
+                  [block|
+                    const fs = require("fs");
+                    return fs.createReadStream($js_path);
+                  |]
+              js_content <- lazyStream s js_stream
+              hs_content <- LBS.readFile p
+              js_content @?= hs_content
       ]
 
 newtype I = I Int
@@ -115,3 +134,20 @@ withTmpDir pre =
         pure p
     )
     removePathForcibly
+
+randomFile :: Int -> IO FilePath
+randomFile size = do
+  tmpdir <- getCanonicalTemporaryDirectory
+  (p, h) <- openBinaryTempFile tmpdir "inline-js"
+  gen <- newSMGen
+  alloca $ \ptr ->
+    let w _gen _size
+          | _size >= 8 = do
+            let (x, _gen') = nextWord64 _gen
+            poke ptr x
+            hPutBuf h ptr 8
+            w _gen' (_size - 8)
+          | otherwise = pure ()
+     in w gen size
+  hClose h
+  pure p

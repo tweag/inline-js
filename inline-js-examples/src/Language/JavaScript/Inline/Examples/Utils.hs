@@ -17,6 +17,6 @@ storableToLBS a =
 
 storableFromLBS :: forall a. Storable a => LBS.ByteString -> IO a
 storableFromLBS s = BS.unsafeUseAsCStringLen (LBS.toStrict s) $ \(p, len) ->
-  if (len == sizeOf (undefined :: a))
+  if len == sizeOf (undefined :: a)
     then peek (castPtr p)
     else fail "Language.JavaScript.Inline.Examples.Utils.storableFromLBS"

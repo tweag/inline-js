@@ -11,7 +11,6 @@ class JSValContext {
   constructor() {
     this.jsvalMap = new Map();
     this.jsvalLast = 0n;
-    Object.seal(this);
   }
 
   new(x) {
@@ -58,7 +57,7 @@ class MainContext {
         Number.parseInt(process.env.INLINE_JS_EXPORT_SYNC_BUFFER_SIZE, 10) *
           0x100000
     );
-    this.exportSyncFlags = new Int32Array(exportSyncArrayBuffer, 0, 1);
+    this.exportSyncFlag = new Int32Array(exportSyncArrayBuffer, 0, 1);
     this.exportSyncBuffer = Buffer.from(exportSyncArrayBuffer, 4);
     this.worker = new worker_threads.Worker(__filename, {
       stdout: true,
@@ -66,7 +65,6 @@ class MainContext {
     });
     this.worker.on("message", (buf_msg) => this.onWorkerMessage(buf_msg));
     this.recvLoop();
-    Object.freeze(this);
   }
 
   recvLoop() {
@@ -80,20 +78,21 @@ class MainContext {
         const buf_msg = buf.slice(8, 8 + len);
         buf = buf.slice(8 + len);
 
-        Atomics.wait(this.exportSyncFlags, 0, 2);
-        const export_sync_state = Atomics.load(this.exportSyncFlags, 0);
-
-        if (export_sync_state === 1) {
-          this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 0);
-          buf_msg.copy(this.exportSyncBuffer, 4);
-          Atomics.store(this.exportSyncFlags, 0, 2);
-          Atomics.notify(this.exportSyncFlags, 0, 1);
-          continue;
-        }
-
         if (buf_msg.readUInt8(0) === 4) {
           process.stdin.unref();
         }
+
+        Atomics.wait(this.exportSyncFlag, 0, 2);
+        const export_sync_flag = Atomics.load(this.exportSyncFlag, 0);
+
+        if (export_sync_flag === 1) {
+          this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 0);
+          buf_msg.copy(this.exportSyncBuffer, 4);
+          Atomics.store(this.exportSyncFlag, 0, 2);
+          Atomics.notify(this.exportSyncFlag, 0, 1);
+          continue;
+        }
+
         this.worker.postMessage(buf_msg);
       }
     });
@@ -126,7 +125,7 @@ class MainContext {
 class WorkerContext {
   constructor() {
     const exportSyncArrayBuffer = worker_threads.workerData;
-    this.exportSyncFlags = new Int32Array(exportSyncArrayBuffer, 0, 1);
+    this.exportSyncFlag = new Int32Array(exportSyncArrayBuffer, 0, 1);
     this.exportSyncBuffer = Buffer.from(exportSyncArrayBuffer, 4);
     this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
@@ -143,7 +142,6 @@ class WorkerContext {
         this.onParentMessage(buf_msg)
       );
     })();
-    Object.freeze(this);
   }
 
   toJS(buf, p) {
@@ -171,7 +169,7 @@ class WorkerContext {
           const buf_len = Number(buf.readBigUInt64LE(p));
           p += 8;
           const buf_id = jsval_tmp.push(buf.slice(p, p + buf_len)) - 1;
-          expr = `${expr}__t${buf_id.toString(36)}`;
+          expr = `${expr}__${buf_id}`;
           p += buf_len;
           break;
         }
@@ -182,7 +180,7 @@ class WorkerContext {
           p += 8;
           const str_id =
             jsval_tmp.push(this.decoder.end(buf.slice(p, p + buf_len))) - 1;
-          expr = `${expr}__t${str_id.toString(36)}`;
+          expr = `${expr}__${str_id}`;
           p += buf_len;
           break;
         }
@@ -195,7 +193,7 @@ class WorkerContext {
             jsval_tmp.push(
               JSON.parse(this.decoder.end(buf.slice(p, p + buf_len)))
             ) - 1;
-          expr = `${expr}__t${json_id.toString(36)}`;
+          expr = `${expr}__${json_id}`;
           p += buf_len;
           break;
         }
@@ -204,7 +202,7 @@ class WorkerContext {
           // JSValLiteral
           const jsval_id =
             jsval_tmp.push(this.jsval.get(buf.readBigUInt64LE(p))) - 1;
-          expr = `${expr}__t${jsval_id.toString(36)}`;
+          expr = `${expr}__${jsval_id}`;
           p += 8;
           break;
         }
@@ -222,7 +220,7 @@ class WorkerContext {
     } else {
       let expr_params = "require";
       for (let i = 0; i < jsval_tmp.length; ++i) {
-        expr_params = `${expr_params}, __t${i.toString(36)}`;
+        expr_params = `${expr_params}, __${i}`;
       }
       expr = `(${expr_params}) => (\n${expr}\n)`;
       result = vm.runInThisContext(expr, {
@@ -268,10 +266,18 @@ class WorkerContext {
     }
   }
 
-  async onParentMessage(buf_msg) {
-    const resp_buf = await this.handleParentMessage(buf_msg);
-    if (resp_buf) {
-      worker_threads.parentPort.postMessage(resp_buf);
+  onParentMessage(buf_msg) {
+    const r = this.handleParentMessage(buf_msg);
+    if (isPromise(r)) {
+      r.then((resp_buf) => {
+        if (resp_buf) {
+          worker_threads.parentPort.postMessage(resp_buf);
+        }
+      });
+    } else {
+      if (r) {
+        worker_threads.parentPort.postMessage(r);
+      }
     }
   }
 
@@ -358,6 +364,9 @@ class WorkerContext {
 
             const hs_eval_req_promise = newPromise();
             const hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
+            if (is_sync) {
+              hs_eval_req_promise.catch(() => {});
+            }
 
             req_buf.writeUInt8(1, 0);
             req_buf.writeUInt8(Number(is_sync), 1);
@@ -373,41 +382,35 @@ class WorkerContext {
             }
 
             if (is_sync) {
-              Atomics.store(this.exportSyncFlags, 0, 1);
+              Atomics.store(this.exportSyncFlag, 0, 1);
             }
 
             worker_threads.parentPort.postMessage(req_buf);
 
             if (is_sync) {
-              Atomics.wait(this.exportSyncFlags, 0, 1);
-              const buf_msg_len = this.exportSyncBuffer.readUInt32LE(0);
-              const buf_msg = Buffer.from(
-                this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
-              );
-              Atomics.store(this.exportSyncFlags, 0, 0);
+              while (true) {
+                Atomics.wait(this.exportSyncFlag, 0, 1);
+                const buf_msg_len = this.exportSyncBuffer.readUInt32LE(0);
+                const buf_msg = Buffer.from(
+                  this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
+                );
 
-              let p = 10;
-              const hs_eval_resp_tag = buf_msg.readUInt8(p);
-              p += 1;
-              switch (hs_eval_resp_tag) {
-                case 0: {
-                  const err_len = Number(buf_msg.readBigUInt64LE(p));
-                  p += 8;
-                  err = new Error(
-                    this.decoder.end(buf_msg.slice(p, p + err_len))
-                  );
-                  p += err_len;
-                  throw err;
+                this.onParentMessage(buf_msg);
+
+                Atomics.store(
+                  this.exportSyncFlag,
+                  0,
+                  hs_eval_req_promise.fulfilled || hs_eval_req_promise.rejected
+                    ? 0
+                    : 1
+                );
+                Atomics.notify(this.exportSyncFlag, 0, 1);
+
+                if (hs_eval_req_promise.fulfilled) {
+                  return hs_eval_req_promise.value;
                 }
-
-                case 1: {
-                  const r = this.toJS(buf_msg, p);
-                  p = r.p;
-                  return r.result;
-                }
-
-                default: {
-                  throw new Error(`inline-js invalid message ${buf_msg}`);
+                if (hs_eval_req_promise.rejected) {
+                  throw hs_eval_req_promise.reason;
                 }
               }
             } else {
@@ -503,13 +506,21 @@ function newPromise() {
     promise_resolve = resolve;
     promise_reject = reject;
   });
-  p.resolve = promise_resolve;
-  p.reject = promise_reject;
+  p.resolve = (v) => {
+    p.fulfilled = true;
+    p.value = v;
+    promise_resolve(v);
+  };
+  p.reject = (err) => {
+    p.rejected = true;
+    p.reason = err;
+    promise_reject(err);
+  };
   return p;
 }
 
 function isPromise(obj) {
-  return obj && typeof obj.then === "function";
+  return Boolean(obj) && typeof obj.then === "function";
 }
 
 function bufferFromArrayBufferView(a) {

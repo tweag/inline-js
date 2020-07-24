@@ -19,6 +19,8 @@ dependencies:
   - base >= 4.13 && < 5
   - bytestring
   - inline-js
+  - stm
+  - stm-chans
 
 library:
   source-dirs: src
