@@ -266,10 +266,18 @@ class WorkerContext {
     }
   }
 
-  async onParentMessage(buf_msg) {
-    const resp_buf = await this.handleParentMessage(buf_msg);
-    if (resp_buf) {
-      worker_threads.parentPort.postMessage(resp_buf);
+  onParentMessage(buf_msg) {
+    const r = this.handleParentMessage(buf_msg);
+    if (isPromise(r)) {
+      r.then((resp_buf) => {
+        if (resp_buf) {
+          worker_threads.parentPort.postMessage(resp_buf);
+        }
+      });
+    } else {
+      if (r) {
+        worker_threads.parentPort.postMessage(r);
+      }
     }
   }
 
@@ -387,7 +395,7 @@ class WorkerContext {
                   this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
                 );
 
-                const r = this.handleParentMessage(buf_msg);
+                this.onParentMessage(buf_msg);
 
                 Atomics.store(
                   this.exportSyncFlag,
@@ -397,18 +405,6 @@ class WorkerContext {
                     : 1
                 );
                 Atomics.notify(this.exportSyncFlag, 0, 1);
-
-                if (isPromise(r)) {
-                  r.then((resp_buf) => {
-                    if (resp_buf) {
-                      worker_threads.parentPort.postMessage(resp_buf);
-                    }
-                  });
-                } else {
-                  if (r) {
-                    worker_threads.parentPort.postMessage(r);
-                  }
-                }
 
                 if (hs_eval_req_promise.fulfilled) {
                   return hs_eval_req_promise.value;
