@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 96b1bb37b74b61b11270f093da0b353b8964526153e38ca331590efff9f57c18
+-- hash: 9c84a5c06051b582d0656ac373ae8a6364f9aea8c6e6b01a795b6addcab59f47
 
 name:           inline-js-core
 version:        0.0.1.0
@@ -20,6 +20,8 @@ license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     jsbits/index.js
+    jsbits/package-lock.json
+    jsbits/package.json
     CHANGELOG.md
     LICENSE
     README.md
@@ -39,6 +41,7 @@ library
       Language.JavaScript.Inline.Core.Import
       Language.JavaScript.Inline.Core.Instruction
       Language.JavaScript.Inline.Core.IPC
+      Language.JavaScript.Inline.Core.JSParser
       Language.JavaScript.Inline.Core.JSVal
       Language.JavaScript.Inline.Core.Message
       Language.JavaScript.Inline.Core.NodeVersion

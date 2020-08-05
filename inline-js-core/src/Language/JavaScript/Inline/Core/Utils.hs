@@ -16,6 +16,7 @@ import Data.ByteString.Builder.Prim.Internal
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Unsafe as BS
 import Data.Coerce
+import Data.Foldable
 import qualified Data.Map.Strict as M
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Encoding as LT
@@ -61,6 +62,38 @@ embedFile p' = do
       if any ((== ".cabal") . takeExtension) fs
         then pure d
         else pkgDir d
+
+embedDir :: FilePath -> Q Exp
+embedDir p' = do
+  fs <- runIO $ listDirectoryRecursive p'
+  listE $
+    flip map fs $ \f -> do
+      s <- runIO $ BS.readFile $ p' </> f
+      let len = BS.length s
+      [|
+        ( f,
+          $( [|
+               unsafePerformIO $
+                 BS.unsafePackAddressLen len $(litE $ stringPrimL $ BS.unpack s)
+               |]
+           )
+        )
+        |]
+  where
+    listDirectoryRecursive p = do
+      ps <- listDirectory p
+      foldrM
+        ( \f acc -> do
+            let dir = p </> f
+            is_dir <- doesDirectoryExist dir
+            if is_dir
+              then do
+                r <- listDirectoryRecursive dir
+                pure $ map (f </>) r <> acc
+              else pure $ f : acc
+        )
+        []
+        ps
 
 -- | Deduplicate an association list in a left-biased manner; if the same key
 -- appears more than once, the left-most key/value pair is preserved.
