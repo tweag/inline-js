@@ -2,6 +2,7 @@ module Language.JavaScript.Inline.Core.IPC where
 
 import Control.Concurrent
 import Control.Concurrent.STM
+import Control.Exception
 import Data.Binary.Get
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
@@ -9,6 +10,7 @@ import Foreign
 import GHC.IO (catchAny)
 import Language.JavaScript.Inline.Core.Utils
 import System.IO
+import System.IO.Unsafe
 
 type Msg = LBS.ByteString
 
@@ -28,8 +30,8 @@ data IPC = IPC
     closeMsg :: Msg,
     -- | The callback to be called when 'closeMsg' is sent.
     preClose :: IO (),
-    -- | The callback to be called when 'recv' throws, which indicates the
-    -- remote device has closed.
+    -- | The callback to be called when 'send' or 'recv' throws, which indicates
+    -- the remote device has closed. Will only be called once.
     postClose :: IO ()
   }
 
@@ -80,16 +82,19 @@ ipcFromHandles h_send h_recv ipc =
 ipcFork :: IPC -> IO IPC
 ipcFork ipc = do
   queue_send <- newTQueueIO
-  let io_send = do
+  post_close_thunk <- unsafeInterleaveIO $ postClose ipc
+  let post_close = evaluate post_close_thunk
+      io_send_loop = do
         msg <- atomically $ readTQueue queue_send
         send ipc msg
-        if msg == closeMsg ipc then preClose ipc else io_send
+        if msg == closeMsg ipc then preClose ipc else io_send_loop
+      io_send = catchAny io_send_loop $ const post_close
   _ <- forkIO io_send
   let io_recv_loop = do
         msg <- recv ipc
         onRecv ipc msg
         io_recv_loop
-      io_recv = catchAny io_recv_loop $ \_ -> postClose ipc
+      io_recv = catchAny io_recv_loop $ const post_close
   _ <- forkIO io_recv
   pure
     ipc
