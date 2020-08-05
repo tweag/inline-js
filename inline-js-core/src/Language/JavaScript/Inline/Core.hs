@@ -5,6 +5,7 @@ module Language.JavaScript.Inline.Core
     Session,
     newSession,
     closeSession,
+    killSession,
 
     -- * Haskell/JavaScript data marshaling
     JSExpr,

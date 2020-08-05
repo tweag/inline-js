@@ -72,9 +72,12 @@ data Session = Session
   { ipc :: IPC,
     fatalErrorInbox :: TMVar (Either LBS.ByteString LBS.ByteString),
     -- | After a 'Session' is closed, no more messages can be sent to @node@.
-    -- @node@ may still run for some time to allow previous evaluation results
-    -- to be sent back.
-    closeSession :: IO ()
+    -- Use this to close the 'Session' if @node@ should still run for some time
+    -- to allow previous evaluation results to be sent back.
+    closeSession :: IO (),
+    -- | Terminate the @node@ process immediately. Use this to close the
+    -- 'Session' if @node@ doesn't need to run any more.
+    killSession :: IO ()
   }
 
 instance Show Session where
@@ -167,11 +170,16 @@ newSession Config {..} = do
           send _ipc $ closeMsg _ipc
           ipc_post_close
           removeDirectoryRecursive _root
+        session_kill = do
+          terminateProcess _ph
+          ipc_post_close
+          removeDirectoryRecursive _root
         _session =
           Session
             { ipc = _ipc,
               fatalErrorInbox = _inbox,
-              closeSession = session_close
+              closeSession = session_close,
+              killSession = session_kill
             }
     pure _session
 
