@@ -22,7 +22,7 @@ jobs:
     steps:
 
       - name: setup-haskell
-        uses: actions/setup-haskell@v1
+        uses: actions/setup-haskell@main
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: 3.2.0.0
@@ -37,7 +37,7 @@ jobs:
       - name: setup-node-14
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 14.6.0
+          node-version: 14.7.0
 
       - name: test-node-14
         run: |
@@ -57,7 +57,7 @@ jobs:
       - name: setup-node-12
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 12.18.2
+          node-version: 12.18.3
 
       - name: test-node-12
         run: |
@@ -87,7 +87,7 @@ jobs:
     steps:
 
       - name: setup-haskell
-        uses: actions/setup-haskell@v1
+        uses: actions/setup-haskell@main
         with:
           stack-version: 2.3.1
           enable-stack: true
@@ -103,7 +103,7 @@ jobs:
       - name: setup-node-14
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 14.6.0
+          node-version: 14.7.0
 
       - name: test-node-14
         run: |
@@ -123,7 +123,7 @@ jobs:
       - name: setup-node-12
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 12.18.2
+          node-version: 12.18.3
 
       - name: test-node-12
         run: |
@@ -175,11 +175,9 @@ jobs:
           curl -L https://github.com/commercialhaskell/stack/releases/download/v2.3.1/stack-2.3.1-linux-x86_64-bin -o $HOME/.local/bin/stack
           chmod +x $HOME/.local/bin/stack
 
-          stack -j2 build --test --no-run-tests
-
-          rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v14.6.0/node-v14.6.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          curl https://unofficial-builds.nodejs.org/download/release/v14.7.0/node-v14.7.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
+          stack -j2 build --test --no-run-tests
           stack test inline-js-tests --test-arguments="-j2"
 
           rm -rf $HOME/.node/*
@@ -188,7 +186,7 @@ jobs:
           stack test inline-js-tests --test-arguments="-j2"
 
           rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v12.18.2/node-v12.18.2-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          curl https://unofficial-builds.nodejs.org/download/release/v12.18.3/node-v12.18.3-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
           stack test inline-js-tests --test-arguments="-j2"
 
@@ -203,7 +201,7 @@ jobs:
     steps:
 
       - name: setup-haskell
-        uses: actions/setup-haskell@v1
+        uses: actions/setup-haskell@main
         with:
           ghc-version: 8.10.1
           cabal-version: 3.2.0.0
@@ -244,7 +242,7 @@ jobs:
     steps:
 
       - name: setup-haskell
-        uses: actions/setup-haskell@v1
+        uses: actions/setup-haskell@main
         with:
           ghc-version: 8.10.1
           cabal-version: 3.2.0.0
@@ -276,7 +274,7 @@ jobs:
     steps:
 
       - name: setup-haskell
-        uses: actions/setup-haskell@v1
+        uses: actions/setup-haskell@main
         with:
           stack-version: 2.3.1
           enable-stack: true
@@ -285,7 +283,7 @@ jobs:
       - name: setup-node-14
         uses: actions/setup-node@v2.0.0
         with:
-          node-version: 14.6.0
+          node-version: 14.7.0
 
       - name: setup-deps
         run: |
