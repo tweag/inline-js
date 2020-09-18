@@ -2,6 +2,12 @@ module Language.JavaScript.Inline.Core.Exception where
 
 import Control.Exception
 
+data NotThreadedRTS
+  = NotThreadedRTS
+  deriving (Show)
+
+instance Exception NotThreadedRTS
+
 data NodeVersionUnsupported
   = NodeVersionUnsupported
   deriving (Show)

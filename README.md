@@ -34,7 +34,7 @@
 Supported GHC versions:
 
 - `ghc-8.8`, tested with `ghc-8.8.4`
-- `ghc-8.10`, tested with `ghc-8.10.1`
+- `ghc-8.10`, tested with `ghc-8.10.2`
 
 Supported platforms:
 
