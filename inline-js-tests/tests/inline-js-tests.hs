@@ -6,11 +6,12 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-import Control.Exception
+import Control.Exception hiding (assert)
 import Control.Monad
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable
+import Data.String
 import Foreign
 import Language.JavaScript.Inline
 import Language.JavaScript.Inline.Examples.Stream
@@ -22,8 +23,7 @@ import System.IO.Temp
 import System.Process
 import System.Random.SplitMix
 import Test.Tasty
-import Test.Tasty.HUnit
-import Data.String
+import Test.Tasty.HUnit hiding (assert)
 
 main :: IO ()
 main =
@@ -118,19 +118,19 @@ newtype V = V A.Value
   deriving (Eq, Show)
   deriving (ToJS, FromJS) via (Aeson A.Value)
 
-withSession :: Config -> (Session -> Assertion) -> Assertion
-withSession conf = bracket (newSession conf) closeSession
+withSession :: Config -> (Session -> IO a) -> IO a
+withSession conf = bracket (newSession conf) killSession
 
-withDefaultSession :: (Session -> Assertion) -> Assertion
+withDefaultSession :: (Session -> IO a) -> IO a
 withDefaultSession = withSession defaultConfig
 
-withTmpDir :: (FilePath -> IO ()) -> (FilePath -> Assertion) -> Assertion
-withTmpDir pre =
+withTmpDir :: (FilePath -> IO ()) -> (FilePath -> IO a) -> IO a
+withTmpDir pre' =
   bracket
     ( do
         tmpdir <- getTemporaryDirectory
         p <- createTempDirectory tmpdir "inline-js"
-        pre p `onException` removePathForcibly p
+        pre' p `onException` removePathForcibly p
         pure p
     )
     removePathForcibly

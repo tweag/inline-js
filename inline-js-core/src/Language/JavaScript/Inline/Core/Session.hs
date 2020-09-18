@@ -11,12 +11,14 @@ module Language.JavaScript.Inline.Core.Session where
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception
+import Control.Monad
 import qualified Data.ByteString as BS
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
 import Data.Maybe
 import Distribution.Simple.Utils
 import Foreign
+import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.IPC
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.NodeVersion
@@ -85,6 +87,7 @@ instance Show Session where
 
 newSession :: Config -> IO Session
 newSession Config {..} = do
+  unless rtsSupportsBoundThreads $ throwIO NotThreadedRTS
   checkNodeVersion nodePath
   (_root, _p) <- do
     _tmp <- getTemporaryDirectory
