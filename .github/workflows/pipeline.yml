@@ -171,11 +171,10 @@ jobs:
             sed \
             util-linux \
             xz
-          ln -s /usr/lib/libncursesw.so.6 /usr/lib/libtinfow.so.6
 
           mkdir $HOME/.stack
           echo "allow-different-user: true" > $HOME/.stack/config.yaml
-          echo "ghc-build: musl" >> $HOME/.stack/config.yaml
+          echo "system-ghc: true" >> $HOME/.stack/config.yaml
           curl -L https://github.com/commercialhaskell/stack/releases/download/v2.3.3/stack-2.3.3-linux-x86_64-bin -o $HOME/.local/bin/stack
           chmod +x $HOME/.local/bin/stack
 
