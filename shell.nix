@@ -4,8 +4,7 @@
 , nixpkgsArgs ? haskellNix.nixpkgsArgs
 , pkgs ? import nixpkgsSrc nixpkgsArgs
 , hsPkgs ? import ./default.nix { inherit pkgs; }
-}:
-hsPkgs.shellFor {
+}: hsPkgs.shellFor {
   packages = ps: with ps; [
     inline-js
     inline-js-core
@@ -15,16 +14,15 @@ hsPkgs.shellFor {
 
   withHoogle = true;
 
-  buildInputs = with pkgs.haskellPackages;
-    [
-      brittany
-      cabal-install
-      ghcid
-      hlint
-      pkgs.nix
-      pkgs.nodejs-14_x
-      ormolu
-    ];
+  buildInputs = with pkgs.haskellPackages; [
+    brittany
+    cabal-install
+    ghcid
+    hlint
+    pkgs.nix
+    pkgs.nodejs-14_x
+    ormolu
+  ];
 
   exactDeps = true;
 }

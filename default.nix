@@ -3,8 +3,7 @@
 , nixpkgsSrc ? haskellNix.sources.nixpkgs-2009
 , nixpkgsArgs ? haskellNix.nixpkgsArgs
 , pkgs ? import nixpkgsSrc nixpkgsArgs
-}:
-pkgs.haskell-nix.cabalProject {
+}: pkgs.haskell-nix.cabalProject {
   src = pkgs.haskell-nix.haskellLib.cleanGit {
     name = "inline-js";
     src = ./.;
