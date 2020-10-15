@@ -15,6 +15,7 @@ import Data.String
 import Foreign
 import Language.JavaScript.Inline
 import Language.JavaScript.Inline.Examples.Stream
+import NPMPath
 import System.Directory
 import System.Exit
 import System.FilePath
@@ -48,7 +49,7 @@ main =
             ( \p -> do
                 (ec, _, _) <-
                   readCreateProcessWithExitCode
-                    ((shell "npm install left-pad") {cwd = Just p})
+                    ((shell $ defNPMPath <> " install left-pad") {cwd = Just p})
                     ""
                 case ec of
                   ExitSuccess -> pure ()

@@ -29,9 +29,9 @@ dependencies:
   - tasty-hunit
   - temporary
 
-tests:
+executables:
   inline-js-tests:
-    source-dirs: tests
+    source-dirs: app
     main: inline-js-tests.hs
     generated-other-modules:
       - Paths_inline_js_tests

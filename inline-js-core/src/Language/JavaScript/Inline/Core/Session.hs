@@ -21,6 +21,7 @@ import Foreign
 import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.IPC
 import Language.JavaScript.Inline.Core.Message
+import Language.JavaScript.Inline.Core.NodePath
 import Language.JavaScript.Inline.Core.NodeVersion
 import Language.JavaScript.Inline.Core.Utils
 import System.Directory
@@ -58,7 +59,7 @@ data Config = Config
 defaultConfig :: Config
 defaultConfig =
   Config
-    { nodePath = "node",
+    { nodePath = defNodePath,
       nodeExtraArgs =
         [ "--experimental-modules",
           "--experimental-worker",
