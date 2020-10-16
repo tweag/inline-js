@@ -43,7 +43,7 @@ jobs:
 
       - name: test
         run: |
-          nix run -f . -i --argstr ghc $ghc --argstr node $node inline-js-tests.components.exes.inline-js-tests -c "inline-js-tests -j2"
+          nix run -f . -i --argstr ghc $ghc --argstr node $node inline-js-tests.components.exes.inline-js-tests -c inline-js-tests -j2
 
       - name: test-nix-shell
         run: |
