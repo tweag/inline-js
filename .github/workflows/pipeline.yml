@@ -37,7 +37,7 @@ jobs:
       - name: setup-node-14
         uses: actions/setup-node@v2-beta
         with:
-          node-version: 14.13.1
+          node-version: 14.14.0
 
       - name: test-node-14
         run: |
@@ -103,7 +103,7 @@ jobs:
       - name: setup-node-14
         uses: actions/setup-node@v2-beta
         with:
-          node-version: 14.13.1
+          node-version: 14.14.0
 
       - name: test-node-14
         run: |
@@ -178,7 +178,7 @@ jobs:
           curl -L https://github.com/commercialhaskell/stack/releases/download/v2.5.1/stack-2.5.1-linux-x86_64-bin -o $HOME/.local/bin/stack
           chmod +x $HOME/.local/bin/stack
 
-          curl https://unofficial-builds.nodejs.org/download/release/v14.13.1/node-v14.13.1-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
+          curl https://unofficial-builds.nodejs.org/download/release/v14.14.0/node-v14.14.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
           node --version
           stack -j2 build --test --no-run-tests
           stack run inline-js-tests -- -j2
@@ -286,7 +286,7 @@ jobs:
       - name: setup-node-14
         uses: actions/setup-node@v2-beta
         with:
-          node-version: 14.13.1
+          node-version: 14.14.0
 
       - name: setup-deps
         run: |
