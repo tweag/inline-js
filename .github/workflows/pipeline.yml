@@ -158,23 +158,23 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
 
-      - name: setup-haskell
-        uses: actions/setup-haskell@main
-        with:
-          ghc-version: 8.10.2
-          cabal-version: 3.2.0.0
-
       - name: checkout
         uses: actions/checkout@v2
 
+      - name: setup-nix
+        uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=./nix/nixpkgs.nix
+
+      - name: setup-cachix
+        uses: cachix/cachix-action@master
+        with:
+          name: inline-js
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+
       - name: haddock
         run: |
-          cabal v2-haddock \
-            --haddock-for-hackage \
-            --haddock-hyperlink-source \
-            --haddock-quickjump \
-            -j2 \
-            all
+          nix-shell --pure --run "cabal v2-haddock --haddock-for-hackage --haddock-hyperlink-source --haddock-quickjump -j2 all"
 
       - name: upload-artifact
         uses: actions/upload-artifact@v2
