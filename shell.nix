@@ -23,7 +23,6 @@
     hlint
     pkgs."${node}"
     (import sources.ormolu {}).ormolu
-    (import sources.ghcide-nix {})."ghcide-${ghc}"
   ];
 
   exactDeps = true;

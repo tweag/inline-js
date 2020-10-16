@@ -1,16 +1,4 @@
 {
-    "ghcide-nix": {
-        "branch": "master",
-        "description": "Nix installation for ghcide",
-        "homepage": "https://github.com/digital-asset/ghcide",
-        "owner": "cachix",
-        "repo": "ghcide-nix",
-        "rev": "8cbf4092acc9faee31a68c4081b081ffebea1f40",
-        "sha256": "06i0b3l50xg7mdv5zm1jp2rgsdjr39vrb7jvlrzy1qxs3qp3qbar",
-        "type": "tarball",
-        "url": "https://github.com/cachix/ghcide-nix/archive/8cbf4092acc9faee31a68c4081b081ffebea1f40.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "haskell-nix": {
         "branch": "master",
         "description": "Alternative Haskell Infrastructure for Nixpkgs",
