@@ -22,7 +22,7 @@
     ghcid
     hlint
     pkgs."${node}"
-    ormolu
+    (import sources.ormolu {}).ormolu
     (import sources.ghcide-nix {})."ghcide-${ghc}"
   ];
 
