@@ -53,8 +53,7 @@ for details.
 
 ## Contributors
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [<img
-src="https://tweag.io/logo.png" height="65">](https://tweag.io)
+[<img src="https://tweag.io/logo.png" height="65">](https://tweag.io)
 
 `inline-js` is maintained by [Tweag I/O](https://tweag.io/).
 
