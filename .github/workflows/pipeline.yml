@@ -117,35 +117,28 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
 
-      - name: setup-haskell
-        uses: actions/setup-haskell@main
-        with:
-          ghc-version: 8.10.2
-          cabal-version: 3.2.0.0
-
       - name: checkout
         uses: actions/checkout@v2
 
+      - name: setup-nix
+        uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=./nix/nixpkgs.nix
+
+      - name: setup-cachix
+        uses: cachix/cachix-action@master
+        with:
+          name: inline-js
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+
       - name: sdist
         run: |
-          pushd inline-js
-          cabal check
-          popd
 
-          pushd inline-js-core
-          cabal check
-          popd
+          for pkg in inline-js inline-js-core inline-js-examples inline-js-tests; do
+            nix-shell --pure --run "cd $pkg && cabal check"
+          done
 
-          pushd inline-js-examples
-          cabal check
-          popd
-
-          pushd inline-js-tests
-          cabal check
-          popd
-
-          cabal v2-sdist \
-            all
+          nix-shell --pure --run "cabal v2-sdist all"
 
       - name: upload-artifact
         uses: actions/upload-artifact@v2
