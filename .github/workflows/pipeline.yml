@@ -183,64 +183,6 @@ jobs:
           node --version
           stack run inline-js-tests -- -j2
 
-  stack-alpine:
-    name: stack-alpine
-    runs-on: ubuntu-20.04
-    container:
-      image: alpine:edge
-    steps:
-
-      - name: checkout
-        uses: actions/checkout@v2
-
-      - name: test
-        run: |
-          export HOME=/root
-          mkdir -p $HOME/.local/bin
-          mkdir $HOME/.node
-          export PATH=$HOME/.local/bin:$HOME/.node/bin:$PATH
-
-          apk add \
-            alpine-sdk \
-            autoconf \
-            automake \
-            binutils-gold \
-            coreutils \
-            findutils \
-            gawk \
-            grep \
-            ghc \
-            ncurses-dev \
-            sed \
-            util-linux \
-            xz
-
-          mkdir $HOME/.stack
-          echo "allow-different-user: true" > $HOME/.stack/config.yaml
-          echo "system-ghc: true" >> $HOME/.stack/config.yaml
-          curl -L https://github.com/commercialhaskell/stack/releases/download/v2.5.1/stack-2.5.1-linux-x86_64-bin -o $HOME/.local/bin/stack
-          chmod +x $HOME/.local/bin/stack
-
-          curl https://unofficial-builds.nodejs.org/download/release/v14.14.0/node-v14.14.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
-          node --version
-          stack -j2 build --test --no-run-tests
-          stack run inline-js-tests -- -j2
-
-          rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v13.14.0/node-v13.14.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
-          node --version
-          stack run inline-js-tests -- -j2
-
-          rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v12.19.0/node-v12.19.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
-          node --version
-          stack run inline-js-tests -- -j2
-
-          rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v10.22.1/node-v10.22.1-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
-          node --version
-          stack run inline-js-tests -- -j2
-
   sdist:
     name: sdist
     runs-on: ubuntu-20.04

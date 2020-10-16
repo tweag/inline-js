@@ -39,7 +39,7 @@ Supported GHC versions:
 Supported platforms:
 
 - Windows 10 x64, tested with Windows Server 2019
-- Linux x64, tested with Ubuntu focal and Alpine edge
+- Linux x64, tested with Ubuntu focal
 - macOS x64, tested with macOS Catalina
 
 Supported `node` versions:
