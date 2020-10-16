@@ -6,6 +6,52 @@ on:
 
 jobs:
 
+  nix:
+    name: nix-${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-20.04
+          - macos-10.15
+        ghc:
+          - ghc8102
+          - ghc884
+        node:
+          - nodejs-14_x
+          - nodejs-12_x
+          - nodejs-10_x
+    env:
+      ghc: ${{ matrix.ghc }}
+      node: ${{ matrix.node }}
+    steps:
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: setup-nix
+        uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=./nix/nixpkgs.nix
+          extra_nix_config:
+            substituters = https://cache.nixos.org https://ghcide-nix.cachix.org https://iohk.cachix.org https://hydra.iohk.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ghcide-nix.cachix.org-1:ibAY5FD+XWLzbLr8fxK6n8fL9zZe7jS+gYeyxyWYK5c= iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+
+      - name: setup-cachix
+        uses: cachix/cachix-action@master
+        with:
+          name: inline-js
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+
+      - name: test
+        run: |
+          nix run -f . -i --argstr ghc $ghc --argstr node $node inline-js-tests.components.exes.inline-js-tests -c "inline-js-tests -j2"
+
+      - name: test-nix-shell
+        run: |
+          nix-shell --pure --argstr ghc $ghc --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
+
   cabal:
     name: cabal-${{ matrix.os }}-ghc-${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}

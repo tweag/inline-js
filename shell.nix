@@ -4,7 +4,8 @@
 , nixpkgsArgs ? haskellNix.nixpkgsArgs
 , pkgs ? import nixpkgsSrc nixpkgsArgs
 , ghc ? "ghc8102"
-, hsPkgs ? import ./default.nix { inherit pkgs; }
+, node ? "nodejs-14_x"
+, hsPkgs ? import ./default.nix { inherit pkgs ghc node; }
 }: hsPkgs.shellFor {
   packages = ps: with ps; [
     inline-js
@@ -20,7 +21,7 @@
     cabal-install
     ghcid
     hlint
-    pkgs.nodejs-14_x
+    pkgs."${node}"
     ormolu
     (import sources.ghcide-nix {})."ghcide-${ghc}"
   ];
