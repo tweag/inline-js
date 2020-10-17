@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 14dc67d6e9b3140007c2cb8324d3fbc205387df94462dcd004edbb9c0348e70a
+-- hash: bd451d42840decd8b5acd66cbfd3b0abe47362280f2d037214043178efce7704
 
 name:           inline-js
 version:        0.0.1.0
@@ -32,6 +32,7 @@ library
       Language.JavaScript.Inline
   other-modules:
       Language.JavaScript.Inline.Aeson
+      Language.JavaScript.Inline.JSParse
       Language.JavaScript.Inline.TH
       Paths_inline_js
   autogen-modules:
@@ -43,7 +44,9 @@ library
       aeson
     , base >=4.13 && <5
     , bytestring
+    , containers
     , inline-js-core
     , language-javascript
+    , syb
     , template-haskell
   default-language: Haskell2010
