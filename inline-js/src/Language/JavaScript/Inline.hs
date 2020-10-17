@@ -6,10 +6,8 @@ module Language.JavaScript.Inline
     Aeson (..),
 
     -- * QuasiQuoters for inline JavaScript
-    expr,
-    block,
-    exprAsync,
-    blockAsync,
+    js,
+    jsAsync,
   )
 where
 

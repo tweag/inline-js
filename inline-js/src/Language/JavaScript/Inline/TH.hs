@@ -1,6 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Language.JavaScript.Inline.TH where
+module Language.JavaScript.Inline.TH
+  ( js,
+    jsAsync,
+  )
+where
 
 import Data.List
 import Data.String
@@ -9,23 +13,19 @@ import Language.Haskell.TH.Quote
 import Language.JavaScript.Inline.Core
 import Language.JavaScript.Inline.JSParse
 
--- | Generate a 'JSExpr' from an inline JavaScript expression. Use @$var@ to
--- refer to a Haskell variable @var@ (its type should be an 'ToJS' instance).
-expr :: QuasiQuoter
-expr = fromQuoteExp exprQuoter
+-- | Generate a 'JSExpr' from inline JavaScript code. The code should be a
+-- single expression or a code block with potentially multiple statements (use
+-- @return@ to specify the result value in which case).
+--
+-- Use @$var@ to refer to a Haskell variable @var@. @var@ should be an instance
+-- of 'ToJS'.
+js :: QuasiQuoter
+js = fromQuoteExp $ inlineJS False
 
--- | Generate a 'JSExpr' from an inline JavaScript code block. Use @return@ in
--- the code block to return the result. Other rules of 'expr' also applies here.
-block :: QuasiQuoter
-block = fromQuoteExp blockQuoter
-
--- | Like 'expr', but supports @await@.
-exprAsync :: QuasiQuoter
-exprAsync = fromQuoteExp exprAsyncQuoter
-
--- | Like 'block', but supports @await@.
-blockAsync :: QuasiQuoter
-blockAsync = fromQuoteExp blockAsyncQuoter
+-- | Like 'js' but async. Top-level @await@ in the inline JavaScript code is
+-- permitted.
+jsAsync :: QuasiQuoter
+jsAsync = fromQuoteExp $ inlineJS True
 
 fromQuoteExp :: (String -> Q Exp) -> QuasiQuoter
 fromQuoteExp q =
@@ -36,20 +36,8 @@ fromQuoteExp q =
       quoteDec = error "Language.JavaScript.Inline.TH: quoteDec"
     }
 
-exprQuoter :: String -> Q Exp
-exprQuoter = asdf False
-
-blockQuoter :: String -> Q Exp
-blockQuoter = asdf False
-
-exprAsyncQuoter :: String -> Q Exp
-exprAsyncQuoter = asdf True
-
-blockAsyncQuoter :: String -> Q Exp
-blockAsyncQuoter = asdf True
-
-asdf :: Bool -> String -> Q Exp
-asdf is_async js_code = do
+inlineJS :: Bool -> String -> Q Exp
+inlineJS is_async js_code = do
   (is_expr, hs_vars) <-
     case jsParse js_code of
       Left err -> fail err
