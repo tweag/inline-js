@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 80760900943ce048a1978948f69de735a0f1f55cd07873ca761525562820e156
+-- hash: dae513607bd59a00106a6fa0bd6f844dc0dcdc6046426a52956a4ca890791f28
 
 name:           inline-js-tests
 version:        0.0.1.0
@@ -27,15 +27,15 @@ source-repository head
   type: git
   location: https://github.com/tweag/inline-js
 
-test-suite inline-js-tests
-  type: exitcode-stdio-1.0
+executable inline-js-tests
   main-is: inline-js-tests.hs
   other-modules:
+      NPMPath
       Paths_inline_js_tests
   autogen-modules:
       Paths_inline_js_tests
   hs-source-dirs:
-      tests
+      app
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
       aeson

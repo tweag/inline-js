@@ -6,8 +6,8 @@ on:
 
 jobs:
 
-  cabal:
-    name: cabal-${{ matrix.os }}-ghc-${{ matrix.ghc }}
+  nix:
+    name: nix-${{ matrix.os }}-${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -15,64 +15,38 @@ jobs:
         os:
           - ubuntu-20.04
           - macos-10.15
-          - windows-2019
         ghc:
-          - 8.10.2
-          - 8.8.4
+          - ghc8102
+          - ghc884
+    env:
+      ghc: ${{ matrix.ghc }}
     steps:
-
-      - name: setup-haskell
-        uses: actions/setup-haskell@main
-        with:
-          ghc-version: ${{ matrix.ghc }}
-          cabal-version: 3.2.0.0
 
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: build
-        run: |
-          cabal v2-build --enable-tests -j2 all
-
-      - name: setup-node-14
-        uses: actions/setup-node@v2.0.0
+      - name: setup-nix
+        uses: cachix/install-nix-action@v11
         with:
-          node-version: 14.11.0
+          nix_path: nixpkgs=./nix/nixpkgs.nix
 
-      - name: test-node-14
-        run: |
-          node --version
-          cabal v2-run inline-js-tests:inline-js-tests -- -j2
-
-      - name: setup-node-13
-        uses: actions/setup-node@v2.0.0
+      - name: setup-cachix
+        uses: cachix/cachix-action@master
         with:
-          node-version: 13.14.0
+          name: inline-js
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
-      - name: test-node-13
+      - name: test
         run: |
-          node --version
-          cabal v2-run inline-js-tests:inline-js-tests -- -j2
+          for node in nodejs-14_x nodejs-12_x nodejs-10_x; do
+            nix run -f . -i --argstr ghc $ghc --argstr node $node inline-js-tests.components.exes.inline-js-tests -c inline-js-tests -j2
+          done
 
-      - name: setup-node-12
-        uses: actions/setup-node@v2.0.0
-        with:
-          node-version: 12.18.4
-
-      - name: test-node-12
+      - name: test-nix-shell
         run: |
-          node --version
-          cabal v2-run inline-js-tests:inline-js-tests -- -j2
-
-      - name: setup-node-10
-        uses: actions/setup-node@v2.0.0
-        with:
-          node-version: 10.22.1
-
-      - name: test-node-10
-        run: |
-          node --version
-          cabal v2-run inline-js-tests:inline-js-tests -- -j2
+          for node in nodejs-14_x nodejs-12_x nodejs-10_x; do
+            nix-shell --pure --argstr ghc $ghc --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
+          done
 
   stack:
     name: stack-${{ matrix.os }}
@@ -81,15 +55,13 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-20.04
-          - macos-10.15
           - windows-2019
     steps:
 
       - name: setup-haskell
         uses: actions/setup-haskell@main
         with:
-          stack-version: 2.3.3
+          stack-version: 2.5.1
           enable-stack: true
           stack-no-global: true
 
@@ -101,137 +73,72 @@ jobs:
           stack -j2 build --test --no-run-tests
 
       - name: setup-node-14
-        uses: actions/setup-node@v2.0.0
+        uses: actions/setup-node@v2-beta
         with:
-          node-version: 14.11.0
+          node-version: 14.14.0
 
       - name: test-node-14
         run: |
           node --version
-          stack test inline-js-tests --test-arguments="-j2"
+          stack run inline-js-tests -- -j2
 
       - name: setup-node-13
-        uses: actions/setup-node@v2.0.0
+        uses: actions/setup-node@v2-beta
         with:
           node-version: 13.14.0
 
       - name: test-node-13
         run: |
           node --version
-          stack test inline-js-tests --test-arguments="-j2"
+          stack run inline-js-tests -- -j2
 
       - name: setup-node-12
-        uses: actions/setup-node@v2.0.0
+        uses: actions/setup-node@v2-beta
         with:
-          node-version: 12.18.4
+          node-version: 12.19.0
 
       - name: test-node-12
         run: |
           node --version
-          stack test inline-js-tests --test-arguments="-j2"
+          stack run inline-js-tests -- -j2
 
       - name: setup-node-10
-        uses: actions/setup-node@v2.0.0
+        uses: actions/setup-node@v2-beta
         with:
           node-version: 10.22.1
 
       - name: test-node-10
         run: |
           node --version
-          stack test inline-js-tests --test-arguments="-j2"
-
-  stack-alpine:
-    name: stack-alpine
-    runs-on: ubuntu-20.04
-    container:
-      image: alpine:edge
-    steps:
-
-      - name: checkout
-        uses: actions/checkout@v2
-
-      - name: test
-        run: |
-          export HOME=/root
-          mkdir -p $HOME/.local/bin
-          mkdir $HOME/.node
-          export PATH=$HOME/.local/bin:$HOME/.node/bin:$PATH
-
-          apk add \
-            alpine-sdk \
-            autoconf \
-            automake \
-            binutils-gold \
-            coreutils \
-            findutils \
-            gawk \
-            grep \
-            ghc \
-            ncurses-dev \
-            sed \
-            util-linux \
-            xz
-
-          mkdir $HOME/.stack
-          echo "allow-different-user: true" > $HOME/.stack/config.yaml
-          echo "system-ghc: true" >> $HOME/.stack/config.yaml
-          curl -L https://github.com/commercialhaskell/stack/releases/download/v2.3.3/stack-2.3.3-linux-x86_64-bin -o $HOME/.local/bin/stack
-          chmod +x $HOME/.local/bin/stack
-
-          curl https://unofficial-builds.nodejs.org/download/release/v14.11.0/node-v14.11.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
-          node --version
-          stack -j2 build --test --no-run-tests
-          stack test inline-js-tests --test-arguments="-j2"
-
-          rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v13.14.0/node-v13.14.0-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
-          node --version
-          stack test inline-js-tests --test-arguments="-j2"
-
-          rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v12.18.4/node-v12.18.4-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
-          node --version
-          stack test inline-js-tests --test-arguments="-j2"
-
-          rm -rf $HOME/.node/*
-          curl https://unofficial-builds.nodejs.org/download/release/v10.22.1/node-v10.22.1-linux-x64-musl.tar.xz | tar xJ -C $HOME/.node --strip 1
-          node --version
-          stack test inline-js-tests --test-arguments="-j2"
+          stack run inline-js-tests -- -j2
 
   sdist:
     name: sdist
     runs-on: ubuntu-20.04
     steps:
 
-      - name: setup-haskell
-        uses: actions/setup-haskell@main
-        with:
-          ghc-version: 8.10.2
-          cabal-version: 3.2.0.0
-
       - name: checkout
         uses: actions/checkout@v2
 
+      - name: setup-nix
+        uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=./nix/nixpkgs.nix
+
+      - name: setup-cachix
+        uses: cachix/cachix-action@master
+        with:
+          name: inline-js
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+
       - name: sdist
         run: |
-          pushd inline-js
-          cabal check
-          popd
 
-          pushd inline-js-core
-          cabal check
-          popd
+          for pkg in inline-js inline-js-core inline-js-examples inline-js-tests; do
+            nix-shell --pure --run "cd $pkg && cabal check"
+          done
 
-          pushd inline-js-examples
-          cabal check
-          popd
-
-          pushd inline-js-tests
-          cabal check
-          popd
-
-          cabal v2-sdist \
-            all
+          nix-shell --pure --run "cabal v2-sdist all"
 
       - name: upload-artifact
         uses: actions/upload-artifact@v2
@@ -244,23 +151,23 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
 
-      - name: setup-haskell
-        uses: actions/setup-haskell@main
-        with:
-          ghc-version: 8.10.2
-          cabal-version: 3.2.0.0
-
       - name: checkout
         uses: actions/checkout@v2
 
+      - name: setup-nix
+        uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=./nix/nixpkgs.nix
+
+      - name: setup-cachix
+        uses: cachix/cachix-action@master
+        with:
+          name: inline-js
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+
       - name: haddock
         run: |
-          cabal v2-haddock \
-            --haddock-for-hackage \
-            --haddock-hyperlink-source \
-            --haddock-quickjump \
-            -j2 \
-            all
+          nix-shell --pure --run "cabal v2-haddock --haddock-for-hackage --haddock-hyperlink-source --haddock-quickjump -j2 all"
 
       - name: upload-artifact
         uses: actions/upload-artifact@v2
@@ -279,14 +186,14 @@ jobs:
       - name: setup-haskell
         uses: actions/setup-haskell@main
         with:
-          stack-version: 2.3.3
+          stack-version: 2.5.1
           enable-stack: true
           stack-no-global: true
 
       - name: setup-node-14
-        uses: actions/setup-node@v2.0.0
+        uses: actions/setup-node@v2-beta
         with:
-          node-version: 14.11.0
+          node-version: 14.14.0
 
       - name: setup-deps
         run: |
