@@ -11,12 +11,13 @@
     src = ./.;
   };
   compiler-nix-name = ghc;
-  modules = [{
-    packages.inline-js-core.configureFlags = [
-      ''--ghc-option=-DINLINE_JS_NODE=\"${builtins.getAttr node pkgs}/bin/node\"''
-    ];
-    packages.inline-js-tests.configureFlags = [
-      ''--ghc-option=-DINLINE_JS_NPM=\"${builtins.getAttr node pkgs}/bin/npm\"''
-    ];
-  }];
+  modules = let nodeSrc = pkgs."${node}"; in
+    [{
+      packages.inline-js-core.configureFlags = [
+        ''--ghc-option=-DINLINE_JS_NODE=\"${nodeSrc}/bin/node\"''
+      ];
+      packages.inline-js-tests.configureFlags = [
+        ''--ghc-option=-DINLINE_JS_NPM=\"${nodeSrc}/bin/npm\"''
+      ];
+    }];
 }
