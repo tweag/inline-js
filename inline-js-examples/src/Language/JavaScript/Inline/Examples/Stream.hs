@@ -23,7 +23,7 @@ lazyStream _session _stream = do
   lazySetFinalizer $ for_ [_on_data, _on_end, _on_error] freeJSVal
   eval @()
     _session
-    [block|
+    [js|
       $_stream.on("data", $_on_data);
       $_stream.on("end", $_on_end);
       $_stream.on("error", $_on_error);

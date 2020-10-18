@@ -67,11 +67,11 @@ main =
           withDefaultSession $ \s -> replicateM_ 0x10 $ do
             let x = I 6
                 y = I 7
-            r <- eval s [expr| $x * $y |]
+            r <- eval s [js| $x * $y |]
             r @?= I 42,
         testCase "import" $
           withDefaultSession $ \s -> replicateM_ 0x10 $ do
-            v <- eval s [expr| (x, y) => x * y |]
+            v <- eval s [js| (x, y) => x * y |]
             let f = importJSFunc s v
             r <- f (I 6) (I 7)
             r @?= I 42,
@@ -82,17 +82,17 @@ main =
             v <- export s f
             let x = V $ A.String "asdf"
                 y = V $ A.String "233"
-            r <- eval s [expr| $v($x, $y) |]
+            r <- eval s [js| $v($x, $y) |]
             r @?= V (A.Array [A.String "asdf", A.String "233"])
             freeJSVal v,
         testCase "exportSync" $
           withDefaultSession $ \s -> replicateM_ 0x10 $ do
             let f :: V -> V -> IO V
-                f x y = eval s [expr| [$x, $y] |]
+                f x y = eval s [js| [$x, $y] |]
             v <- exportSync s f
             let x = V $ A.String "asdf"
                 y = V $ A.String "233"
-            r <- eval s [expr| $v($x, $y) |]
+            r <- eval s [js| $v($x, $y) |]
             r @?= V (A.Array [A.String "asdf", A.String "233"])
             freeJSVal v,
         testCase "stream" $
@@ -102,7 +102,7 @@ main =
               js_stream <-
                 eval
                   s
-                  [block|
+                  [js|
                     const fs = require("fs");
                     return fs.createReadStream($js_path);
                   |]

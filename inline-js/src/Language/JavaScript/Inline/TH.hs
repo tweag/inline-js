@@ -1,32 +1,31 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Language.JavaScript.Inline.TH where
+module Language.JavaScript.Inline.TH
+  ( js,
+    jsAsync,
+  )
+where
 
-import Data.Foldable
 import Data.List
 import Data.String
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Language.JavaScript.Inline.Core
-import Language.JavaScript.Parser.Lexer
+import Language.JavaScript.Inline.JSParse
 
--- | Generate a 'JSExpr' from an inline JavaScript expression. Use @$var@ to
--- refer to a Haskell variable @var@ (its type should be an 'ToJS' instance).
-expr :: QuasiQuoter
-expr = fromQuoteExp exprQuoter
+-- | Generate a 'JSExpr' from inline JavaScript code. The code should be a
+-- single expression or a code block with potentially multiple statements (use
+-- @return@ to specify the result value in which case).
+--
+-- Use @$var@ to refer to a Haskell variable @var@. @var@ should be an instance
+-- of 'ToJS'.
+js :: QuasiQuoter
+js = fromQuoteExp $ inlineJS False
 
--- | Generate a 'JSExpr' from an inline JavaScript code block. Use @return@ in
--- the code block to return the result. Other rules of 'expr' also applies here.
-block :: QuasiQuoter
-block = fromQuoteExp blockQuoter
-
--- | Like 'expr', but supports @await@.
-exprAsync :: QuasiQuoter
-exprAsync = fromQuoteExp exprAsyncQuoter
-
--- | Like 'block', but supports @await@.
-blockAsync :: QuasiQuoter
-blockAsync = fromQuoteExp blockAsyncQuoter
+-- | Like 'js' but async. Top-level @await@ in the inline JavaScript code is
+-- permitted.
+jsAsync :: QuasiQuoter
+jsAsync = fromQuoteExp $ inlineJS True
 
 fromQuoteExp :: (String -> Q Exp) -> QuasiQuoter
 fromQuoteExp q =
@@ -37,31 +36,39 @@ fromQuoteExp q =
       quoteDec = error "Language.JavaScript.Inline.TH: quoteDec"
     }
 
-exprQuoter :: String -> Q Exp
-exprQuoter js_code = blockQuoter $ "return " <> js_code <> ";"
-
-blockQuoter :: String -> Q Exp
-blockQuoter js_code =
-  [|fromString "(() => { " <> $(jsCodeHeader js_code) <> fromString $(litE $ stringL $ js_code <> " })()")|]
-
-exprAsyncQuoter :: String -> Q Exp
-exprAsyncQuoter js_code = blockAsyncQuoter $ "return " <> js_code <> ";"
-
-blockAsyncQuoter :: String -> Q Exp
-blockAsyncQuoter js_code =
-  [|fromString "(async () => { " <> $(jsCodeHeader js_code) <> fromString $(litE $ stringL $ js_code <> " })()")|]
-
-jsCodeHeader :: String -> Q Exp
-jsCodeHeader js_code = do
-  tokens <- case alexTestTokeniser js_code of
-    Left err -> fail err
-    Right tokens -> pure tokens
-  let vars = nub [var | IdentifierToken {tokenLiteral = '$' : var} <- tokens]
-      js_code_header =
-        foldr'
-          (\m0 m1 -> [|$(m0) <> $(m1)|])
-          [|(mempty :: JSExpr)|]
-          [ [|fromString $(litE $ stringL $ "const $" <> var <> " = ") <> toJS $(varE $ mkName var) <> fromString "; "|]
-            | var <- vars
-          ]
-  js_code_header
+inlineJS :: Bool -> String -> Q Exp
+inlineJS is_async js_code = do
+  (is_expr, hs_vars) <-
+    case jsParse js_code of
+      Left err -> fail err
+      Right r -> pure r
+  [|
+    mconcat
+      $( listE
+           ( [ [|
+                 fromString
+                   $( litE
+                        ( stringL
+                            ( ( if is_async
+                                  then "(async ("
+                                  else "(("
+                              )
+                                <> intercalate "," ['$' : v | v <- hs_vars]
+                                <> ") => {"
+                                <> ( if is_expr
+                                       then "return " <> js_code <> ";"
+                                       else js_code
+                                   )
+                                <> "})("
+                            )
+                        )
+                    )
+                 |]
+             ]
+               <> intersperse
+                 [|fromString ","|]
+                 [[|toJS $(varE (mkName v))|] | v <- hs_vars]
+               <> [[|fromString ")"|]]
+           )
+       )
+    |]
