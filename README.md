@@ -40,7 +40,7 @@ Supported platforms:
 
 - Windows 10 x64, tested with Windows Server 2019
 - Linux x64, tested with Ubuntu 20.04
-- macOS x64, tested with macOS 11.0
+- macOS x64, tested with macOS 10.15
 
 Supported `node` versions:
 
