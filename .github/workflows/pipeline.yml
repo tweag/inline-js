@@ -72,6 +72,16 @@ jobs:
         run: |
           stack -j2 build --test --no-run-tests
 
+      - name: setup-node-15
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: 15.0.1
+
+      - name: test-node-15
+        run: |
+          node --version
+          stack run inline-js-tests -- -j2
+
       - name: setup-node-14
         uses: actions/setup-node@v2-beta
         with:
@@ -183,25 +193,27 @@ jobs:
       NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
     steps:
 
-      - name: setup-haskell
-        uses: actions/setup-haskell@main
-        with:
-          stack-version: 2.5.1
-          enable-stack: true
-          stack-no-global: true
+      - name: checkout
+        uses: actions/checkout@v2
 
-      - name: setup-node-14
-        uses: actions/setup-node@v2-beta
+      - name: setup-nix
+        uses: cachix/install-nix-action@v11
         with:
-          node-version: 14.14.0
+          nix_path: nixpkgs=./nix/nixpkgs.nix
+
+      - name: setup-cachix
+        uses: cachix/cachix-action@master
+        with:
+          name: asterius
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
       - name: setup-deps
         run: |
+          nix-env -iA \
+            nixpkgs.nodejs-14_x \
+            nixpkgs.stack
           npm install -g \
             netlify-cli
-
-      - name: checkout
-        uses: actions/checkout@v2
 
       - name: build
         run: |
