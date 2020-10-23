@@ -213,6 +213,9 @@ jobs:
             nodejs-14_x \
             stack
 
+          mkdir ~/.stack
+          printf "nix:\n  enable: true\n" > ~/.stack/config.yaml
+
           npm config set prefix ~/.local
 
           npm install -g \
