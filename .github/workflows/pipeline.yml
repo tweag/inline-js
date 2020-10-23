@@ -212,11 +212,16 @@ jobs:
           nix-env -f ./nix/nixpkgs.nix -iA \
             nodejs-14_x \
             stack
+
+          npm config set prefix ~/.local
+
           npm install -g \
             netlify-cli
 
       - name: build
         run: |
+          export PATH=~/.local/bin:$PATH
+
           stack -j2 build --haddock
 
           if [ ! -z "$NETLIFY_AUTH_TOKEN" ]
