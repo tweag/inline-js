@@ -15,6 +15,7 @@ import Data.String
 import Foreign
 import Language.JavaScript.Inline
 import Language.JavaScript.Inline.Examples.Stream
+import Language.JavaScript.Inline.Tests.Utils.Aeson
 import NPMPath
 import System.Directory
 import System.Exit
@@ -25,6 +26,7 @@ import System.Process
 import System.Random.SplitMix
 import Test.Tasty
 import Test.Tasty.HUnit hiding (assert)
+import Test.Tasty.QuickCheck
 
 main :: IO ()
 main =
@@ -44,6 +46,13 @@ main =
               let buf = "asdf"
               buf' <- (eval @LBS.ByteString) s $ toJS buf
               buf' @?= buf,
+        withResource (newSession defaultConfig) killSession $ \m ->
+          testProperty "JSON" $
+            forAll (V <$> genValueWithSize 0x400) $ \v ->
+              ioProperty $ do
+                s <- m
+                v' <- eval s [js| $v |]
+                pure $ v' == v,
         testCase "left-pad" $
           withTmpDir
             ( \p -> do

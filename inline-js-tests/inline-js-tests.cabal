@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dae513607bd59a00106a6fa0bd6f844dc0dcdc6046426a52956a4ca890791f28
+-- hash: ef3a595172fea1dd87a65de3e48a183e94d8f4c2c954e3948a825907cdab97c2
 
 name:           inline-js-tests
 version:        0.0.1.0
@@ -30,6 +30,7 @@ source-repository head
 executable inline-js-tests
   main-is: inline-js-tests.hs
   other-modules:
+      Language.JavaScript.Inline.Tests.Utils.Aeson
       NPMPath
       Paths_inline_js_tests
   autogen-modules:
@@ -38,7 +39,8 @@ executable inline-js-tests
       app
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , base >=4.13 && <5
     , bytestring
     , directory
@@ -46,8 +48,10 @@ executable inline-js-tests
     , inline-js
     , inline-js-examples
     , process
+    , quickcheck-instances
     , splitmix
     , tasty
     , tasty-hunit
+    , tasty-quickcheck
     , temporary
   default-language: Haskell2010
