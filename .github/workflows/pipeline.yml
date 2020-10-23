@@ -209,9 +209,9 @@ jobs:
 
       - name: setup-deps
         run: |
-          nix-env -iA \
-            nixpkgs.nodejs-14_x \
-            nixpkgs.stack
+          nix-env -f ./nix/nixpkgs.nix -iA \
+            nodejs-14_x \
+            stack
           npm install -g \
             netlify-cli
 
