@@ -10,7 +10,7 @@ module Language.JavaScript.Inline.Core.Session where
 
 import Control.Concurrent
 import Control.Concurrent.STM
-import Control.Exception
+import Control.Exception hiding (bracket)
 import Control.Monad
 import qualified Data.ByteString as BS
 import Data.ByteString.Builder
@@ -18,6 +18,7 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Maybe
 import Distribution.Simple.Utils
 import Foreign
+import Language.JavaScript.Inline.Core.Bracket
 import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.IPC
 import Language.JavaScript.Inline.Core.Message
@@ -186,6 +187,9 @@ newSession Config {..} = do
               killSession = session_kill
             }
     pure _session
+
+withSession :: Config -> (Session -> IO r) -> IO r
+withSession c = bracket (newSession c) killSession
 
 sessionSend :: Session -> MessageHS -> IO ()
 sessionSend Session {..} msg = send ipc $ toLazyByteString $ messageHSPut msg

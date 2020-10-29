@@ -128,9 +128,6 @@ newtype V = V A.Value
   deriving (Eq, Show)
   deriving (ToJS, FromJS) via (Aeson A.Value)
 
-withSession :: Config -> (Session -> IO a) -> IO a
-withSession conf = bracket (newSession conf) killSession
-
 withDefaultSession :: (Session -> IO a) -> IO a
 withDefaultSession = withSession defaultConfig
 
