@@ -18,6 +18,7 @@ jobs:
         ghc:
           - ghc8102
           - ghc884
+          - ghc865
     env:
       ghc: ${{ matrix.ghc }}
     steps:

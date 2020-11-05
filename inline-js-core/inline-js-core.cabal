@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: df29d5e3b1871d4042076c8dffe53719c61a82e90758422a6ac27b95fdff8cc0
+-- hash: 931b91b5653e66e29cab39436155a67292d040c02b8b5e67476362174835f928
 
 name:           inline-js-core
 version:        0.0.1.0
@@ -54,7 +54,7 @@ library
   ghc-options: -Wall
   build-depends:
       Cabal
-    , base >=4.13 && <5
+    , base >=4.12 && <5
     , binary
     , bytestring
     , containers

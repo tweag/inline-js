@@ -18,7 +18,7 @@ ghc-options: -Wall
 
 dependencies:
   - Cabal
-  - base >= 4.13 && < 5
+  - base >= 4.12 && < 5
   - binary
   - bytestring
   - containers
