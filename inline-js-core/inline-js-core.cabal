@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 931b91b5653e66e29cab39436155a67292d040c02b8b5e67476362174835f928
+-- hash: 2f594755f3d3e8d64e2a067efba235ae054fba00f6ba99f332c18fb9d9bec7ab
 
 name:           inline-js-core
 version:        0.0.1.0
@@ -61,7 +61,7 @@ library
     , directory
     , filepath
     , ghc-prim
-    , process
+    , process >=1.6.8
     , stm
     , template-haskell
     , text

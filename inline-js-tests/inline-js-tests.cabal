@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ef3a595172fea1dd87a65de3e48a183e94d8f4c2c954e3948a825907cdab97c2
+-- hash: 9070242b12a9ad384e2193c84645942498ca1a050725ce1198d744c50227ba6d
 
 name:           inline-js-tests
 version:        0.0.1.0
@@ -47,7 +47,7 @@ executable inline-js-tests
     , filepath
     , inline-js
     , inline-js-examples
-    , process
+    , process >=1.6.8
     , quickcheck-instances
     , splitmix
     , tasty
