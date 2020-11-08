@@ -58,7 +58,11 @@ main =
             ( \p -> do
                 (ec, _, _) <-
                   readCreateProcessWithExitCode
-                    ((shell $ defNPMPath <> " install left-pad") {cwd = Just p})
+                    ( (shell $ defNPMPath <> " install left-pad")
+                        { cwd = Just p,
+                          use_process_jobs = True
+                        }
+                    )
                     ""
                 case ec of
                   ExitSuccess -> pure ()

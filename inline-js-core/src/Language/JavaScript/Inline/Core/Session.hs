@@ -112,7 +112,8 @@ newSession Config {..} = do
                   <> nodeExtraEnv
                   <> _env,
           std_in = CreatePipe,
-          std_out = CreatePipe
+          std_out = CreatePipe,
+          use_process_jobs = True
         }
   _inbox <- newEmptyTMVarIO
   mdo

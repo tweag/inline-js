@@ -24,7 +24,7 @@ dependencies:
   - filepath
   - inline-js
   - inline-js-examples
-  - process
+  - process >= 1.6.8
   - quickcheck-instances
   - splitmix
   - tasty
