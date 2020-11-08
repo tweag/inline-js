@@ -17,7 +17,7 @@ ghc-options: -Wall
 
 dependencies:
   - aeson
-  - base >= 4.13 && < 5
+  - base >= 4.12 && < 5
   - bytestring
   - containers
   - inline-js-core

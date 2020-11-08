@@ -18,7 +18,7 @@ ghc-options: -Wall -threaded -rtsopts
 dependencies:
   - QuickCheck
   - aeson
-  - base >= 4.13 && < 5
+  - base >= 4.12 && < 5
   - bytestring
   - directory
   - filepath
