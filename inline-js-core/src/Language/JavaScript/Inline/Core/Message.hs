@@ -10,7 +10,6 @@ import Data.Binary
 import Data.Binary.Get
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
-import Data.Foldable
 import Data.String
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Utils
