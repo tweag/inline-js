@@ -76,7 +76,7 @@ jobs:
       - name: setup-node-15
         uses: actions/setup-node@v2-beta
         with:
-          node-version: 15.1.0
+          node-version: 15.2.0
 
       - name: test-node-15
         run: |
