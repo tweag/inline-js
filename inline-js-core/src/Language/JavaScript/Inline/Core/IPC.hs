@@ -1,9 +1,9 @@
 module Language.JavaScript.Inline.Core.IPC where
 
 import Control.Concurrent
-import Control.Concurrent.STM
 import Control.Exception
 import Data.Binary.Get
+import qualified Data.ByteString as BS
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
 import Foreign
@@ -52,9 +52,11 @@ ipcFromHandles :: Handle -> Handle -> IPC -> IPC
 ipcFromHandles h_send h_recv ipc =
   ipc
     { send = \msg -> do
-        hPutBuilder h_send $
-          storablePut (LBS.length msg)
-            <> lazyByteString msg
+        BS.hPut h_send $
+          LBS.toStrict $
+            toLazyByteString $
+              storablePut (LBS.length msg)
+                <> lazyByteString msg
         hFlush h_send,
       recv = do
         len <- runGet storableGet <$> hGetExact h_recv 8
@@ -81,15 +83,8 @@ ipcFromHandles h_send h_recv ipc =
 -- users.
 ipcFork :: IPC -> IO IPC
 ipcFork ipc = do
-  queue_send <- newTQueueIO
   post_close_thunk <- unsafeInterleaveIO $ postClose ipc
   let post_close = evaluate post_close_thunk
-      io_send_loop = do
-        msg <- atomically $ readTQueue queue_send
-        send ipc msg
-        if msg == closeMsg ipc then preClose ipc else io_send_loop
-      io_send = catchAny io_send_loop $ const post_close
-  _ <- forkIO io_send
   let io_recv_loop = do
         msg <- recv ipc
         onRecv ipc msg
@@ -98,8 +93,7 @@ ipcFork ipc = do
   _ <- forkIO io_recv
   pure
     ipc
-      { send = atomically . writeTQueue queue_send,
-        recv = error "fork: recv",
+      { recv = error "fork: recv",
         onRecv = error "fork: onRecv",
         preClose = error "fork: preClose",
         postClose = error "fork: postClose"
