@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 984be4683a1f47b1ff48e1e1f76e84fc11e815ab78c11a66aaabd2ba19e54762
+-- hash: ab930fd082825c835b9fa6402676d4b00b4fe6d0c099f6be2ba7931d28bc898b
 
 name:           inline-js-examples
 version:        0.0.1.0
@@ -41,7 +41,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base >=4.13 && <5
+      base >=4.12 && <5
     , bytestring
     , inline-js
     , stm

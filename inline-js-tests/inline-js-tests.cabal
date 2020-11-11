@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dae513607bd59a00106a6fa0bd6f844dc0dcdc6046426a52956a4ca890791f28
+-- hash: 56cbde9ce1569fccb4387e52cd7c83f40146b8c18864d7ea188cea9d91bdea9d
 
 name:           inline-js-tests
 version:        0.0.1.0
@@ -39,7 +39,7 @@ executable inline-js-tests
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
       aeson
-    , base >=4.13 && <5
+    , base >=4.12 && <5
     , bytestring
     , directory
     , filepath

@@ -98,7 +98,7 @@ messageHSPut msg = case msg of
       <> word64Put exportRequestId
       <> word64Put exportFuncId
       <> word64Put (fromIntegral (length argsType))
-      <> foldMap'
+      <> foldMap
         (\(code, raw_type) -> exprPut code <> rawTypePut raw_type)
         argsType
   HSEvalResponse {..} ->
@@ -118,7 +118,7 @@ messageHSPut msg = case msg of
     lbsPut s = storablePut (LBS.length s) <> lazyByteString s
     exprPut code =
       word64Put (fromIntegral (length (unJSExpr code)) :: Word64)
-        <> foldMap' exprSegmentPut (unJSExpr code)
+        <> foldMap exprSegmentPut (unJSExpr code)
     exprSegmentPut (Code s) = word8Put 0 <> lbsPut s
     exprSegmentPut (BufferLiteral s) = word8Put 1 <> lbsPut s
     exprSegmentPut (StringLiteral s) = word8Put 2 <> lbsPut s
