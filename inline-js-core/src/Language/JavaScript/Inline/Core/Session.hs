@@ -167,7 +167,6 @@ newSession Config {..} = do
               recv = error "newSession: recv",
               onRecv = on_recv,
               closeMsg = toLazyByteString $ messageHSPut Close,
-              preClose = error "newSession: preClose",
               postClose = ipc_post_close
             }
     let session_close = do
