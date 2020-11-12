@@ -167,10 +167,9 @@ newSession Config {..} = do
             { send = error "newSession: send",
               recv = error "newSession: recv",
               onRecv = on_recv,
-              closeMsg = toLazyByteString $ messageHSPut Close,
               postClose = ipc_post_close
             }
-    let session_close = send _ipc $ closeMsg _ipc
+    let session_close = send _ipc $ toLazyByteString $ messageHSPut Close
         session_kill = terminateProcess _ph
         _session =
           Session

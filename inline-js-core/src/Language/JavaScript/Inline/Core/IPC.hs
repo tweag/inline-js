@@ -22,10 +22,6 @@ data IPC = IPC
     recv :: IO Msg,
     -- | Callback for each incoming 'Msg'.
     onRecv :: Msg -> IO (),
-    -- | The 'Msg' to notify the remote device to shutdown. No more 'Msg's may
-    -- be sent after this is sent, but more incoming 'Msg's are still permitted
-    -- (until 'recv' throws). This allows graceful shutdown behavior.
-    closeMsg :: Msg,
     -- | The callback to be called when 'recv' throws, which indicates the
     -- remote device has closed. Will only be called once.
     postClose :: IO ()
@@ -60,7 +56,7 @@ ipcFromHandles h_send h_recv ipc =
     }
 
 -- | This function forks the recv thread. In the result 'IPC' value, only the
--- 'send' / 'closeMsg' fields remain valid and can be used by the user.
+-- 'send' field remain valid and can be used by the user.
 --
 -- The recv thread repeatedly fetches incoming 'Msg's and invokes the 'onRecv'
 -- callback on them. When an exception is raised, it invokes the 'postClose'
