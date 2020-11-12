@@ -5,10 +5,10 @@
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "654063dd6a538929239beddcbb77e254513cd3f7",
-        "sha256": "0vk98hlajmfqj0lvczd86ynppbyds83h0kwi5qaafg977hg7a9a9",
+        "rev": "c583fb3e775d0f071b58a53f82f726cec623c800",
+        "sha256": "0pzsaxwap6jmmpcyzwvygbrfcanjzkwfrmlqac4jnjrfixd8g27s",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/654063dd6a538929239beddcbb77e254513cd3f7.tar.gz",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/c583fb3e775d0f071b58a53f82f726cec623c800.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "niv": {
@@ -29,10 +29,10 @@
         "homepage": null,
         "owner": "tweag",
         "repo": "ormolu",
-        "rev": "288e1cc039ba754446ecf2456e531b97e14a410b",
-        "sha256": "1yq8psr4fpkad9hhccll48icm2zlkji1i9c2cykfakiakwfis64q",
+        "rev": "286afb7ed6bd2985339c617cbdeae5c8ab4b8353",
+        "sha256": "10fxbbf675m1y8qdwlqzl42g6w40gx1kv6ggbfszq9wpdk7qw314",
         "type": "tarball",
-        "url": "https://github.com/tweag/ormolu/archive/288e1cc039ba754446ecf2456e531b97e14a410b.tar.gz",
+        "url": "https://github.com/tweag/ormolu/archive/286afb7ed6bd2985339c617cbdeae5c8ab4b8353.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
