@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -53,6 +54,11 @@ main =
                 s <- m
                 v' <- eval s [js| $v |]
                 pure $ v' == v,
+        testCase "catch-use-after-free" $ do
+          (err :: Aeson String) <- withDefaultSession $ \s ->
+            eval s [js| new Promise(resolve => setTimeout(resolve, 8000, "asdf")) |]
+          result <- catch (False <$ evaluate err) $ \EvalError {} -> pure True
+          assertBool "" result,
         testCase "left-pad" $
           withTmpDir
             ( \p -> do

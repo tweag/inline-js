@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE StrictData #-}
@@ -113,7 +114,7 @@ newSession Config {..} = do
           std_in = CreatePipe,
           std_out = CreatePipe
         }
-  _inbox <- newEmptyTMVarIO
+  _err_inbox <- newEmptyTMVarIO
   mdo
     let on_recv msg_buf = do
           msg <- runGetExact messageJSGet msg_buf
@@ -150,12 +151,15 @@ newSession Config {..} = do
                       Right () -> pure ()
                   )
               pure ()
-            -- todo: should make all subsequent operations invalid immediately
-            -- here, possibly via a session state atomic variable. also cleanup
-            -- tmp dir.
-            FatalError err_buf -> atomically $ putTMVar _inbox $ Left err_buf
+            FatalError err_buf -> atomically $ putTMVar _err_inbox $ Left err_buf
         ipc_post_close = do
           _ <- waitForProcess _ph
+          atomically $ do
+            _ <-
+              tryPutTMVar _err_inbox $
+                Left
+                  "node process exited, may be a use-after-free issue, try forcing the result before closing session"
+            pure ()
           removePathForcibly _root
           pure ()
     _ipc <-
@@ -174,7 +178,7 @@ newSession Config {..} = do
         _session =
           Session
             { ipc = _ipc,
-              fatalErrorInbox = _inbox,
+              fatalErrorInbox = _err_inbox,
               closeSession = session_close,
               killSession = session_kill
             }
