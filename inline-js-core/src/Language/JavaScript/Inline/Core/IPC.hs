@@ -1,16 +1,14 @@
 module Language.JavaScript.Inline.Core.IPC where
 
 import Control.Concurrent
-import Control.Exception
+import Control.Monad
 import Data.Binary.Get
 import qualified Data.ByteString as BS
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy as LBS
 import Foreign
-import GHC.IO (catchAny)
 import Language.JavaScript.Inline.Core.Utils
 import System.IO
-import System.IO.Unsafe
 
 type Msg = LBS.ByteString
 
@@ -71,14 +69,10 @@ ipcFromHandles h_send h_recv ipc =
 -- it'll block later incoming messages.
 ipcFork :: IPC -> IO IPC
 ipcFork ipc = do
-  post_close_thunk <- unsafeInterleaveIO $ postClose ipc
-  let post_close = evaluate post_close_thunk
-  let io_recv_loop = do
+  let io_recv_loop = forever $ do
         msg <- recv ipc
         onRecv ipc msg
-        io_recv_loop
-      io_recv = catchAny io_recv_loop $ const post_close
-  _ <- forkIO io_recv
+  _ <- forkFinally io_recv_loop $ \_ -> postClose ipc
   pure
     ipc
       { recv = error "fork: recv",

@@ -156,6 +156,7 @@ newSession Config {..} = do
             FatalError err_buf -> atomically $ putTMVar _inbox $ Left err_buf
         ipc_post_close = do
           _ <- waitForProcess _ph
+          removePathForcibly _root
           pure ()
     _ipc <-
       ipcFork $
@@ -169,14 +170,8 @@ newSession Config {..} = do
               closeMsg = toLazyByteString $ messageHSPut Close,
               postClose = ipc_post_close
             }
-    let session_close = do
-          send _ipc $ closeMsg _ipc
-          ipc_post_close
-          removeDirectoryRecursive _root
-        session_kill = do
-          terminateProcess _ph
-          ipc_post_close
-          removeDirectoryRecursive _root
+    let session_close = send _ipc $ closeMsg _ipc
+        session_kill = terminateProcess _ph
         _session =
           Session
             { ipc = _ipc,
