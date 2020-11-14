@@ -13,7 +13,6 @@ import Data.Proxy
 import Foreign
 import Language.JavaScript.Inline.Core.Class
 import Language.JavaScript.Inline.Core.Dict
-import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.Export
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
@@ -44,8 +43,7 @@ evalWithDecoder _return_type _decoder _session@Session {..} _code = do
     _resp <- atomically $ takeTMVar _inbox `orElse` readTMVar fatalErrorInbox
     freeStablePtr _sp
     case _resp of
-      Left _err_buf ->
-        throwIO $ EvalError {evalErrorMessage = stringFromLBS _err_buf}
+      Left err -> throwIO err
       Right _result_buf -> _decoder _session _result_buf
 
 -- | Evaluate a 'JSExpr' and return the result. Evaluation is /asynchronous/.
@@ -123,8 +121,7 @@ exportAsyncOrSync _is_sync _session@Session {..} f = do
     _resp <- atomically $ takeTMVar _inbox `orElse` readTMVar fatalErrorInbox
     freeStablePtr _sp_inbox
     case _resp of
-      Left _err_buf ->
-        throwIO $ EvalError {evalErrorMessage = stringFromLBS _err_buf}
+      Left err -> throwIO err
       Right _jsval_id_buf -> do
         _jsval_id <- runGetExact getWord64host _jsval_id_buf
         newJSVal False _jsval_id $ do

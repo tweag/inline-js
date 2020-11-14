@@ -74,7 +74,7 @@ defaultConfig =
 
 data Session = Session
   { ipc :: IPC,
-    fatalErrorInbox :: TMVar (Either LBS.ByteString LBS.ByteString),
+    fatalErrorInbox :: TMVar (Either SomeException LBS.ByteString),
     -- | After a 'Session' is closed, no more messages can be sent to @node@.
     -- Use this to close the 'Session' if @node@ should still run for some time
     -- to allow previous evaluation results to be sent back.
@@ -152,14 +152,18 @@ newSession Config {..} = do
                       Right () -> pure ()
                   )
               pure ()
-            FatalError err_buf -> atomically $ putTMVar _err_inbox $ Left err_buf
+            FatalError err_buf ->
+              atomically $
+                putTMVar _err_inbox $
+                  Left $
+                    toException
+                      EvalError
+                        { evalErrorMessage = stringFromLBS err_buf
+                        }
         ipc_post_close = do
           ec <- waitForProcess _ph
           atomically $ do
-            _ <-
-              tryPutTMVar _err_inbox $
-                Left
-                  "node process exited, may be a use-after-free issue, try forcing the result before closing session"
+            _ <- tryPutTMVar _err_inbox $ Left $ toException SessionClosed
             putTMVar _exit_inbox ec
           removePathForcibly _root
     _ipc <-

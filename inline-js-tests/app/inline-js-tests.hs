@@ -57,7 +57,7 @@ main =
         testCase "catch-use-after-free" $ do
           (err :: Aeson String) <- withDefaultSession $ \s ->
             eval s [js| new Promise(resolve => setTimeout(resolve, 8000, "asdf")) |]
-          result <- catch (False <$ evaluate err) $ \EvalError {} -> pure True
+          result <- catch (False <$ evaluate err) $ \SessionClosed -> pure True
           assertBool "" result,
         testCase "left-pad" $
           withTmpDir
