@@ -16,8 +16,5 @@
       packages.inline-js-core.configureFlags = [
         ''--ghc-option=-DINLINE_JS_NODE=\"${nodeSrc}/bin/node\"''
       ];
-      packages.inline-js-tests.configureFlags = [
-        ''--ghc-option=-DINLINE_JS_NPM=\"${nodeSrc}/bin/npm\"''
-      ];
     }];
 }

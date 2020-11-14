@@ -13,6 +13,9 @@ extra-source-files:
   - LICENSE
   - README.md
 
+data-files:
+  - jsbits/**/*
+
 ghc-options: -Wall -threaded -rtsopts
 
 dependencies:

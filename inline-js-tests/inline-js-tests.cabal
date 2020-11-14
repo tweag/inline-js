@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: acc2299bb49f0106936231f9648c491cf49663c271445061e20e67f4134bfcc8
+-- hash: 5324729ee29258b2283e6d32210f7ddbaffded7f3f607e1cee2a85e244b9d691
 
 name:           inline-js-tests
 version:        0.0.1.0
@@ -22,6 +22,9 @@ extra-source-files:
     CHANGELOG.md
     LICENSE
     README.md
+data-files:
+    jsbits/node_modules/left-pad/COPYING
+    jsbits/node_modules/left-pad/index.js
 
 source-repository head
   type: git
@@ -31,7 +34,6 @@ executable inline-js-tests
   main-is: inline-js-tests.hs
   other-modules:
       Language.JavaScript.Inline.Tests.Utils.Aeson
-      NPMPath
       Paths_inline_js_tests
   autogen-modules:
       Paths_inline_js_tests
