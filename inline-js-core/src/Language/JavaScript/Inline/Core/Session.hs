@@ -115,6 +115,7 @@ newSession Config {..} = do
           std_out = CreatePipe
         }
   _err_inbox <- newEmptyTMVarIO
+  _exit_inbox <- newEmptyTMVarIO
   mdo
     let on_recv msg_buf = do
           msg <- runGetExact messageJSGet msg_buf
@@ -153,15 +154,14 @@ newSession Config {..} = do
               pure ()
             FatalError err_buf -> atomically $ putTMVar _err_inbox $ Left err_buf
         ipc_post_close = do
-          _ <- waitForProcess _ph
+          ec <- waitForProcess _ph
           atomically $ do
             _ <-
               tryPutTMVar _err_inbox $
                 Left
                   "node process exited, may be a use-after-free issue, try forcing the result before closing session"
-            pure ()
+            putTMVar _exit_inbox ec
           removePathForcibly _root
-          pure ()
     _ipc <-
       ipcFork $
         ipcFromHandles
@@ -173,8 +173,13 @@ newSession Config {..} = do
               onRecv = on_recv,
               postClose = ipc_post_close
             }
-    let session_close = send _ipc $ toLazyByteString $ messageHSPut Close
-        session_kill = terminateProcess _ph
+    let wait_for_exit = atomically $ () <$ readTMVar _exit_inbox
+        session_close = do
+          send _ipc $ toLazyByteString $ messageHSPut Close
+          wait_for_exit
+        session_kill = do
+          terminateProcess _ph
+          wait_for_exit
         _session =
           Session
             { ipc = _ipc,
