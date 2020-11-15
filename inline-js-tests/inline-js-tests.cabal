@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5324729ee29258b2283e6d32210f7ddbaffded7f3f607e1cee2a85e244b9d691
+-- hash: 8912fd1ec69855ed172c9adea39a63aab17515de840c3f9db539e0eb5fc5976d
 
 name:           inline-js-tests
 version:        0.0.1.0
@@ -23,7 +23,6 @@ extra-source-files:
     LICENSE
     README.md
 data-files:
-    jsbits/node_modules/left-pad/COPYING
     jsbits/node_modules/left-pad/index.js
 
 source-repository head
