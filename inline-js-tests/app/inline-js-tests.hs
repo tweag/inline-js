@@ -54,11 +54,12 @@ main = do
                 v' <- eval s [js| $v |]
                 pure $ v' == v,
         testCase "catch-use-after-free" $ do
-          (err :: Aeson String) <- withDefaultSession $
-            \s ->
-              eval
-                s
-                [js| new Promise(resolve => setTimeout(resolve, 8000, "asdf")) |]
+          (err :: Aeson String) <-
+            bracket (newSession defaultConfig) killSession $
+              \s ->
+                eval
+                  s
+                  [js| new Promise(resolve => setTimeout(resolve, 8000, "asdf")) |]
           result <- catch (False <$ evaluate err) $ \SessionClosed -> pure True
           assertBool "" result,
         withResource
