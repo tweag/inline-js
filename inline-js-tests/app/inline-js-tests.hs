@@ -61,14 +61,20 @@ main = do
                 [js| new Promise(resolve => setTimeout(resolve, 8000, "asdf")) |]
           result <- catch (False <$ evaluate err) $ \SessionClosed -> pure True
           assertBool "" result,
-        testCase "left-pad" $
-          withSession
-            defaultConfig
-              { nodeModules = Just $ data_dir </> "jsbits" </> "node_modules"
-              }
-            $ \s -> replicateM_ 0x10 $ do
-              _ <- evaluate =<< (eval @JSVal) s "require('left-pad')"
-              pure (),
+        withResource
+          ( newSession
+              defaultConfig
+                { nodeModules = Just $ data_dir </> "jsbits" </> "node_modules"
+                }
+          )
+          killSession
+          $ \m -> testCase "left-pad" $ do
+            s <- m
+            (Aeson r :: Aeson String) <-
+              eval
+                s
+                [js| require('left-pad')('foo', 5) |]
+            r @?= "  foo",
         testCase "expr" $
           withDefaultSession $ \s -> replicateM_ 0x10 $ do
             let x = I 6
