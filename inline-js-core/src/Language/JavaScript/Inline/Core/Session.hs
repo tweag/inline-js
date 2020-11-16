@@ -195,3 +195,9 @@ newSession Config {..} = do
 
 sessionSend :: Session -> MessageHS -> IO ()
 sessionSend Session {..} msg = send ipc $ toLazyByteString $ messageHSPut msg
+
+-- | Create a 'Session' with 'newSession', run the passed computation, then free
+-- the 'Session' with 'killSession'. The return value is forced to WHNF before
+-- freeing the 'Session' to reduce the likelihood of use-after-free errors.
+withSession :: Config -> (Session -> IO r) -> IO r
+withSession c m = bracket (newSession c) killSession (evaluate <=< m)
