@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE StrictData #-}
@@ -73,13 +74,15 @@ defaultConfig =
 
 data Session = Session
   { ipc :: IPC,
-    fatalErrorInbox :: TMVar (Either LBS.ByteString LBS.ByteString),
+    fatalErrorInbox :: TMVar (Either SomeException LBS.ByteString),
     -- | After a 'Session' is closed, no more messages can be sent to @node@.
     -- Use this to close the 'Session' if @node@ should still run for some time
-    -- to allow previous evaluation results to be sent back.
+    -- to allow previous evaluation results to be sent back. Blocks until @node@
+    -- process exits.
     closeSession :: IO (),
     -- | Terminate the @node@ process immediately. Use this to close the
-    -- 'Session' if @node@ doesn't need to run any more.
+    -- 'Session' if @node@ doesn't need to run any more. Blocks until @node@
+    -- process exits.
     killSession :: IO ()
   }
 
@@ -113,7 +116,8 @@ newSession Config {..} = do
           std_in = CreatePipe,
           std_out = CreatePipe
         }
-  _inbox <- newEmptyTMVarIO
+  _err_inbox <- newEmptyTMVarIO
+  _exit_inbox <- newEmptyTMVarIO
   mdo
     let on_recv msg_buf = do
           msg <- runGetExact messageJSGet msg_buf
@@ -150,13 +154,20 @@ newSession Config {..} = do
                       Right () -> pure ()
                   )
               pure ()
-            -- todo: should make all subsequent operations invalid immediately
-            -- here, possibly via a session state atomic variable. also cleanup
-            -- tmp dir.
-            FatalError err_buf -> atomically $ putTMVar _inbox $ Left err_buf
+            FatalError err_buf ->
+              atomically $
+                putTMVar _err_inbox $
+                  Left $
+                    toException
+                      EvalError
+                        { evalErrorMessage = stringFromLBS err_buf
+                        }
         ipc_post_close = do
-          _ <- waitForProcess _ph
-          pure ()
+          ec <- waitForProcess _ph
+          atomically $ do
+            _ <- tryPutTMVar _err_inbox $ Left $ toException SessionClosed
+            putTMVar _exit_inbox ec
+          removePathForcibly _root
     _ipc <-
       ipcFork $
         ipcFromHandles
@@ -166,22 +177,19 @@ newSession Config {..} = do
             { send = error "newSession: send",
               recv = error "newSession: recv",
               onRecv = on_recv,
-              closeMsg = toLazyByteString $ messageHSPut Close,
-              preClose = error "newSession: preClose",
               postClose = ipc_post_close
             }
-    let session_close = do
-          send _ipc $ closeMsg _ipc
-          ipc_post_close
-          removeDirectoryRecursive _root
+    let wait_for_exit = atomically $ () <$ readTMVar _exit_inbox
+        session_close = do
+          send _ipc $ toLazyByteString $ messageHSPut Close
+          wait_for_exit
         session_kill = do
           terminateProcess _ph
-          ipc_post_close
-          removeDirectoryRecursive _root
+          wait_for_exit
         _session =
           Session
             { ipc = _ipc,
-              fatalErrorInbox = _inbox,
+              fatalErrorInbox = _err_inbox,
               closeSession = session_close,
               killSession = session_kill
             }
@@ -189,3 +197,9 @@ newSession Config {..} = do
 
 sessionSend :: Session -> MessageHS -> IO ()
 sessionSend Session {..} msg = send ipc $ toLazyByteString $ messageHSPut msg
+
+-- | Create a 'Session' with 'newSession', run the passed computation, then free
+-- the 'Session' with 'killSession'. The return value is forced to WHNF before
+-- freeing the 'Session' to reduce the likelihood of use-after-free errors.
+withSession :: Config -> (Session -> IO r) -> IO r
+withSession c m = bracket (newSession c) killSession (evaluate <=< m)
