@@ -77,10 +77,12 @@ data Session = Session
     fatalErrorInbox :: TMVar (Either SomeException LBS.ByteString),
     -- | After a 'Session' is closed, no more messages can be sent to @node@.
     -- Use this to close the 'Session' if @node@ should still run for some time
-    -- to allow previous evaluation results to be sent back.
+    -- to allow previous evaluation results to be sent back. Blocks until @node@
+    -- process exits.
     closeSession :: IO (),
     -- | Terminate the @node@ process immediately. Use this to close the
-    -- 'Session' if @node@ doesn't need to run any more.
+    -- 'Session' if @node@ doesn't need to run any more. Blocks until @node@
+    -- process exits.
     killSession :: IO ()
   }
 
