@@ -1,4 +1,4 @@
-cabal-version:      2.2
+cabal-version:      3.0
 name:               inline-js-core
 version:            0.0.1.0
 synopsis:           Call JavaScript from Haskell.
@@ -24,6 +24,7 @@ source-repository head
   location: https://github.com/tweag/inline-js
 
 library
+  cmm-sources:      cbits/JSVal.cmm
   exposed-modules:  Language.JavaScript.Inline.Core
   other-modules:
     Language.JavaScript.Inline.Core.Class

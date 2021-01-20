@@ -1,6 +1,7 @@
+{-# LANGUAGE GHCForeignImportPrim #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE StrictData #-}
 {-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE UnliftedFFITypes #-}
 
 module Language.JavaScript.Inline.Core.JSVal where
 
@@ -33,14 +34,17 @@ import GHC.Types
 -- a finalizer which frees the reference on the @node@ side when it's garbage
 -- collected in Haskell. It's also possible to manually free a 'JSVal' using
 -- 'freeJSVal'.
+
+type JSVal# = Any
+
 data JSVal
-  = JSVal Word64 (MutVar# RealWorld ()) (Weak# ())
+  = JSVal !Word64 JSVal# (Weak# ())
 
 instance Show JSVal where
   show (JSVal i _ _) = "JSVal " <> show i
 
 newJSVal :: Bool -> Word64 -> IO () -> IO JSVal
-newJSVal gc i (IO f) = IO $ \s0 -> case newMutVar# () s0 of
+newJSVal gc i (IO f) = IO $ \s0 -> case newJSVal# s0 of
   (# s1, v #) ->
     if gc
       then case mkWeak# v () f s1 of
@@ -55,3 +59,5 @@ freeJSVal :: JSVal -> IO ()
 freeJSVal (JSVal _ _ w) = IO $ \s0 -> case finalizeWeak# w s0 of
   (# s1, 0#, _ #) -> (# s1, () #)
   (# s1, _, f #) -> f s1
+
+foreign import prim "stg_newJSValzh" newJSVal# :: State# RealWorld -> (# State# RealWorld, Any #)
