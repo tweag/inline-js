@@ -1,49 +1,43 @@
-cabal-version: 2.2
+cabal-version:      2.2
+name:               inline-js-examples
+version:            0.0.1.0
+synopsis:           Call JavaScript from Haskell.
+description:
+  Please see <https://github.com/tweag/inline-js> for details.
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
---
--- see: https://github.com/sol/hpack
---
--- hash: ab930fd082825c835b9fa6402676d4b00b4fe6d0c099f6be2ba7931d28bc898b
-
-name:           inline-js-examples
-version:        0.0.1.0
-synopsis:       Call JavaScript from Haskell.
-description:    Please see <https://github.com/tweag/inline-js> for details.
-category:       Web
-homepage:       https://github.com/tweag/inline-js#readme
-bug-reports:    https://github.com/tweag/inline-js/issues
-maintainer:     Cheng Shao <cheng.shao@tweag.io>
-copyright:      (c) 2018 Tweag I/O
-license:        BSD-3-Clause
-license-file:   LICENSE
-build-type:     Simple
+category:           Web
+homepage:           https://github.com/tweag/inline-js#readme
+bug-reports:        https://github.com/tweag/inline-js/issues
+maintainer:         Cheng Shao <cheng.shao@tweag.io>
+copyright:          (c) 2018 Tweag I/O
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
 extra-source-files:
-    CHANGELOG.md
-    LICENSE
-    README.md
+  CHANGELOG.md
+  LICENSE
+  README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/tweag/inline-js
 
 library
   exposed-modules:
-      Language.JavaScript.Inline.Examples.Stream
-      Language.JavaScript.Inline.Examples.Utils
-      Language.JavaScript.Inline.Examples.Utils.LazyIO
-      Language.JavaScript.Inline.Examples.Wasm
-  other-modules:
-      Paths_inline_js_examples
-  autogen-modules:
-      Paths_inline_js_examples
-  hs-source-dirs:
-      src
-  ghc-options: -Wall
+    Language.JavaScript.Inline.Examples.Stream
+    Language.JavaScript.Inline.Examples.Utils
+    Language.JavaScript.Inline.Examples.Utils.LazyIO
+    Language.JavaScript.Inline.Examples.Wasm
+
+  other-modules:    Paths_inline_js_examples
+  autogen-modules:  Paths_inline_js_examples
+  hs-source-dirs:   src
+  ghc-options:      -Wall
   build-depends:
-      base >=4.12 && <5
+    , base        >=4.12 && <5
     , bytestring
     , inline-js
     , stm
     , stm-chans
+
   default-language: Haskell2010

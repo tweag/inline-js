@@ -1,61 +1,54 @@
-cabal-version: 2.2
+cabal-version:      2.2
+name:               inline-js-core
+version:            0.0.1.0
+synopsis:           Call JavaScript from Haskell.
+description:
+  Please see <https://github.com/tweag/inline-js> for details.
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
---
--- see: https://github.com/sol/hpack
---
--- hash: 755f7c7fce00c52a8364a8aa480871885a8b682da60d815132848b32e0c890df
-
-name:           inline-js-core
-version:        0.0.1.0
-synopsis:       Call JavaScript from Haskell.
-description:    Please see <https://github.com/tweag/inline-js> for details.
-category:       Web
-homepage:       https://github.com/tweag/inline-js#readme
-bug-reports:    https://github.com/tweag/inline-js/issues
-maintainer:     Cheng Shao <cheng.shao@tweag.io>
-copyright:      (c) 2018 Tweag I/O
-license:        BSD-3-Clause
-license-file:   LICENSE
-build-type:     Simple
+category:           Web
+homepage:           https://github.com/tweag/inline-js#readme
+bug-reports:        https://github.com/tweag/inline-js/issues
+maintainer:         Cheng Shao <cheng.shao@tweag.io>
+copyright:          (c) 2018 Tweag I/O
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
 extra-source-files:
-    jsbits/index.js
-    CHANGELOG.md
-    LICENSE
-    README.md
+  CHANGELOG.md
+  jsbits/index.js
+  LICENSE
+  README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/tweag/inline-js
 
 library
-  exposed-modules:
-      Language.JavaScript.Inline.Core
+  exposed-modules:  Language.JavaScript.Inline.Core
   other-modules:
-      Language.JavaScript.Inline.Core.Class
-      Language.JavaScript.Inline.Core.Dict
-      Language.JavaScript.Inline.Core.Exception
-      Language.JavaScript.Inline.Core.Export
-      Language.JavaScript.Inline.Core.Import
-      Language.JavaScript.Inline.Core.Instruction
-      Language.JavaScript.Inline.Core.IPC
-      Language.JavaScript.Inline.Core.JSVal
-      Language.JavaScript.Inline.Core.Message
-      Language.JavaScript.Inline.Core.NodePath
-      Language.JavaScript.Inline.Core.NodeVersion
-      Language.JavaScript.Inline.Core.Session
-      Language.JavaScript.Inline.Core.Utils
-      Paths_inline_js_core
-  autogen-modules:
-      Paths_inline_js_core
-  hs-source-dirs:
-      src
-  ghc-options: -Wall
+    Language.JavaScript.Inline.Core.Class
+    Language.JavaScript.Inline.Core.Dict
+    Language.JavaScript.Inline.Core.Exception
+    Language.JavaScript.Inline.Core.Export
+    Language.JavaScript.Inline.Core.Import
+    Language.JavaScript.Inline.Core.Instruction
+    Language.JavaScript.Inline.Core.IPC
+    Language.JavaScript.Inline.Core.JSVal
+    Language.JavaScript.Inline.Core.Message
+    Language.JavaScript.Inline.Core.NodePath
+    Language.JavaScript.Inline.Core.NodeVersion
+    Language.JavaScript.Inline.Core.Session
+    Language.JavaScript.Inline.Core.Utils
+    Paths_inline_js_core
+
+  autogen-modules:  Paths_inline_js_core
+  hs-source-dirs:   src
+  ghc-options:      -Wall
   build-depends:
-      Cabal
-    , base >=4.12 && <5
+    , base              >=4.12 && <5
     , binary
     , bytestring
+    , Cabal
     , containers
     , directory
     , filepath
@@ -64,4 +57,5 @@ library
     , stm
     , template-haskell
     , text
+
   default-language: Haskell2010
