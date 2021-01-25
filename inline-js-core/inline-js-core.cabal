@@ -39,9 +39,7 @@ library
     Language.JavaScript.Inline.Core.NodeVersion
     Language.JavaScript.Inline.Core.Session
     Language.JavaScript.Inline.Core.Utils
-    Paths_inline_js_core
 
-  autogen-modules:  Paths_inline_js_core
   hs-source-dirs:   src
   ghc-options:      -Wall
   build-depends:

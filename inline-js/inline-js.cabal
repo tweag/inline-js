@@ -28,9 +28,7 @@ library
     Language.JavaScript.Inline.Aeson
     Language.JavaScript.Inline.JSParse
     Language.JavaScript.Inline.TH
-    Paths_inline_js
 
-  autogen-modules:  Paths_inline_js
   hs-source-dirs:   src
   ghc-options:      -Wall
   build-depends:

@@ -29,8 +29,6 @@ library
     Language.JavaScript.Inline.Examples.Utils.LazyIO
     Language.JavaScript.Inline.Examples.Wasm
 
-  other-modules:    Paths_inline_js_examples
-  autogen-modules:  Paths_inline_js_examples
   hs-source-dirs:   src
   ghc-options:      -Wall
   build-depends:
