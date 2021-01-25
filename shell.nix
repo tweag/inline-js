@@ -3,7 +3,7 @@
 , nixpkgsSrc ? haskellNix.sources.nixpkgs-2009
 , nixpkgsArgs ? haskellNix.nixpkgsArgs
 , pkgs ? import nixpkgsSrc nixpkgsArgs
-, ghc ? "ghc8102"
+, ghc ? "ghc8103"
 , node ? "nodejs-14_x"
 , hsPkgs ? import ./default.nix { inherit pkgs ghc node; }
 }: hsPkgs.shellFor {
