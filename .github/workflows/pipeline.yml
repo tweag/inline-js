@@ -79,12 +79,13 @@ jobs:
 
       - name: build
         run: |
+          echo ${{ steps.setup-haskell.outputs.stack-root }}
           stack -j2 build --test --no-run-tests
 
       - name: setup-node-15
         uses: actions/setup-node@v2
         with:
-          node-version: 15.5.1
+          node-version: 15.6.0
 
       - name: test-node-15
         run: |
