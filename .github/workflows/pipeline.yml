@@ -73,13 +73,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ${{ steps.setup-haskell.outputs.stack-root }}
+            C:\sr
             **/.stack-work
           key: stack-${{ matrix.os }}
 
       - name: build
         run: |
-          echo ${{ steps.setup-haskell.outputs }}
           stack -j2 build --test --no-run-tests
 
       - name: setup-node-15
