@@ -79,7 +79,7 @@ jobs:
 
       - name: build
         run: |
-          echo ${{ steps.setup-haskell.outputs.stack-root }}
+          echo ${{ steps.setup-haskell.outputs }}
           stack -j2 build --test --no-run-tests
 
       - name: setup-node-15
