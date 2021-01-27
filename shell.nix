@@ -31,6 +31,14 @@
       compiler-nix-name = ghc;
     }).hindent.components.exes.hindent
 
+    (pkgs.haskell-nix.hackage-tool {
+      name = "cabal-fmt";
+      compiler-nix-name = ghc;
+      cabalProject = ''
+        packages: .
+      '';
+    })
+
     pkgs."${node}"
   ];
 
