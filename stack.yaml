@@ -1,11 +1,6 @@
-resolver: lts-16.31
+resolver: lts-17.0
 packages:
   - inline-js
   - inline-js-core
   - inline-js-examples
   - inline-js-tests
-nix:
-  path:
-    - nixpkgs=./nix/nixpkgs.nix
-  packages:
-    - nodejs-14_x

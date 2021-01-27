@@ -29,7 +29,7 @@ jobs:
       - name: setup-nix
         uses: cachix/install-nix-action@v12
         with:
-          nix_path: nixpkgs=./nix/nixpkgs.nix
+          nix_path: nixpkgs=${{ github.workspace }}/nix/nixpkgs.nix
 
       - name: setup-cachix
         uses: cachix/cachix-action@v8
@@ -142,7 +142,7 @@ jobs:
       - name: setup-nix
         uses: cachix/install-nix-action@v12
         with:
-          nix_path: nixpkgs=./nix/nixpkgs.nix
+          nix_path: nixpkgs=${{ github.workspace }}/nix/nixpkgs.nix
 
       - name: setup-cachix
         uses: cachix/cachix-action@v8
@@ -176,7 +176,7 @@ jobs:
       - name: setup-nix
         uses: cachix/install-nix-action@v12
         with:
-          nix_path: nixpkgs=./nix/nixpkgs.nix
+          nix_path: nixpkgs=${{ github.workspace }}/nix/nixpkgs.nix
 
       - name: setup-cachix
         uses: cachix/cachix-action@v8
@@ -205,26 +205,28 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: setup-nix
-        uses: cachix/install-nix-action@v12
+      - name: setup-haskell
+        uses: haskell/actions/setup@v1
         with:
-          nix_path: nixpkgs=./nix/nixpkgs.nix
+          stack-version: 2.5.1
+          enable-stack: true
+          stack-no-global: true
 
-      - name: setup-cachix
-        uses: cachix/cachix-action@v8
+      - name: setup-node-15
+        uses: actions/setup-node@v2
         with:
-          name: asterius
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          node-version: 15.7.0
+
+      - name: cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.stack
+            **/.stack-work
+          key: stack-haddock
 
       - name: setup-deps
         run: |
-          nix-env -f ./nix/nixpkgs.nix -iA \
-            nodejs-14_x \
-            stack
-
-          mkdir ~/.stack
-          printf "nix:\n  enable: true\n" > ~/.stack/config.yaml
-
           npm config set prefix ~/.local
 
           npm install -g \
