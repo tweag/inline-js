@@ -33,7 +33,7 @@
 
     (pkgs.haskell-nix.hackage-tool {
       name = "cabal-fmt";
-      compiler-nix-name = ghc;
+      compiler-nix-name = "ghc8103";
       cabalProject = ''
         packages: .
       '';
