@@ -5,10 +5,10 @@
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "a404de5f3cc7306169c7b9c579ee7a906280036c",
-        "sha256": "192h19jc7c4la8rq3sqcnb74lf7iq4mfm4k48qm8mhhabsibm98c",
+        "rev": "b4e3a936787249ceb7fca704ae93d536bac46062",
+        "sha256": "1w6l5y6fci2v7xbvkaxs21mr629la2q5v182jdl9wlz29ff08558",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/a404de5f3cc7306169c7b9c579ee7a906280036c.tar.gz",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/b4e3a936787249ceb7fca704ae93d536bac46062.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "hindent": {
@@ -17,10 +17,10 @@
         "homepage": "",
         "owner": "mihaimaruseac",
         "repo": "hindent",
-        "rev": "1917b7b9ac2cb3dcb152f4435de61d1858a4064b",
-        "sha256": "0rpmmzwjqij5v8k33qlpq323za96447pdwrwzwk4474n4v5xsp50",
+        "rev": "e146d672ea4c00fe17018e7e76e49d59570eeb2b",
+        "sha256": "0bcrlw76nihbffm7p5jh9vf3r1756p6vwa7hbwp933r4caaiyqid",
         "type": "tarball",
-        "url": "https://github.com/mihaimaruseac/hindent/archive/1917b7b9ac2cb3dcb152f4435de61d1858a4064b.tar.gz",
+        "url": "https://github.com/mihaimaruseac/hindent/archive/e146d672ea4c00fe17018e7e76e49d59570eeb2b.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "niv": {

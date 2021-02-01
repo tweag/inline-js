@@ -69,14 +69,6 @@ jobs:
           enable-stack: true
           stack-no-global: true
 
-      - name: cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            C:\sr
-            **/.stack-work
-          key: stack-${{ matrix.os }}
-
       - name: build
         run: |
           stack -j2 build --test --no-run-tests
@@ -216,14 +208,6 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 15.7.0
-
-      - name: cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.stack
-            **/.stack-work
-          key: stack-haddock
 
       - name: setup-deps
         run: |
