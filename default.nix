@@ -1,6 +1,6 @@
 { sources ? import ./nix/sources.nix { }
 , haskellNix ? import sources.haskell-nix { }
-, nixpkgsSrc ? haskellNix.sources.nixpkgs-2009
+, nixpkgsSrc ? haskellNix.sources.nixpkgs-unstable
 , nixpkgsArgs ? haskellNix.nixpkgsArgs
 , pkgs ? import nixpkgsSrc nixpkgsArgs
 , ghc ? "ghc8103"

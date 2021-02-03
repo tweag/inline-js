@@ -39,13 +39,13 @@ jobs:
 
       - name: test
         run: |
-          for node in nodejs-14_x nodejs-12_x nodejs-10_x; do
+          for node in nodejs-15_x nodejs-14_x nodejs-12_x nodejs-10_x; do
             nix run -f . -i --argstr ghc $ghc --argstr node $node inline-js-tests.components.exes.inline-js-tests -c inline-js-tests -j2
           done
 
       - name: test-nix-shell
         run: |
-          for node in nodejs-14_x nodejs-12_x nodejs-10_x; do
+          for node in nodejs-15_x nodejs-14_x nodejs-12_x nodejs-10_x; do
             nix-shell --pure --argstr ghc $ghc --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
           done
 
@@ -76,7 +76,7 @@ jobs:
       - name: setup-node-15
         uses: actions/setup-node@v2
         with:
-          node-version: 15.7.0
+          node-version: 15.8.0
 
       - name: test-node-15
         run: |
@@ -207,7 +207,7 @@ jobs:
       - name: setup-node-15
         uses: actions/setup-node@v2
         with:
-          node-version: 15.7.0
+          node-version: 15.8.0
 
       - name: setup-deps
         run: |
