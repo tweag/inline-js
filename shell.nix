@@ -21,16 +21,12 @@
     cabal-install = "latest";
     ghcid = "latest";
     haskell-language-server = "latest";
+    hindent = "latest";
     hlint = "latest";
     ormolu = "latest";
   };
 
   buildInputs = [
-    (pkgs.haskell-nix.cabalProject {
-      src = sources.hindent;
-      compiler-nix-name = ghc;
-    }).hindent.components.exes.hindent
-
     (pkgs.haskell-nix.hackage-tool {
       name = "cabal-fmt";
       compiler-nix-name = "ghc8103";
