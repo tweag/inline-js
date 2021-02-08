@@ -4,7 +4,7 @@
 , nixpkgsArgs ? haskellNix.nixpkgsArgs
 , pkgs ? import nixpkgsSrc nixpkgsArgs
 , ghc ? "ghc8103"
-, node ? "nodejs-14_x"
+, node ? "nodejs-15_x"
 , hsPkgs ? import ./default.nix { inherit pkgs ghc node; }
 }: hsPkgs.shellFor {
   packages = ps: with ps; [
