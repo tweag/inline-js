@@ -3,7 +3,7 @@
 , nixpkgsSrc ? haskellNix.sources.nixpkgs-unstable
 , nixpkgsArgs ? haskellNix.nixpkgsArgs
 , pkgs ? import nixpkgsSrc nixpkgsArgs
-, ghc ? "ghc8103"
+, ghc ? "ghc8104"
 , node ? "nodejs-15_x"
 }: pkgs.haskell-nix.cabalProject {
   src = pkgs.haskell-nix.haskellLib.cleanGit {

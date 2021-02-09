@@ -3,7 +3,7 @@
 , nixpkgsSrc ? haskellNix.sources.nixpkgs-unstable
 , nixpkgsArgs ? haskellNix.nixpkgsArgs
 , pkgs ? import nixpkgsSrc nixpkgsArgs
-, ghc ? "ghc8103"
+, ghc ? "ghc8104"
 , node ? "nodejs-15_x"
 , hsPkgs ? import ./default.nix { inherit pkgs ghc node; }
 }: hsPkgs.shellFor {
@@ -29,7 +29,7 @@
   buildInputs = [
     (pkgs.haskell-nix.hackage-tool {
       name = "cabal-fmt";
-      compiler-nix-name = "ghc8103";
+      compiler-nix-name = "ghc8104";
       cabalProject = ''
         packages: .
       '';

@@ -16,7 +16,7 @@ jobs:
           - ubuntu-20.04
           - macos-10.15
         ghc:
-          - ghc8103
+          - ghc8104
           - ghc884
           - ghc865
     env:
