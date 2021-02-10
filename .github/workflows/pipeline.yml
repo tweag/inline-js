@@ -86,7 +86,7 @@ jobs:
       - name: setup-node-14
         uses: actions/setup-node@v2
         with:
-          node-version: 14.15.4
+          node-version: 14.15.5
 
       - name: test-node-14
         run: |
@@ -116,7 +116,7 @@ jobs:
       - name: setup-node-10
         uses: actions/setup-node@v2
         with:
-          node-version: 10.23.2
+          node-version: 10.23.3
 
       - name: test-node-10
         run: |
