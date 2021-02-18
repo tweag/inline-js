@@ -40,13 +40,13 @@ jobs:
       - name: test
         run: |
           for node in nodejs-15_x nodejs-14_x nodejs-12_x nodejs-10_x; do
-            nix run -f . -i --argstr ghc $ghc --argstr node $node inline-js-tests.components.exes.inline-js-tests -c inline-js-tests -j2
+            nix run --keep-going -f . -i --argstr ghc $ghc --argstr node $node inline-js-tests.components.exes.inline-js-tests -c inline-js-tests -j2
           done
 
       - name: test-nix-shell
         run: |
           for node in nodejs-15_x nodejs-14_x nodejs-12_x nodejs-10_x; do
-            nix-shell --pure --argstr ghc $ghc --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
+            nix-shell --keep-going --pure --argstr ghc $ghc --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
           done
 
   stack:
@@ -76,7 +76,7 @@ jobs:
       - name: setup-node-15
         uses: actions/setup-node@v2
         with:
-          node-version: 15.8.0
+          node-version: 15.9.0
 
       - name: test-node-15
         run: |
@@ -106,7 +106,7 @@ jobs:
       - name: setup-node-12
         uses: actions/setup-node@v2
         with:
-          node-version: 12.20.1
+          node-version: 12.20.2
 
       - name: test-node-12
         run: |
@@ -146,10 +146,10 @@ jobs:
         run: |
 
           for pkg in inline-js inline-js-core inline-js-examples inline-js-tests; do
-            nix-shell --pure --run "cd $pkg && cabal check"
+            nix-shell --keep-going --pure --run "cd $pkg && cabal check"
           done
 
-          nix-shell --pure --run "cabal v2-sdist all"
+          nix-shell --keep-going --pure --run "cabal v2-sdist all"
 
       - name: upload-artifact
         uses: actions/upload-artifact@v2
@@ -178,7 +178,7 @@ jobs:
 
       - name: haddock
         run: |
-          nix-shell --pure --run "cabal v2-haddock --haddock-for-hackage --haddock-hyperlink-source --haddock-quickjump -j2 all"
+          nix-shell --keep-going --pure --run "cabal v2-haddock --haddock-for-hackage --haddock-hyperlink-source --haddock-quickjump -j2 all"
 
       - name: upload-artifact
         uses: actions/upload-artifact@v2
