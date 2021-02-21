@@ -18,7 +18,7 @@
 
   tools = {
     brittany = "latest";
-    cabal-install = "latest";
+    cabal = "latest";
     ghcid = "latest";
     haskell-language-server = "latest";
     hindent = "latest";
