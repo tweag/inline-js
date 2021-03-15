@@ -4,6 +4,7 @@
 , nixpkgsArgs ? haskellNix.nixpkgsArgs
 , pkgs ? import nixpkgsSrc nixpkgsArgs
 , ghc ? "ghc8104"
+, toolsGhc ? "ghc8104"
 , node ? "nodejs-15_x"
 , hsPkgs ? import ./default.nix { inherit pkgs ghc node; }
 }: hsPkgs.shellFor {
@@ -17,24 +18,26 @@
   withHoogle = true;
 
   tools = {
-    brittany = "latest";
-    cabal = "latest";
-    ghcid = "latest";
     haskell-language-server = "latest";
-    hindent = "latest";
-    hlint = "latest";
-    ormolu = "latest";
   };
 
-  buildInputs = [
-    (pkgs.haskell-nix.hackage-tool {
-      name = "cabal-fmt";
-      compiler-nix-name = "ghc8104";
-      cabalProject = ''
-        packages: .
-      '';
-    })
-
+  buildInputs = (builtins.map
+    (t:
+      (pkgs.haskell-nix.hackage-tool {
+        name = t;
+        compiler-nix-name = toolsGhc;
+      }))
+    [
+      "brittany"
+      "cabal"
+      "cabal-fmt"
+      "ghcid"
+      "hindent"
+      "hlint"
+      "ormolu"
+    ]) ++
+  [
+    pkgs.nixpkgs-fmt
     pkgs."${node}"
   ];
 
