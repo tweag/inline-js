@@ -53,13 +53,17 @@ jobs:
           done
 
   stack:
-    name: stack-${{ matrix.os }}
+    name: stack-${{ matrix.os }}-${{ matrix.resolver }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - windows-2019
+        resolver:
+          - lts-17
+          - lts-16
+          - lts-14
     steps:
 
       - name: checkout
@@ -74,7 +78,7 @@ jobs:
 
       - name: build
         run: |
-          stack -j2 build --test --no-run-tests
+          stack --resolver {{ matrix.resolver }} -j2 build --test --no-run-tests
 
       - name: setup-node-15
         uses: actions/setup-node@v2
@@ -85,7 +89,7 @@ jobs:
       - name: test-node-15
         run: |
           node --version
-          stack run inline-js-tests -- -j2
+          stack --resolver {{ matrix.resolver }} run inline-js-tests -- -j2
 
       - name: setup-node-14
         uses: actions/setup-node@v2
@@ -96,7 +100,7 @@ jobs:
       - name: test-node-14
         run: |
           node --version
-          stack run inline-js-tests -- -j2
+          stack --resolver {{ matrix.resolver }} run inline-js-tests -- -j2
 
       - name: setup-node-13
         uses: actions/setup-node@v2
@@ -107,7 +111,7 @@ jobs:
       - name: test-node-13
         run: |
           node --version
-          stack run inline-js-tests -- -j2
+          stack --resolver {{ matrix.resolver }} run inline-js-tests -- -j2
 
       - name: setup-node-12
         uses: actions/setup-node@v2
@@ -118,7 +122,7 @@ jobs:
       - name: test-node-12
         run: |
           node --version
-          stack run inline-js-tests -- -j2
+          stack --resolver {{ matrix.resolver }} run inline-js-tests -- -j2
 
       - name: setup-node-10
         uses: actions/setup-node@v2
@@ -129,7 +133,7 @@ jobs:
       - name: test-node-10
         run: |
           node --version
-          stack run inline-js-tests -- -j2
+          stack --resolver {{ matrix.resolver }} run inline-js-tests -- -j2
 
   sdist:
     name: sdist
