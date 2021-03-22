@@ -23,7 +23,7 @@
 
   nativeBuildInputs = pkgs.lib.attrValues
     (pkgs.haskell-nix.tools toolsGhc
-      ({
+      {
         brittany = "latest";
         cabal = "latest";
         cabal-fmt = "latest";
@@ -31,7 +31,7 @@
         hindent = "latest";
         hlint = "latest";
         ormolu = "latest";
-      })) ++
+      }) ++
   [
     pkgs.nixpkgs-fmt
     pkgs."${node}"
