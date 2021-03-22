@@ -21,21 +21,17 @@
     haskell-language-server = "latest";
   };
 
-  buildInputs = (builtins.map
-    (t:
-      (pkgs.haskell-nix.hackage-tool {
-        name = t;
-        compiler-nix-name = toolsGhc;
-      }))
-    [
-      "brittany"
-      "cabal"
-      "cabal-fmt"
-      "ghcid"
-      "hindent"
-      "hlint"
-      "ormolu"
-    ]) ++
+  nativeBuildInputs = pkgs.lib.attrValues
+    (pkgs.haskell-nix.tools toolsGhc
+      ({
+        brittany = "latest";
+        cabal = "latest";
+        cabal-fmt = "latest";
+        ghcid = "latest";
+        hindent = "latest";
+        hlint = "latest";
+        ormolu = "latest";
+      })) ++
   [
     pkgs.nixpkgs-fmt
     pkgs."${node}"
