@@ -11,8 +11,8 @@
   compiler-nix-name = ghc;
   modules = let nodeSrc = pkgs."${node}"; in
     [{
-      packages.inline-js-core.configureFlags = [
-        ''--ghc-option=-DINLINE_JS_NODE=\"${nodeSrc}/bin/node\"''
-      ];
+      packages.inline-js-core.postUnpack = ''
+        substituteInPlace $sourceRoot/inline-js-core/src/Language/JavaScript/Inline/Core/NodePath.hs --replace '"node"' '"${nodeSrc}/bin/node"'
+      '';
     }];
 }
