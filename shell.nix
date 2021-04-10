@@ -28,7 +28,9 @@
       hindent = "latest";
       hlint = "latest";
       ormolu = "latest";
+      stylish-haskell = "latest";
     }) ++ [
+    (import sources.niv { }).niv
     pkgs.nixpkgs-fmt
     pkgs."${node}"
   ];
