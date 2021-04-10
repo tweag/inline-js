@@ -190,6 +190,7 @@ jobs:
       - name: haddock
         run: |
           cabal v2-haddock \
+            --enable-documentation \
             --haddock-for-hackage \
             --haddock-hyperlink-source \
             --haddock-quickjump \
