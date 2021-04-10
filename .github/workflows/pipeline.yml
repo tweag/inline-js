@@ -144,70 +144,58 @@ jobs:
           node --version
           stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
 
-  sdist:
-    name: sdist
+  sdist-haddock:
+    name: sdist-haddock
     runs-on: ubuntu-latest
     steps:
 
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: setup-nix
-        uses: cachix/install-nix-action@v13
+      - name: setup-haskell
+        id: setup-haskell
+        uses: haskell/actions/setup@v1
         with:
-          extra_nix_config: |
-            substituters = https://cache.nixos.org https://hydra.iohk.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+          ghc-version: 8.10.4
+          cabal-version: 3.4.0.0
 
-      - name: setup-cachix
-        uses: cachix/cachix-action@v10
+      - name: cache
+        uses: actions/cache@v2
         with:
-          name: asterius
-          extraPullNames: niv
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          key: sdist-haddock-${{ github.run_id }}
+          restore-keys: sdist-haddock-
+          path: |
+            ${{ steps.setup-haskell.outputs.cabal-store }}
+            dist-newstyle
+
+      - name: check
+        run: |
+          for pkg in inline-js inline-js-core inline-js-examples inline-js-tests; do
+            pushd $pkg
+            cabal check
+            popd
+          done
 
       - name: sdist
         run: |
+          cabal v2-sdist all
 
-          for pkg in inline-js inline-js-core inline-js-examples inline-js-tests; do
-            nix-shell --keep-going --pure --run "cd $pkg && cabal check"
-          done
-
-          nix-shell --keep-going --pure --run "cabal v2-sdist all"
-
-      - name: upload-artifact
+      - name: sdist-artifact
         uses: actions/upload-artifact@v2
         with:
           name: sdist
           path: dist-newstyle/sdist/*.tar.gz
 
-  haddock:
-    name: haddock
-    runs-on: ubuntu-latest
-    steps:
-
-      - name: checkout
-        uses: actions/checkout@v2
-
-      - name: setup-nix
-        uses: cachix/install-nix-action@v13
-        with:
-          extra_nix_config: |
-            substituters = https://cache.nixos.org https://hydra.iohk.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-
-      - name: setup-cachix
-        uses: cachix/cachix-action@v10
-        with:
-          name: asterius
-          extraPullNames: niv
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-
       - name: haddock
         run: |
-          nix-shell --keep-going --pure --run "cabal v2-haddock --haddock-for-hackage --haddock-hyperlink-source --haddock-quickjump -j2 all"
+          cabal v2-haddock \
+            --haddock-for-hackage \
+            --haddock-hyperlink-source \
+            --haddock-quickjump \
+            -j2 \
+            all
 
-      - name: upload-artifact
+      - name: haddock-artifact
         uses: actions/upload-artifact@v2
         with:
           name: haddock
