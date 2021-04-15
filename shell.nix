@@ -15,10 +15,6 @@
 
   withHoogle = true;
 
-  tools = {
-    haskell-language-server = "latest";
-  };
-
   nativeBuildInputs = pkgs.lib.attrValues
     (pkgs.haskell-nix.tools toolsGhc {
       brittany = "latest";
@@ -30,6 +26,17 @@
       ormolu = "latest";
       stylish-haskell = "latest";
     }) ++ [
+    (pkgs.haskell-nix.cabalProject {
+      src = pkgs.fetchFromGitHub {
+        owner = "haskell";
+        repo = "haskell-language-server";
+        rev = "1.1.0";
+        sha256 = "0kviq3kinm3i0qm4r26rdnlkwbs1s3r1rqiqdry517rgkgnjpcp5";
+        fetchSubmodules = true;
+      };
+      compiler-nix-name = ghc;
+      configureArgs = "--disable-benchmarks --disable-tests";
+    }).haskell-language-server.components.exes.haskell-language-server
     (import sources.niv { }).niv
     pkgs.nixpkgs-fmt
     pkgs."${node}"
