@@ -24,6 +24,7 @@
       hindent = "latest";
       hlint = "latest";
       ormolu = "latest";
+      stan = "latest";
       stylish-haskell = "latest";
     }) ++ [
     (pkgs.haskell-nix.cabalProject {
