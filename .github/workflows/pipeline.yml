@@ -90,6 +90,17 @@ jobs:
         run: |
           stack --resolver ${{ matrix.resolver }} -j2 build --test --no-run-tests
 
+      - name: setup-node-16
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          check-latest: true
+
+      - name: test-node-16
+        run: |
+          node --version
+          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
+
       - name: setup-node-15
         uses: actions/setup-node@v2
         with:
