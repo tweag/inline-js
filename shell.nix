@@ -20,11 +20,9 @@
       brittany = "latest";
       cabal = "latest";
       cabal-fmt = "latest";
-      ghcid = "latest";
       hindent = "latest";
       hlint = "latest";
       ormolu = "latest";
-      stan = "latest";
       stylish-haskell = "latest";
     }) ++ [
     (pkgs.haskell-nix.cabalProject {

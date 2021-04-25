@@ -19,8 +19,6 @@ jobs:
           - ghc8104
           - ghc884
           - ghc865
-    env:
-      ghc: ${{ matrix.ghc }}
     steps:
 
       - name: checkout
@@ -44,14 +42,16 @@ jobs:
       - name: test
         run: |
           for node in nodejs-15_x nodejs-14_x nodejs-12_x nodejs-10_x; do
-            nix run --keep-going -f . -i --argstr ghc $ghc --argstr node $node inline-js-tests.components.exes.inline-js-tests -c inline-js-tests -j2
+            nix run --keep-going -f . -i --argstr ghc ${{ matrix.ghc }} --argstr node $node inline-js-tests.components.exes.inline-js-tests -c inline-js-tests -j2
           done
 
       - name: test-nix-shell
         run: |
           for node in nodejs-15_x nodejs-14_x nodejs-12_x nodejs-10_x; do
-            nix-shell --keep-going --pure --argstr ghc $ghc --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
+            nix-shell --keep-going --pure --argstr ghc ${{ matrix.ghc }} --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
           done
+
+          nix-shell --keep-going --pure --argstr ghc ${{ matrix.ghc }} --run "haskell-language-server typecheck"
 
   stack:
     name: stack-${{ matrix.os }}-${{ matrix.resolver }}
@@ -88,7 +88,7 @@ jobs:
 
       - name: build
         run: |
-          stack --resolver ${{ matrix.resolver }} -j2 build --test --no-run-tests
+          stack --resolver ${{ matrix.resolver }} build --test --no-run-tests
 
       - name: setup-node-16
         uses: actions/setup-node@v2
@@ -205,7 +205,6 @@ jobs:
             --haddock-for-hackage \
             --haddock-hyperlink-source \
             --haddock-quickjump \
-            -j2 \
             all
 
       - name: haddock-artifact
@@ -258,7 +257,7 @@ jobs:
         run: |
           export PATH=~/.local/bin:$PATH
 
-          stack -j2 build --haddock
+          stack build --haddock
 
           if [ ! -z "$NETLIFY_AUTH_TOKEN" ]
           then
