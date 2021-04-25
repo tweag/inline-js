@@ -1,8 +1,8 @@
 { sources ? import ./nix/sources.nix { }
 , haskellNix ? import sources.haskell-nix { }
-, pkgs ? haskellNix.pkgs-unstable
+, pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
 , ghc ? "ghc8104"
-, node ? "nodejs-15_x"
+, node ? "nodejs-16_x"
 }: pkgs.haskell-nix.cabalProject {
   src = pkgs.haskell-nix.haskellLib.cleanGit {
     name = "inline-js";
