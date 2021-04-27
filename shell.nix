@@ -5,13 +5,15 @@
 , toolsGhc ? "ghc8104"
 , node ? "nodejs-16_x"
 , hsPkgs ? import ./default.nix { inherit pkgs ghc node; }
-}: hsPkgs.shellFor {
-  packages = ps: with ps; [
-    inline-js
-    inline-js-core
-    inline-js-examples
-    inline-js-tests
-  ];
+}:
+hsPkgs.shellFor {
+  packages = ps:
+    with ps; [
+      inline-js
+      inline-js-core
+      inline-js-examples
+      inline-js-tests
+    ];
 
   withHoogle = true;
 
@@ -37,6 +39,7 @@
       configureArgs = "--disable-benchmarks --disable-tests";
     }).haskell-language-server.components.exes.haskell-language-server
     (import sources.niv { }).niv
+    pkgs.nixfmt
     pkgs.nixpkgs-fmt
     pkgs."${node}"
   ];
