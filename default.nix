@@ -14,8 +14,8 @@ pkgs.haskell-nix.cabalProject {
     let nodeSrc = pkgs."${node}";
     in
     [{
-      packages.inline-js-core.postUnpack = ''
-        substituteInPlace $sourceRoot/inline-js-core/src/Language/JavaScript/Inline/Core/NodePath.hs --replace '"node"' '"${nodeSrc}/bin/node"'
+      packages.inline-js-core.preBuild = ''
+        substituteInPlace src/Language/JavaScript/Inline/Core/NodePath.hs --replace '"node"' '"${nodeSrc}/bin/node"'
       '';
     }];
 }
