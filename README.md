@@ -6,7 +6,60 @@
 
 ## Documentation
 
+### Haddock
+
 [Haddock documentation](https://inline-js.netlify.app) for HEAD is available.
+
+### Adding `inline-js` as a dependency
+
+#### `cabal`
+
+Add a `source-repository-package` in the `cabal.project` file, see
+[documentation](https://cabal.readthedocs.io/en/latest/cabal-project.html#specifying-packages-from-remote-version-control-locations)
+for details.
+
+#### `stack`
+
+Add an `extra-deps` entry in the `stack.yaml` file, see
+[documentation](https://docs.haskellstack.org/en/stable/yaml_configuration/#extra-deps)
+for details.
+
+#### `nix`
+
+Here's an example overlay.
+
+```nix
+pkgsSelf: pkgsSuper:
+let
+  src = pkgsSelf.fetchFromGitHub {
+    owner = "tweag";
+    repo = "inline-js";
+    rev = "<rev>";
+    sha256 = pkgsSelf.lib.fakeSha256;
+  };
+in
+{
+  haskellPackages = pkgsSuper.haskellPackages.override {
+    overrides = self: _: {
+      inline-js-core = (self.callCabal2nixWithOptions "inline-js-core" src
+        "--subpath inline-js-core"
+        { }).overrideAttrs (_: {
+        preBuild = ''
+          substituteInPlace src/Language/JavaScript/Inline/Core/NodePath.hs --replace '"node"' '"${pkgsSelf.nodejs-16_x}/bin/node"'
+        '';
+      });
+      inline-js =
+        self.callCabal2nixWithOptions "inline-js" src "--subpath inline-js" { };
+    };
+  };
+}
+```
+
+#### `haskell.nix`
+
+See
+[documentation](https://input-output-hk.github.io/haskell.nix/tutorials/source-repository-hashes)
+for details.
 
 ## Implemented features
 
@@ -35,7 +88,7 @@ Supported GHC versions:
 
 - `ghc-8.6`, tested with `ghc-8.6.5`
 - `ghc-8.8`, tested with `ghc-8.8.4`
-- `ghc-8.10`, tested with `ghc-8.10.2`
+- `ghc-8.10`, tested with `ghc-8.10.4`
 
 Supported platforms:
 

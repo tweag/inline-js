@@ -1,5 +1,7 @@
+.direnv/
 .ghc.environment*
 .stack-work/
+.vscode/
 dist/
 dist-newstyle/
 stack.yaml.lock

@@ -13,174 +13,201 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-20.04
-          - macos-10.15
+          - ubuntu-latest
+          - macos-latest
         ghc:
-          - ghc8102
+          - ghc8104
           - ghc884
           - ghc865
-    env:
-      ghc: ${{ matrix.ghc }}
     steps:
 
       - name: checkout
         uses: actions/checkout@v2
 
       - name: setup-nix
-        uses: cachix/install-nix-action@v12
+        uses: cachix/install-nix-action@v13
         with:
-          nix_path: nixpkgs=./nix/nixpkgs.nix
+          nix_path: nixpkgs=channel:nixpkgs-unstable
+          extra_nix_config: |
+            substituters = https://cache.nixos.org https://hydra.iohk.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 
       - name: setup-cachix
-        uses: cachix/cachix-action@v7
+        uses: cachix/cachix-action@v10
         with:
           name: asterius
+          extraPullNames: niv
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
       - name: test
         run: |
-          for node in nodejs-14_x nodejs-12_x nodejs-10_x; do
-            nix run -f . -i --argstr ghc $ghc --argstr node $node inline-js-tests.components.exes.inline-js-tests -c inline-js-tests -j2
+          for node in nodejs-16_x nodejs-15_x nodejs-14_x nodejs-12_x nodejs-10_x; do
+            nix run --keep-going -f . -i --argstr ghc ${{ matrix.ghc }} --argstr node $node inline-js-tests.components.exes.inline-js-tests -c inline-js-tests -j2
           done
 
       - name: test-nix-shell
         run: |
-          for node in nodejs-14_x nodejs-12_x nodejs-10_x; do
-            nix-shell --pure --argstr ghc $ghc --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
+          for node in nodejs-16_x nodejs-15_x nodejs-14_x nodejs-12_x nodejs-10_x; do
+            nix-shell --keep-going --pure --argstr ghc ${{ matrix.ghc }} --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
           done
 
+          nix-shell --keep-going --pure --argstr ghc ${{ matrix.ghc }} --run "haskell-language-server typecheck"
+
   stack:
-    name: stack-${{ matrix.os }}
+    name: stack-${{ matrix.os }}-${{ matrix.resolver }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
-          - windows-2019
+          - windows-latest
+        resolver:
+          - lts-17
+          - lts-16
+          - lts-14
     steps:
-
-      - name: setup-haskell
-        uses: actions/setup-haskell@v1
-        with:
-          stack-version: 2.5.1
-          enable-stack: true
-          stack-no-global: true
 
       - name: checkout
         uses: actions/checkout@v2
 
+      - name: setup-haskell
+        id: setup-haskell
+        uses: haskell/actions/setup@v1
+        with:
+          enable-stack: true
+          stack-no-global: true
+
+      - name: cache
+        uses: actions/cache@v2
+        with:
+          key: stack-${{ matrix.os }}-${{ matrix.resolver }}-${{ github.run_id }}
+          restore-keys: stack-${{ matrix.os }}-${{ matrix.resolver }}-
+          path: |
+            ${{ steps.setup-haskell.outputs.stack-root }}
+            **/.stack-work
+
       - name: build
         run: |
-          stack -j2 build --test --no-run-tests
+          stack --resolver ${{ matrix.resolver }} build --test --no-run-tests
+
+      - name: setup-node-16
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          check-latest: true
+
+      - name: test-node-16
+        run: |
+          node --version
+          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
 
       - name: setup-node-15
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v2
         with:
-          node-version: 15.2.0
+          node-version: 15
+          check-latest: true
 
       - name: test-node-15
         run: |
           node --version
-          stack run inline-js-tests -- -j2
+          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
 
       - name: setup-node-14
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v2
         with:
-          node-version: 14.15.0
+          node-version: 14
+          check-latest: true
 
       - name: test-node-14
         run: |
           node --version
-          stack run inline-js-tests -- -j2
+          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
 
       - name: setup-node-13
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v2
         with:
-          node-version: 13.14.0
+          node-version: 13
+          check-latest: true
 
       - name: test-node-13
         run: |
           node --version
-          stack run inline-js-tests -- -j2
+          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
 
       - name: setup-node-12
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v2
         with:
-          node-version: 12.19.0
+          node-version: 12
+          check-latest: true
 
       - name: test-node-12
         run: |
           node --version
-          stack run inline-js-tests -- -j2
+          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
 
       - name: setup-node-10
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v2
         with:
-          node-version: 10.23.0
+          node-version: 10
+          check-latest: true
 
       - name: test-node-10
         run: |
           node --version
-          stack run inline-js-tests -- -j2
+          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
 
-  sdist:
-    name: sdist
-    runs-on: ubuntu-20.04
+  sdist-haddock:
+    name: sdist-haddock
+    runs-on: ubuntu-latest
     steps:
 
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: setup-nix
-        uses: cachix/install-nix-action@v12
+      - name: setup-haskell
+        id: setup-haskell
+        uses: haskell/actions/setup@v1
         with:
-          nix_path: nixpkgs=./nix/nixpkgs.nix
+          ghc-version: 8.10.4
+          cabal-version: 3.4.0.0
 
-      - name: setup-cachix
-        uses: cachix/cachix-action@v7
+      - name: cache
+        uses: actions/cache@v2
         with:
-          name: asterius
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          key: sdist-haddock-${{ github.run_id }}
+          restore-keys: sdist-haddock-
+          path: |
+            ${{ steps.setup-haskell.outputs.cabal-store }}
+            dist-newstyle
+
+      - name: check
+        run: |
+          for pkg in inline-js inline-js-core inline-js-examples inline-js-tests; do
+            pushd $pkg
+            cabal check
+            popd
+          done
 
       - name: sdist
         run: |
+          cabal v2-sdist all
 
-          for pkg in inline-js inline-js-core inline-js-examples inline-js-tests; do
-            nix-shell --pure --run "cd $pkg && cabal check"
-          done
-
-          nix-shell --pure --run "cabal v2-sdist all"
-
-      - name: upload-artifact
+      - name: sdist-artifact
         uses: actions/upload-artifact@v2
         with:
           name: sdist
           path: dist-newstyle/sdist/*.tar.gz
 
-  haddock:
-    name: haddock
-    runs-on: ubuntu-20.04
-    steps:
-
-      - name: checkout
-        uses: actions/checkout@v2
-
-      - name: setup-nix
-        uses: cachix/install-nix-action@v12
-        with:
-          nix_path: nixpkgs=./nix/nixpkgs.nix
-
-      - name: setup-cachix
-        uses: cachix/cachix-action@v7
-        with:
-          name: asterius
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-
       - name: haddock
         run: |
-          nix-shell --pure --run "cabal v2-haddock --haddock-for-hackage --haddock-hyperlink-source --haddock-quickjump -j2 all"
+          cabal v2-haddock \
+            --enable-documentation \
+            --haddock-for-hackage \
+            --haddock-hyperlink-source \
+            --haddock-quickjump \
+            all
 
-      - name: upload-artifact
+      - name: haddock-artifact
         uses: actions/upload-artifact@v2
         with:
           name: haddock
@@ -188,7 +215,7 @@ jobs:
 
   docs:
     name: docs
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -197,26 +224,30 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: setup-nix
-        uses: cachix/install-nix-action@v12
+      - name: setup-haskell
+        id: setup-haskell
+        uses: haskell/actions/setup@v1
         with:
-          nix_path: nixpkgs=./nix/nixpkgs.nix
+          enable-stack: true
+          stack-no-global: true
 
-      - name: setup-cachix
-        uses: cachix/cachix-action@v7
+      - name: cache
+        uses: actions/cache@v2
         with:
-          name: asterius
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          key: docs-${{ github.run_id }}
+          restore-keys: docs-
+          path: |
+            ${{ steps.setup-haskell.outputs.stack-root }}
+            **/.stack-work
+
+      - name: setup-node-15
+        uses: actions/setup-node@v2
+        with:
+          node-version: 15
+          check-latest: true
 
       - name: setup-deps
         run: |
-          nix-env -f ./nix/nixpkgs.nix -iA \
-            nodejs-14_x \
-            stack
-
-          mkdir ~/.stack
-          printf "nix:\n  enable: true\n" > ~/.stack/config.yaml
-
           npm config set prefix ~/.local
 
           npm install -g \
@@ -226,7 +257,7 @@ jobs:
         run: |
           export PATH=~/.local/bin:$PATH
 
-          stack -j2 build --haddock
+          stack build --haddock
 
           if [ ! -z "$NETLIFY_AUTH_TOKEN" ]
           then

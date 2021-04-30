@@ -1,58 +1,53 @@
-cabal-version: 2.2
+cabal-version:      2.2
+name:               inline-js-tests
+version:            0.0.1.0
+synopsis:           Call JavaScript from Haskell.
+description:
+  Please see <https://github.com/tweag/inline-js> for details.
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
---
--- see: https://github.com/sol/hpack
---
--- hash: 8912fd1ec69855ed172c9adea39a63aab17515de840c3f9db539e0eb5fc5976d
-
-name:           inline-js-tests
-version:        0.0.1.0
-synopsis:       Call JavaScript from Haskell.
-description:    Please see <https://github.com/tweag/inline-js> for details.
-category:       Web
-homepage:       https://github.com/tweag/inline-js#readme
-bug-reports:    https://github.com/tweag/inline-js/issues
-maintainer:     Cheng Shao <cheng.shao@tweag.io>
-copyright:      (c) 2018 Tweag I/O
-license:        BSD-3-Clause
-license-file:   LICENSE
-build-type:     Simple
+category:           Web
+homepage:           https://github.com/tweag/inline-js#readme
+bug-reports:        https://github.com/tweag/inline-js/issues
+maintainer:         Cheng Shao <cheng.shao@tweag.io>
+copyright:          (c) 2018 Tweag I/O
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
 extra-source-files:
-    CHANGELOG.md
-    LICENSE
-    README.md
-data-files:
-    jsbits/node_modules/left-pad/index.js
+  CHANGELOG.md
+  LICENSE
+  README.md
+
+data-files:         jsbits/node_modules/left-pad/index.js
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/tweag/inline-js
 
 executable inline-js-tests
-  main-is: inline-js-tests.hs
+  main-is:          inline-js-tests.hs
   other-modules:
-      Language.JavaScript.Inline.Tests.Utils.Aeson
-      Paths_inline_js_tests
-  autogen-modules:
-      Paths_inline_js_tests
-  hs-source-dirs:
-      app
-  ghc-options: -Wall -threaded -rtsopts
+    Language.JavaScript.Inline.Tests.Utils.Aeson
+    Paths_inline_js_tests
+
+  autogen-modules:  Paths_inline_js_tests
+  hs-source-dirs:   app
+  ghc-options:      -Wall -threaded -rtsopts
   build-depends:
-      QuickCheck
     , aeson
-    , base >=4.12 && <5
+    , base                  >=4.12 && <5
     , bytestring
     , directory
     , filepath
     , inline-js
     , inline-js-examples
     , process
+    , QuickCheck
     , quickcheck-instances
     , splitmix
     , tasty
     , tasty-hunit
     , tasty-quickcheck
     , temporary
+
   default-language: Haskell2010
