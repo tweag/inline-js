@@ -2,7 +2,7 @@
 , haskellNix ? import sources.haskell-nix { }
 , pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
 , ghc ? "ghc8104"
-, node ? "nodejs-16_x"
+, node ? "nodejs_latest"
 }:
 pkgs.haskell-nix.cabalProject {
   src = pkgs.haskell-nix.haskellLib.cleanGit {
