@@ -16,6 +16,7 @@ jobs:
           - ubuntu-latest
           - macos-latest
         ghc:
+          - ghc901
           - ghc8104
           - ghc884
           - ghc865
@@ -50,8 +51,6 @@ jobs:
           for node in nodejs-16_x nodejs-15_x nodejs-14_x nodejs-12_x nodejs-10_x; do
             nix-shell --keep-going --pure --argstr ghc ${{ matrix.ghc }} --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
           done
-
-          nix-shell --keep-going --pure --argstr ghc ${{ matrix.ghc }} --run "haskell-language-server typecheck"
 
   stack:
     name: stack-${{ matrix.os }}-${{ matrix.resolver }}

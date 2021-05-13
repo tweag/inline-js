@@ -6,6 +6,10 @@
 , node ? "nodejs_latest"
 , hsPkgs ? import ./default.nix { inherit pkgs ghc node; }
 }:
+let
+  ghc_ver = pkgs.haskell-nix.compiler."${ghc}".version;
+  ghc_pre_9 = !(pkgs.lib.versionAtLeast ghc_ver "9");
+in
 hsPkgs.shellFor {
   packages = ps:
     with ps; [
@@ -15,29 +19,31 @@ hsPkgs.shellFor {
       inline-js-tests
     ];
 
-  withHoogle = true;
+  withHoogle = ghc_pre_9;
 
   nativeBuildInputs = pkgs.lib.attrValues
     (pkgs.haskell-nix.tools toolsGhc {
       brittany = "latest";
       cabal = "latest";
       cabal-fmt = "latest";
+      ghcid = "latest";
       hindent = "latest";
       hlint = "latest";
       ormolu = "latest";
       stylish-haskell = "latest";
-    }) ++ [
+    }) ++ pkgs.lib.optionals ghc_pre_9 [
     (pkgs.haskell-nix.cabalProject {
       src = pkgs.fetchFromGitHub {
         owner = "haskell";
         repo = "haskell-language-server";
-        rev = "1.1.0";
-        sha256 = "0kviq3kinm3i0qm4r26rdnlkwbs1s3r1rqiqdry517rgkgnjpcp5";
+        rev = "ghcide-v1.3.0";
+        sha256 = "07b8xjjsd5g4lh9c1klak7gnlss5zwb6dad2cgdxry9jhx7w4z7m";
         fetchSubmodules = true;
       };
       compiler-nix-name = ghc;
       configureArgs = "--disable-benchmarks --disable-tests";
     }).haskell-language-server.components.exes.haskell-language-server
+  ] ++ [
     (import sources.niv { }).niv
     pkgs.nixfmt
     pkgs.nixpkgs-fmt
