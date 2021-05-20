@@ -41,7 +41,7 @@ hsPkgs.shellFor {
         fetchSubmodules = true;
       };
       compiler-nix-name = ghc;
-      configureArgs = "--disable-benchmarks --disable-tests";
+      configureArgs = "--disable-benchmarks --disable-tests -fall-formatters -fall-plugins";
     }).haskell-language-server.components.exes.haskell-language-server
   ] ++ [
     (import sources.niv { }).niv
