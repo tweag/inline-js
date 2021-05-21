@@ -26,8 +26,8 @@ hsPkgs.shellFor {
       brittany = "latest";
       cabal = "latest";
       cabal-fmt = "latest";
+      floskell = "latest";
       ghcid = "latest";
-      hindent = "latest";
       hlint = "latest";
       ormolu = "latest";
       stylish-haskell = "latest";
