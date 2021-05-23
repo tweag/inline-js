@@ -28,7 +28,7 @@ jobs:
       - name: setup-nix
         uses: cachix/install-nix-action@v13
         with:
-          nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/5dbd28d75410738ee7a948c7dec9f9cb5a41fa9d.tar.gz
+          nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/efee454783c5c14ae78687439077c1d3f0544d97.tar.gz
           extra_nix_config: |
             substituters = https://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
@@ -239,10 +239,10 @@ jobs:
             ${{ steps.setup-haskell.outputs.stack-root }}
             **/.stack-work
 
-      - name: setup-node-15
+      - name: setup-node-16
         uses: actions/setup-node@v2
         with:
-          node-version: 15
+          node-version: 16
           check-latest: true
 
       - name: setup-deps
