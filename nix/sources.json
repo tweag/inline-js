@@ -5,10 +5,10 @@
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "dc49a0f4041d3fd1a7417e6ddc889dcb000e6b9b",
-        "sha256": "1dvvj6afvpqcbbklf8klpaakhl94hf1m4wqs9x21slq1zybia3fg",
+        "rev": "2350f6311b432217268f4adfb532efa310c1059e",
+        "sha256": "1igj5c98g6bya1yx7ybg084mv7ywwi0fn2ag5vm04pi9b2z9s38k",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/dc49a0f4041d3fd1a7417e6ddc889dcb000e6b9b.tar.gz",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/2350f6311b432217268f4adfb532efa310c1059e.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "niv": {
