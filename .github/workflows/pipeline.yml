@@ -52,18 +52,19 @@ jobs:
             nix-shell --keep-going --pure --argstr ghc ${{ matrix.ghc }} --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
           done
 
-  stack:
-    name: stack-${{ matrix.os }}-${{ matrix.resolver }}
+  cabal:
+    name: cabal-${{ matrix.os }}-${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - windows-latest
-        resolver:
-          - lts-17
-          - lts-16
-          - lts-14
+        ghc:
+          - 9.0.1
+          - 8.10.4
+          - 8.8.4
+          - 8.6.5
     steps:
 
       - name: checkout
@@ -73,17 +74,20 @@ jobs:
         id: setup-haskell
         uses: haskell/actions/setup@v1
         with:
-          enable-stack: true
-          stack-no-global: true
+          ghc-version: ${{ matrix.ghc }}
 
       - name: cache
         uses: actions/cache@v2
         with:
-          key: stack-${{ matrix.os }}-${{ matrix.resolver }}-${{ github.run_id }}
-          restore-keys: stack-${{ matrix.os }}-${{ matrix.resolver }}-
+          key: cabal-${{ matrix.os }}-${{ matrix.ghc }}-${{ github.run_id }}
+          restore-keys: cabal-${{ matrix.os }}-${{ matrix.ghc }}-
           path: |
-            ${{ steps.setup-haskell.outputs.stack-root }}
-            **/.stack-work
+            ${{ steps.setup-haskell.outputs.cabal-store }}
+            dist-newstyle
+
+      - name: build
+        run: |
+          C:\msys64\msys2_shell.cmd -mingw64 -defterm -full-path -here -no-start -c "cabal v2-build all"
 
       - name: setup-node-16
         uses: actions/setup-node@v2
@@ -91,14 +95,10 @@ jobs:
           node-version: 16
           check-latest: true
 
-      - name: build
-        run: |
-          stack --resolver ${{ matrix.resolver }} build --test --no-run-tests
-
       - name: test-node-16
         run: |
           node --version
-          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
+          C:\msys64\msys2_shell.cmd -mingw64 -defterm -full-path -here -no-start -c "cabal v2-run inline-js-tests -- -j2"
 
       - name: setup-node-15
         uses: actions/setup-node@v2
@@ -109,7 +109,7 @@ jobs:
       - name: test-node-15
         run: |
           node --version
-          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
+          C:\msys64\msys2_shell.cmd -mingw64 -defterm -full-path -here -no-start -c "cabal v2-run inline-js-tests -- -j2"
 
       - name: setup-node-14
         uses: actions/setup-node@v2
@@ -120,7 +120,7 @@ jobs:
       - name: test-node-14
         run: |
           node --version
-          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
+          C:\msys64\msys2_shell.cmd -mingw64 -defterm -full-path -here -no-start -c "cabal v2-run inline-js-tests -- -j2"
 
       - name: setup-node-13
         uses: actions/setup-node@v2
@@ -131,7 +131,7 @@ jobs:
       - name: test-node-13
         run: |
           node --version
-          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
+          C:\msys64\msys2_shell.cmd -mingw64 -defterm -full-path -here -no-start -c "cabal v2-run inline-js-tests -- -j2"
 
       - name: setup-node-12
         uses: actions/setup-node@v2
@@ -142,7 +142,7 @@ jobs:
       - name: test-node-12
         run: |
           node --version
-          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
+          C:\msys64\msys2_shell.cmd -mingw64 -defterm -full-path -here -no-start -c "cabal v2-run inline-js-tests -- -j2"
 
       - name: setup-node-10
         uses: actions/setup-node@v2
@@ -153,7 +153,7 @@ jobs:
       - name: test-node-10
         run: |
           node --version
-          stack --resolver ${{ matrix.resolver }} run inline-js-tests -- -j2
+          C:\msys64\msys2_shell.cmd -mingw64 -defterm -full-path -here -no-start -c "cabal v2-run inline-js-tests -- -j2"
 
   sdist-haddock:
     name: sdist-haddock
