@@ -7,7 +7,7 @@ function tokenize(s) {
     ecmaVersion: "latest",
     onToken: (tok) => {
       if (tok.type.label === "name" && tok.value.startsWith("$")) {
-        toks.add(tok.value);
+        toks.add(tok.value.slice(1));
       }
     },
   });

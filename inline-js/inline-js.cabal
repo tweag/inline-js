@@ -15,6 +15,7 @@ license-file:       LICENSE
 build-type:         Simple
 extra-source-files:
   CHANGELOG.md
+  jsbits/main.js
   LICENSE
   README.md
 
@@ -36,8 +37,11 @@ library
     , base                 >=4.12 && <5
     , bytestring
     , containers
+    , file-embed
+    , filepath
     , inline-js-core
     , language-javascript
+    , process
     , syb
     , template-haskell
 
