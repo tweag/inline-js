@@ -3,16 +3,9 @@
 
 module Language.JavaScript.Inline.JSParse (jsParse) where
 
-import System.Process
 import Data.FileEmbed
-import Data.Generics (GenericQ, everything)
-import qualified Data.Set as S
 import Language.JavaScript.Inline.Core
-import Language.JavaScript.Parser
-import Language.JavaScript.Parser.Grammar7
-import Language.JavaScript.Parser.Parser
-import System.FilePath
-import Type.Reflection
+import System.Process
 
 jsParse :: String -> IO (Bool, Bool, [String])
 jsParse src =

@@ -85,15 +85,15 @@ jobs:
             ${{ steps.setup-haskell.outputs.stack-root }}
             **/.stack-work
 
-      - name: build
-        run: |
-          stack --resolver ${{ matrix.resolver }} build --test --no-run-tests
-
       - name: setup-node-16
         uses: actions/setup-node@v2
         with:
           node-version: 16
           check-latest: true
+
+      - name: build
+        run: |
+          stack --resolver ${{ matrix.resolver }} build --test --no-run-tests
 
       - name: test-node-16
         run: |
