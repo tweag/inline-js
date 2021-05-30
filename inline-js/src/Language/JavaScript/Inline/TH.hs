@@ -11,10 +11,15 @@ import Language.JavaScript.Inline.JSParse
 
 -- | Generate a 'JSExpr' from inline JavaScript code. The code should be a
 -- single expression or a code block with potentially multiple statements (use
--- @return@ to specify the result value in which case).
+-- @return@ to specify the result value in which case). Top-level @await@ is
+-- supported.
 --
 -- Use @$var@ to refer to a Haskell variable @var@. @var@ should be an instance
 -- of 'ToJS'.
+--
+-- Important: when using 'js', GHC calls the @node@ process at compile-time in
+-- order to use a JavaScript-based JavaScript parser to extract necessary info.
+-- Don't forget to ensure @node@ is available in @PATH@ at compile-time.
 js :: QuasiQuoter
 js = fromQuoteExp inlineJS
 
