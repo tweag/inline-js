@@ -1,10 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Language.JavaScript.Inline.TH
-  ( js,
-    jsAsync,
-  )
-where
+module Language.JavaScript.Inline.TH (js) where
 
 import Data.List
 import Data.String
@@ -15,17 +11,17 @@ import Language.JavaScript.Inline.JSParse
 
 -- | Generate a 'JSExpr' from inline JavaScript code. The code should be a
 -- single expression or a code block with potentially multiple statements (use
--- @return@ to specify the result value in which case).
+-- @return@ to specify the result value in which case). Top-level @await@ is
+-- supported.
 --
 -- Use @$var@ to refer to a Haskell variable @var@. @var@ should be an instance
 -- of 'ToJS'.
+--
+-- Important: when using 'js', GHC calls the @node@ process at compile-time in
+-- order to use a JavaScript-based JavaScript parser to extract necessary info.
+-- Don't forget to ensure @node@ is available in @PATH@ at compile-time.
 js :: QuasiQuoter
-js = fromQuoteExp $ inlineJS False
-
--- | Like 'js' but async. Top-level @await@ in the inline JavaScript code is
--- permitted.
-jsAsync :: QuasiQuoter
-jsAsync = fromQuoteExp $ inlineJS True
+js = fromQuoteExp inlineJS
 
 fromQuoteExp :: (String -> Q Exp) -> QuasiQuoter
 fromQuoteExp q =
@@ -36,39 +32,44 @@ fromQuoteExp q =
       quoteDec = error "Language.JavaScript.Inline.TH: quoteDec"
     }
 
-inlineJS :: Bool -> String -> Q Exp
-inlineJS is_async js_code = do
-  (is_expr, hs_vars) <-
-    case jsParse js_code of
-      Left err -> fail err
-      Right r -> pure r
-  [|
-    mconcat
-      $( listE
-           ( [ [|
-                 fromString
-                   $( litE
-                        ( stringL
-                            ( ( if is_async
-                                  then "(async ("
-                                  else "(("
+inlineJS :: String -> Q Exp
+inlineJS js_code =
+  do
+    (is_sync, is_expr, hs_vars) <- runIO $ jsParse js_code
+    [|
+      mconcat
+        $( listE
+             ( [ [|
+                   fromString
+                     $( litE
+                          ( stringL
+                              ( ( if is_sync
+                                    then "(("
+                                    else "(async ("
+                                )
+                                  <> intercalate
+                                    ","
+                                    ['$' : v | v <- hs_vars]
+                                  <> ") => {"
+                                  <> ( if is_expr
+                                         then
+                                           "return "
+                                             <> js_code
+                                             <> ";"
+                                         else js_code
+                                     )
+                                  <> "})("
                               )
-                                <> intercalate "," ['$' : v | v <- hs_vars]
-                                <> ") => {"
-                                <> ( if is_expr
-                                       then "return " <> js_code <> ";"
-                                       else js_code
-                                   )
-                                <> "})("
-                            )
-                        )
-                    )
-                 |]
-             ]
-               <> intersperse
-                 [|fromString ","|]
-                 [[|toJS $(varE (mkName v))|] | v <- hs_vars]
-               <> [[|fromString ")"|]]
-           )
-       )
-    |]
+                          )
+                      )
+                   |]
+               ]
+                 <> intersperse
+                   [|fromString ","|]
+                   [ [|toJS $(varE (mkName v))|]
+                     | v <- hs_vars
+                   ]
+                 <> [[|fromString ")"|]]
+             )
+         )
+      |]

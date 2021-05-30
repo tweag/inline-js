@@ -15,6 +15,7 @@ license-file:       LICENSE
 build-type:         Simple
 extra-source-files:
   CHANGELOG.md
+  jsbits/main.js
   LICENSE
   README.md
 
@@ -33,12 +34,11 @@ library
   ghc-options:      -Wall
   build-depends:
     , aeson
-    , base                 >=4.12 && <5
+    , base              >=4.12 && <5
     , bytestring
-    , containers
+    , file-embed
     , inline-js-core
-    , language-javascript
-    , syb
     , template-haskell
+    , unliftio
 
   default-language: Haskell2010

@@ -2,7 +2,7 @@
 , haskellNix ? import sources.haskell-nix { }
 , pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
 , ghc ? "ghc8104"
-, node ? "nodejs-16_x"
+, node ? "nodejs_latest"
 }:
 pkgs.haskell-nix.cabalProject {
   src = pkgs.haskell-nix.haskellLib.cleanGit {
@@ -10,12 +10,12 @@ pkgs.haskell-nix.cabalProject {
     src = ./.;
   };
   compiler-nix-name = ghc;
-  modules =
-    let nodeSrc = pkgs."${node}";
-    in
-    [{
-      packages.inline-js-core.preBuild = ''
+  modules = [{
+    packages.inline-js-core.preBuild =
+      let nodeSrc = pkgs."${node}";
+      in
+      ''
         substituteInPlace src/Language/JavaScript/Inline/Core/NodePath.hs --replace '"node"' '"${nodeSrc}/bin/node"'
       '';
-    }];
+  }];
 }

@@ -7,7 +7,6 @@ module Language.JavaScript.Inline
 
     -- * QuasiQuoters for inline JavaScript
     js,
-    jsAsync,
   )
 where
 
