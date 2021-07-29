@@ -4,10 +4,12 @@ packages:
   inline-js-examples
   inline-js-tests
 
+tests: True
+
 package aeson
   flags: +cffi
 
 package hashable
   flags: +random-initial-seed
 
-index-state: 2021-05-29T00:00:00Z
+index-state: 2021-07-27T00:00:00Z
