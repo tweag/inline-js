@@ -17,7 +17,7 @@ jobs:
           - macos-latest
         ghc:
           - ghc901
-          - ghc8104
+          - ghc8105
           - ghc884
           - ghc865
     steps:
@@ -28,7 +28,6 @@ jobs:
       - name: setup-nix
         uses: cachix/install-nix-action@v13
         with:
-          nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/c9fd31e5914111602bc1ba20da875d72aba5a0f4.tar.gz
           extra_nix_config: |
             substituters = https://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
@@ -37,20 +36,15 @@ jobs:
         uses: cachix/cachix-action@v10
         with:
           name: asterius
-          extraPullNames: niv
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+
+      - name: cachix-watch-store
+        run: |
+          cachix watch-store -c9 asterius &
 
       - name: test
         run: |
-          for node in nodejs-16_x nodejs-14_x nodejs-12_x nodejs-10_x; do
-            nix run --keep-going -f . -i --argstr ghc ${{ matrix.ghc }} --argstr node $node inline-js-tests.components.exes.inline-js-tests -c inline-js-tests -j2
-          done
-
-      - name: test-nix-shell
-        run: |
-          for node in nodejs-16_x nodejs-14_x nodejs-12_x nodejs-10_x; do
-            nix-shell --keep-going --pure --argstr ghc ${{ matrix.ghc }} --argstr node $node --run "cabal v2-run inline-js-tests:inline-js-tests -- -j2"
-          done
+          nix-build --keep-going --no-out-link --argstr ghc ${{ matrix.ghc }} nix/ci.nix
 
   cabal:
     name: cabal-${{ matrix.os }}-${{ matrix.ghc }}
@@ -62,7 +56,7 @@ jobs:
           - windows-latest
         ghc:
           - 9.0.1
-          - 8.10.4
+          - 8.10.5
           - 8.8.4
           - 8.6.5
     steps:
@@ -167,8 +161,7 @@ jobs:
         id: setup-haskell
         uses: haskell/actions/setup@v1
         with:
-          ghc-version: 8.10.4
-          cabal-version: 3.4.0.0
+          ghc-version: 8.10.5
 
       - name: cache
         uses: actions/cache@v2
@@ -239,23 +232,8 @@ jobs:
             ${{ steps.setup-haskell.outputs.stack-root }}
             **/.stack-work
 
-      - name: setup-node-16
-        uses: actions/setup-node@v2
-        with:
-          node-version: 16
-          check-latest: true
-
-      - name: setup-deps
-        run: |
-          npm config set prefix ~/.local
-
-          npm install -g \
-            netlify-cli
-
       - name: build
         run: |
-          export PATH=~/.local/bin:$PATH
-
           stack build --haddock
 
           if [ ! -z "$NETLIFY_AUTH_TOKEN" ]
