@@ -30,6 +30,7 @@ pkgs.callPackage
           npm run-script build
           mv dist/main.js $out
         '';
+        allowedReferences = [ ];
       };
     in
     jsbits)
