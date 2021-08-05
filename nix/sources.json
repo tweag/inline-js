@@ -12,10 +12,10 @@
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "9d940715665e28af6a60c760946330c6c63f2e29",
-        "sha256": "0pcmab8lqxla97cd0726s1nasrwapz95wd78ps9xlv3spz5j2x0n",
+        "rev": "065734b7f3b4fb7dd71b2e3908ac105e08559a46",
+        "sha256": "13qzybqq9na01pmmc87azmg3lbbbwwygw1l220wafnjx2q78i1qp",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/9d940715665e28af6a60c760946330c6c63f2e29.tar.gz",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/065734b7f3b4fb7dd71b2e3908ac105e08559a46.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
@@ -24,10 +24,10 @@
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "4d3e13e51b6e59b7892874b03072a7c931911e66",
-        "sha256": "046ca3dd8p5a2a2x2d4n7d31yy6989jjb5xnh9gy631wfs7g6rcw",
+        "rev": "f6ccdfcd2ac4f2e259d20e378737dcbd0ca7debe",
+        "sha256": "1d2lk7a0l166pvgy0xfdlhxgja986hgn39szn9d1fqamyhxzvbaz",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/4d3e13e51b6e59b7892874b03072a7c931911e66.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/f6ccdfcd2ac4f2e259d20e378737dcbd0ca7debe.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

@@ -32,5 +32,5 @@ pkgs.callPackage
               '';
             }))
           ]) [ "nodejs-16_x" "nodejs-14_x" "nodejs-12_x" "nodejs-10_x" ];
-      } "mv $pathsPath > $out")
+      } "mv $pathsPath $out")
 { }
