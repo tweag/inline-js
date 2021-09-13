@@ -5,7 +5,7 @@
 , toolsGhc ? "ghc8105"
 }:
 pkgs.callPackage
-  ({ callPackage, haskell-nix, lib, runCommand }:
+  ({ callPackage, haskell-nix, lib, runCommand, stdenvNoCC }:
     runCommand "inline-js-ci"
       {
         passAsFile = [ "paths" ];
@@ -31,6 +31,8 @@ pkgs.callPackage
                 printenv > $out
               '';
             }))
-          ]) [ "nodejs-16_x" "nodejs-14_x" "nodejs-12_x" "nodejs-10_x" ];
+          ])
+          (lib.optionals (!stdenvNoCC.isDarwin) [ "nodejs-16_x" ]
+            ++ [ "nodejs-14_x" "nodejs-12_x" "nodejs-10_x" ]);
       } "mv $pathsPath $out")
 { }

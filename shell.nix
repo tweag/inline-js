@@ -3,7 +3,7 @@
 , pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
 , ghc ? "ghc8105"
 , toolsGhc ? "ghc8105"
-, node ? "nodejs_latest"
+, node ? if pkgs.stdenv.isDarwin then "nodejs-14_x" else "nodejs_latest"
 , hsPkgs ? import ./default.nix { inherit pkgs ghc node; }
 }:
 let
@@ -26,7 +26,11 @@ hsPkgs.shellFor {
       args = {
         version = "latest";
         compiler-nix-name = toolsGhc;
-        modules = [{ dontPatchELF = false; } { dontStrip = false; }];
+        modules = [
+          { dontPatchELF = false; }
+          { dontStrip = false; }
+          { hardeningDisable = [ "all" ]; }
+        ];
       };
     in
     {
@@ -56,6 +60,7 @@ hsPkgs.shellFor {
       modules = [
         { dontPatchELF = false; }
         { dontStrip = false; }
+        { hardeningDisable = [ "all" ]; }
         { reinstallableLibGhc = true; }
       ];
     }).cabal-docspec.components.exes.cabal-docspec
@@ -68,7 +73,11 @@ hsPkgs.shellFor {
       else
         "${src}/cabal-ghc901.project");
       configureArgs = "--disable-benchmarks --disable-tests";
-      modules = [{ dontPatchELF = false; } { dontStrip = false; }];
+      modules = [
+        { dontPatchELF = false; }
+        { dontStrip = false; }
+        { hardeningDisable = [ "all" ]; }
+      ];
     }).haskell-language-server.components.exes.haskell-language-server
   ] ++ [
     pkgs.haskell-nix.internal-cabal-install

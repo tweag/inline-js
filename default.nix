@@ -2,7 +2,7 @@
 , haskellNix ? import sources.haskell-nix { }
 , pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
 , ghc ? "ghc8105"
-, node ? "nodejs_latest"
+, node ? if pkgs.stdenv.isDarwin then "nodejs-14_x" else "nodejs_latest"
 }:
 pkgs.haskell-nix.cabalProject {
   src = pkgs.haskell-nix.haskellLib.cleanGit {
@@ -13,6 +13,7 @@ pkgs.haskell-nix.cabalProject {
   modules = [
     { dontPatchELF = false; }
     { dontStrip = false; }
+    { hardeningDisable = [ "all" ]; }
     {
       packages.inline-js-core.preConfigure =
         let nodeSrc = pkgs."${node}";
