@@ -1,7 +1,7 @@
 { sources ? import ./nix/sources.nix { }
 , haskellNix ? import sources.haskell-nix { }
 , pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
-, ghc ? "ghc8105"
+, ghc ? "ghc8107"
 , node ? if pkgs.stdenv.isDarwin then "nodejs-14_x" else "nodejs_latest"
 }:
 pkgs.haskell-nix.cabalProject {

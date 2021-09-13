@@ -1,21 +1,26 @@
 {
-    "haskell-language-server": {
-        "branch": "master",
-        "repo": "https://github.com/haskell/haskell-language-server.git",
-        "rev": "e7c5e90b6df5dff2760d76169eddaea3bdd6a831",
-        "sha256": "1c5dayxvw00k4vfsfxg955ww32mcfx46124x386nabqzjz7d2cs6",
-        "type": "git"
-    },
     "haskell-nix": {
         "branch": "master",
         "description": "Alternative Haskell Infrastructure for Nixpkgs",
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "ed6d223e9ba8cc1435f872326df923b9a73ef8dc",
-        "sha256": "1j8a5r7wh57p98q74ccq3wbpagihxzkrpam1857msiil3fdzkmnx",
+        "rev": "903bdfe655b644690d4b4c6ca4adf55be95377f8",
+        "sha256": "1skdd228mjcji3k4rkf9n4kwjgvm7kd9r4bakd4lc2igqxv0nzjr",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/ed6d223e9ba8cc1435f872326df923b9a73ef8dc.tar.gz",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/903bdfe655b644690d4b4c6ca4adf55be95377f8.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "hs-nix-tools": {
+        "branch": "master",
+        "description": null,
+        "homepage": null,
+        "owner": "TerrorJack",
+        "repo": "hs-nix-tools",
+        "rev": "fdb8894b502c555fb0cb9c6bb698e0774bbca5c4",
+        "sha256": "06nkil61irf0s01d4kl7dv76593qzj2xvr4m4n906vbadl1znv17",
+        "type": "tarball",
+        "url": "https://github.com/TerrorJack/hs-nix-tools/archive/fdb8894b502c555fb0cb9c6bb698e0774bbca5c4.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
@@ -24,10 +29,10 @@
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "6525bbc06a39f26750ad8ee0d40000ddfdc24acb",
-        "sha256": "1irrvwzfj37awf0l7ww4n5dbs7scf7jkb436gwgyzs1bn4r5w7nq",
+        "rev": "65b70fbe4c3a942a266794e28a08147b06ebb6bc",
+        "sha256": "0p2kprsxjvrn1m90h91dmjpgxxbbpa9xpwcz5zs2qzcaz279gdkm",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/6525bbc06a39f26750ad8ee0d40000ddfdc24acb.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/65b70fbe4c3a942a266794e28a08147b06ebb6bc.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
