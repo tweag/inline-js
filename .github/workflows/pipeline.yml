@@ -33,6 +33,11 @@ jobs:
           name: asterius
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
+      - name: restrict-max-jobs
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          echo "max-jobs = 1" >> ~/.config/nix/nix.conf
+
       - name: cachix-watch-store
         run: |
           cachix watch-store -c9 asterius &
