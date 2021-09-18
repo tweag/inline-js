@@ -24,6 +24,7 @@ jobs:
         uses: cachix/install-nix-action@v14
         with:
           extra_nix_config: |
+            max-jobs = 1
             substituters = https://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 
@@ -32,11 +33,6 @@ jobs:
         with:
           name: asterius
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-
-      - name: restrict-max-jobs
-        if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          echo "max-jobs = 1" >> ~/.config/nix/nix.conf
 
       - name: cachix-watch-store
         run: |
