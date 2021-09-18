@@ -7,7 +7,7 @@ on:
 jobs:
 
   nix:
-    name: nix-${{ matrix.os }}
+    name: nix-${{ matrix.os }}-${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -15,6 +15,10 @@ jobs:
         os:
           - ubuntu-latest
           - macos-11
+        ghc:
+          - ghc8107
+          - ghc884
+          - ghc865
     steps:
 
       - name: checkout
@@ -24,8 +28,6 @@ jobs:
         uses: cachix/install-nix-action@v14
         with:
           extra_nix_config: |
-            max-jobs = 1
-            cores = 1
             substituters = https://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 
@@ -41,7 +43,7 @@ jobs:
 
       - name: test
         run: |
-          nix-build --keep-going --no-out-link nix/ci.nix
+          nix-build --keep-going --no-out-link --arg ghcs '["${{ matrix.ghc }}"]' nix/ci.nix
 
   cabal:
     name: cabal-${{ matrix.os }}-${{ matrix.ghc }}
