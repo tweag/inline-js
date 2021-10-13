@@ -3,7 +3,7 @@
 , pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
 , ghc ? "ghc8107"
 , node ? if pkgs.stdenv.isDarwin then "nodejs-14_x" else "nodejs_latest"
-, hsPkgs ? import ./default.nix { inherit pkgs ghc node; }
+, hsPkgs ? import ./nix/pkg-set.nix { inherit pkgs ghc node; }
 }:
 hsPkgs.shellFor {
   packages = ps:
@@ -21,4 +21,6 @@ hsPkgs.shellFor {
     ++ [ pkgs."${node}" ];
 
   exactDeps = true;
+
+  shellHook = "taskset -pc 0-1000 $$";
 }

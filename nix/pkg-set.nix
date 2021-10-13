@@ -1,4 +1,4 @@
-{ sources ? import ./nix/sources.nix { }
+{ sources ? import ./sources.nix { }
 , haskellNix ? import sources.haskell-nix { }
 , pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
 , ghc ? "ghc8107"
@@ -7,10 +7,11 @@
 pkgs.haskell-nix.cabalProject {
   src = pkgs.haskell-nix.haskellLib.cleanGit {
     name = "inline-js";
-    src = ./.;
+    src = ../.;
   };
   compiler-nix-name = ghc;
   modules = [
+    { configureFlags = [ "-O2" ]; }
     { dontPatchELF = false; }
     { dontStrip = false; }
     { hardeningDisable = [ "all" ]; }

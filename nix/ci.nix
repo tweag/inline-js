@@ -17,7 +17,7 @@ pkgs.callPackage
           (ghc:
             lib.concatMap
               (node: [
-                (callPackage ../default.nix {
+                (callPackage ./pkg-set.nix {
                   inherit pkgs ghc node;
                 }).inline-js-tests.checks.inline-js-tests
                 ((callPackage ../shell.nix { inherit pkgs ghc node; }).overrideAttrs
@@ -27,7 +27,7 @@ pkgs.callPackage
                     inherit src;
                     buildPhase = ''
                       export HOME=$(mktemp -d)
-                      cabal v2-build all -j$NIX_BUILD_CORES
+                      cabal v2-build all -j$NIX_BUILD_CORES --ghc-option=-j$(($NIX_BUILD_CORES > 4 ? 4 : $NIX_BUILD_CORES))
                       cabal v2-run inline-js-tests -- -j$NIX_BUILD_CORES
                       cabal-docspec
                       echo :q | cabal v2-repl inline-js
