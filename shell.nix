@@ -2,7 +2,7 @@
 , haskellNix ? import sources.haskell-nix { }
 , pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
 , ghc ? "ghc8107"
-, node ? if pkgs.stdenv.isDarwin then "nodejs-14_x" else "nodejs_latest"
+, node ? "nodejs_latest"
 , hsPkgs ? import ./nix/pkg-set.nix { inherit pkgs ghc node; }
 }:
 hsPkgs.shellFor {

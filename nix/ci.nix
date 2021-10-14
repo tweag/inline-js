@@ -34,9 +34,7 @@ pkgs.callPackage
                       export > $out
                     '';
                   }))
-              ])
-              (lib.optionals (!stdenvNoCC.isDarwin) [ "nodejs-16_x" ]
-                ++ [ "nodejs-14_x" "nodejs-12_x" "nodejs-10_x" ]))
+              ]) [ "nodejs-16_x" "nodejs-14_x" "nodejs-12_x" "nodejs-10_x" ])
           ghcs;
       } "export > $out")
 { }
