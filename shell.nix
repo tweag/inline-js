@@ -18,7 +18,7 @@ hsPkgs.shellFor {
 
   nativeBuildInputs =
     pkgs.lib.attrValues (import sources.hs-nix-tools { inherit ghc; })
-    ++ [ pkgs."${node}" ];
+    ++ [ pkgs."${node}" pkgs.util-linux ];
 
   exactDeps = true;
 
