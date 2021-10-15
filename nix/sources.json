@@ -5,22 +5,34 @@
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "531c9f4cac0e335db245849df3b5036973826d36",
-        "sha256": "0pxvhl20r8fkwpw2yb98jr87v932z0m53j5dx4w7f7q7wccjbsvh",
+        "rev": "e6a0d20e06aa16134446468c3f3f59ea92eb745b",
+        "sha256": "07fyygw5sbzzq3j96imn9imparfsaymvbbfxaq4wj6h8kng76clp",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/531c9f4cac0e335db245849df3b5036973826d36.tar.gz",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/e6a0d20e06aa16134446468c3f3f59ea92eb745b.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "hs-nix-tools": {
+        "branch": "master",
+        "description": null,
+        "homepage": null,
+        "owner": "TerrorJack",
+        "repo": "hs-nix-tools",
+        "rev": "a922abb7ecffa678c830dd3198a422787d156f0f",
+        "sha256": "1waj70r475kha8wyk6fk729ai21hqykc1phw0vsvyjy5h3l43ywx",
+        "type": "tarball",
+        "url": "https://github.com/TerrorJack/hs-nix-tools/archive/a922abb7ecffa678c830dd3198a422787d156f0f.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "nixpkgs-unstable",
+        "branch": "nixos-unstable",
         "description": "Nix Packages collection",
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "dd98b100651cfbb8804f32d852f75ef7c97a6b74",
-        "sha256": "08ck4y9yhw75qdqh3m6mfk7k0pqcwylffrw30h6dphmgsxq188ip",
+        "rev": "2cf9db0e3d45b9d00f16f2836cb1297bcadc475e",
+        "sha256": "0sij1a5hlbigwcgx10dkw6mdbjva40wzz4scn0wchv7yyi9ph48l",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/dd98b100651cfbb8804f32d852f75ef7c97a6b74.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/2cf9db0e3d45b9d00f16f2836cb1297bcadc475e.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
