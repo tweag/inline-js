@@ -129,7 +129,8 @@ What happens when we evaluate a piece of JavaScript?
   it to `node`.
 - In the eval server, the `MainContext` class runs in the main thread, and the
   `recvLoop` method will intercept the message, then redirect it to the worker.
-- The `WorkerContext` class runs in a worker thread, and the parent thread sends it a message, to be handled by the `handleParentMessage` method.
+- The `WorkerContext` class runs in a worker thread, and the parent thread sends
+  it a message, to be handled by the `handleParentMessage` method.
 - The evaluation may be asynchronous; so we attach handlers to the `Promise`
   that represents eval result, and when eval completes either successfully or
   with error, the handlers will construct the reply message, to be sent back to
