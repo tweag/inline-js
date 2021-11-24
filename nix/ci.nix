@@ -1,7 +1,7 @@
 { sources ? import ./sources.nix { }
 , haskellNix ? import sources.haskell-nix { }
 , pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
-, ghcs ? [ "ghc865" "ghc884" "ghc8107" ]
+, ghcs ? [ "ghc865" "ghc884" "ghc8107" "ghc901" ]
 }:
 pkgs.callPackage
   ({ callPackage, haskell-nix, lib, runCommand, stdenvNoCC }:
@@ -34,7 +34,7 @@ pkgs.callPackage
                       export > $out
                     '';
                   }))
-              ]) [ "nodejs-16_x" "nodejs-14_x" "nodejs-12_x" "nodejs-10_x" ])
+              ]) [ "nodejs-17_x" "nodejs-16_x" "nodejs-14_x" "nodejs-12_x" "nodejs-10_x" ])
           ghcs;
       } "export > $out")
 { }
