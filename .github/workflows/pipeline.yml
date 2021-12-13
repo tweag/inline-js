@@ -7,7 +7,7 @@ on:
 jobs:
 
   nix:
-    name: nix-${{ matrix.os }}-${{ matrix.ghc }}
+    name: nix-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -15,11 +15,6 @@ jobs:
         os:
           - ubuntu-latest
           - macos-11
-        ghc:
-          - ghc901
-          - ghc8107
-          - ghc884
-          - ghc865
     steps:
 
       - name: checkout
@@ -29,9 +24,9 @@ jobs:
         uses: cachix/install-nix-action@v16
         with:
           extra_nix_config: |
+            max-jobs = 1
             substituters = https://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-          install_url: https://releases.nixos.org/nix/nix-2.3.16/install
 
       - name: setup-cachix
         uses: cachix/cachix-action@v10
@@ -41,11 +36,11 @@ jobs:
 
       - name: cachix-watch-store
         run: |
-          cachix watch-store -c9 asterius &
+          cachix watch-store -c9 -j3 asterius &
 
       - name: test
         run: |
-          nix-build --keep-going --no-out-link --arg ghcs '["${{ matrix.ghc }}"]' nix/ci.nix
+          nix-build --keep-going --no-out-link nix/ci.nix
 
   cabal:
     name: cabal-${{ matrix.os }}-${{ matrix.ghc }}
