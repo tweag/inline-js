@@ -6,10 +6,4 @@ packages:
 
 tests:       True
 
-package aeson
-  flags: +cffi
-
-package hashable
-  flags: +random-initial-seed
-
-index-state: 2021-11-24T00:00:00Z
+index-state: 2021-11-05T00:00:00Z

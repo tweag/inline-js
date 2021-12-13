@@ -1,9 +1,10 @@
 { sources ? import ./nix/sources.nix { }
 , haskellNix ? import sources.haskell-nix { }
-, pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
+, pkgs ? import haskellNix.sources.nixpkgs-unstable haskellNix.nixpkgsArgs
+, pkgsVanilla ? import haskellNix.sources.nixpkgs-unstable { }
 , ghc ? "ghc8107"
 , node ? "nodejs_latest"
-, hsPkgs ? import ./nix/pkg-set.nix { inherit pkgs ghc node; }
+, hsPkgs ? import ./nix/project.nix { inherit pkgs pkgsVanilla ghc node; }
 }:
 hsPkgs.shellFor {
   packages = ps:
@@ -17,8 +18,8 @@ hsPkgs.shellFor {
   withHoogle = true;
 
   nativeBuildInputs =
-    pkgs.lib.attrValues (import sources.hs-nix-tools { inherit ghc; })
-    ++ [ pkgs."${node}" pkgs.util-linux ];
+    pkgsVanilla.lib.attrValues (import sources.hs-nix-tools { inherit ghc; })
+    ++ [ pkgsVanilla."${node}" pkgsVanilla.util-linux ];
 
   exactDeps = true;
 

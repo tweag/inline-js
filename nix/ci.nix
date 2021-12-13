@@ -1,27 +1,28 @@
 { sources ? import ./sources.nix { }
 , haskellNix ? import sources.haskell-nix { }
-, pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
+, pkgs ? import haskellNix.sources.nixpkgs-unstable haskellNix.nixpkgsArgs
+, pkgsVanilla ? import haskellNix.sources.nixpkgs-unstable { }
 , ghcs ? [ "ghc865" "ghc884" "ghc8107" "ghc901" ]
 }:
-pkgs.callPackage
-  ({ callPackage, haskell-nix, lib, runCommand, stdenvNoCC }:
+pkgsVanilla.callPackage
+  ({ lib, runCommand, stdenvNoCC }:
     let
-      src = haskell-nix.haskellLib.cleanGit {
+      src = pkgs.haskell-nix.haskellLib.cleanGit {
         name = "inline-js-src";
         src = ../.;
       };
     in
     runCommand "inline-js-ci"
       {
-        paths = [ (callPackage ./jsbits.nix { inherit pkgs; }) ] ++ lib.concatMap
+        paths = [ (import ./jsbits.nix { inherit pkgs pkgsVanilla; }) ]
+          ++ lib.concatMap
           (ghc:
             lib.concatMap
-              (node: [
-                (callPackage ./pkg-set.nix {
-                  inherit pkgs ghc node;
-                }).inline-js-tests.checks.inline-js-tests
-                ((callPackage ../shell.nix { inherit pkgs ghc node; }).overrideAttrs
-                  (_: {
+              (node:
+                [
+                  ((import ../shell.nix {
+                    inherit pkgs pkgsVanilla ghc node;
+                  }).overrideAttrs (_: {
                     name = "inline-js-ci-${ghc}-${node}";
                     phases = [ "unpackPhase" "buildPhase" ];
                     inherit src;
@@ -34,7 +35,13 @@ pkgs.callPackage
                       export > $out
                     '';
                   }))
-              ]) [ "nodejs-17_x" "nodejs-16_x" "nodejs-14_x" "nodejs-12_x" "nodejs-10_x" ])
+                ]) [
+              "nodejs-17_x"
+              "nodejs-16_x"
+              "nodejs-14_x"
+              "nodejs-12_x"
+              "nodejs-10_x"
+            ])
           ghcs;
       } "export > $out")
 { }
