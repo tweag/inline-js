@@ -6,10 +6,7 @@
 , node ? "nodejs_latest"
 }:
 pkgs.haskell-nix.cabalProject {
-  src = pkgs.haskell-nix.haskellLib.cleanGit {
-    name = "inline-js";
-    src = ../.;
-  };
+  src = import ./src.nix { inherit pkgs; };
   compiler-nix-name = ghc;
   modules = [
     {

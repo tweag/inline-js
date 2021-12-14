@@ -6,12 +6,6 @@
 }:
 pkgsVanilla.callPackage
   ({ lib, runCommand, stdenvNoCC }:
-    let
-      src = pkgs.haskell-nix.haskellLib.cleanGit {
-        name = "inline-js-src";
-        src = ../.;
-      };
-    in
     runCommand "inline-js-ci"
       {
         paths = [ (import ./jsbits.nix { inherit pkgs pkgsVanilla; }) ]
@@ -25,7 +19,7 @@ pkgsVanilla.callPackage
                   }).overrideAttrs (_: {
                     name = "inline-js-ci-${ghc}-${node}";
                     phases = [ "unpackPhase" "buildPhase" ];
-                    inherit src;
+                    src = import ./src.nix { inherit pkgs; };
                     buildPhase = ''
                       export HOME=$(mktemp -d)
                       cabal v2-build all -j$NIX_BUILD_CORES --ghc-option=-j$(($NIX_BUILD_CORES > 4 ? 4 : $NIX_BUILD_CORES))
