@@ -7,7 +7,7 @@ on:
 jobs:
 
   nix:
-    name: nix-${{ matrix.os }}-${{ matrix.ghc }}
+    name: nix-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -15,11 +15,6 @@ jobs:
         os:
           - ubuntu-latest
           - macos-11
-        ghc:
-          - ghc901
-          - ghc8107
-          - ghc884
-          - ghc865
     steps:
 
       - name: checkout
@@ -30,6 +25,7 @@ jobs:
         with:
           extra_nix_config: |
             max-jobs = 1
+            cores = 1
             substituters = https://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 
@@ -46,7 +42,7 @@ jobs:
       - name: ci
         id: ci
         run: |
-          nix-build --keep-going --no-out-link --arg ghcs '["${{ matrix.ghc }}"]' nix/ci.nix
+          nix-build --keep-going --no-out-link nix/ci.nix
           echo ::set-output name=haddock::$(nix-build --no-out-link nix/haddock.nix)
 
       - name: upload-artifact
