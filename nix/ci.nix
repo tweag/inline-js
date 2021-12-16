@@ -8,8 +8,10 @@ pkgsVanilla.callPackage
   ({ lib, runCommand, stdenvNoCC }:
     runCommand "inline-js-ci"
       {
-        paths = [ (import ./jsbits.nix { inherit pkgs pkgsVanilla; }) ]
-          ++ lib.concatMap
+        paths = [
+          (import ./jsbits.nix { inherit pkgs pkgsVanilla; })
+          (import ./haddock.nix { inherit pkgs pkgsVanilla; })
+        ] ++ lib.concatMap
           (ghc:
             lib.concatMap
               (node:
