@@ -90,12 +90,13 @@ Supported GHC versions:
 - `ghc-8.8`, tested with `ghc-8.8.4`
 - `ghc-8.10`, tested with `ghc-8.10.7`
 - `ghc-9.0`, tested with `ghc-9.0.1`
+- `ghc-9.2`, tested with `ghc-9.2.1`
 
 Supported platforms:
 
 - Windows 10 x64, tested with Windows Server 2019
 - Linux x64, tested with Ubuntu 20.04
-- macOS x64, tested with macOS 10.15
+- macOS x64, tested with macOS 11.10
 
 Supported `node` versions:
 

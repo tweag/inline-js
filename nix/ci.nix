@@ -2,7 +2,7 @@
 , haskellNix ? import sources.haskell-nix { }
 , pkgs ? import haskellNix.sources.nixpkgs-unstable haskellNix.nixpkgsArgs
 , pkgsVanilla ? import haskellNix.sources.nixpkgs-unstable { }
-, ghcs ? [ "ghc865" "ghc884" "ghc8107" "ghc901" ]
+, ghcs ? [ "ghc865" "ghc884" "ghc8107" "ghc901" "ghc921" ]
 , nodes ? [
     "nodejs-17_x"
     "nodejs-16_x"
@@ -38,7 +38,8 @@ pkgsVanilla.callPackage
                       export > $out
                     '';
                   }))
-                ]) nodes)
+                ])
+              nodes)
           ghcs;
       } "export > $out")
 { }
