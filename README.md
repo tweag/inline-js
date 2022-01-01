@@ -94,7 +94,7 @@ Supported GHC versions:
 
 Supported platforms:
 
-- Windows 10 x64, tested with Windows Server 2019
+- Windows x64, tested with Windows Server 2022
 - Linux x64, tested with Ubuntu 20.04
 - macOS x64, tested with macOS 11.10
 
