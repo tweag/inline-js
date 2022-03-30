@@ -36,7 +36,6 @@ library
     Language.JavaScript.Inline.Core.JSVal
     Language.JavaScript.Inline.Core.Message
     Language.JavaScript.Inline.Core.NodePath
-    Language.JavaScript.Inline.Core.NodeVersion
     Language.JavaScript.Inline.Core.Session
     Language.JavaScript.Inline.Core.Utils
 

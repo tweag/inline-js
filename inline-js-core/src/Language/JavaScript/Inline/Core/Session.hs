@@ -23,7 +23,6 @@ import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.IPC
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.NodePath
-import Language.JavaScript.Inline.Core.NodeVersion
 import Language.JavaScript.Inline.Core.Utils
 import System.Directory
 import System.Environment.Blank
@@ -60,7 +59,6 @@ defaultConfig =
     { nodePath = defNodePath,
       nodeExtraArgs =
         [ "--experimental-modules",
-          "--experimental-worker",
           "--no-warnings",
           "--unhandled-rejections=strict"
         ],
@@ -88,7 +86,6 @@ instance Show Session where
 newSession :: Config -> IO Session
 newSession Config {..} = do
   unless rtsSupportsBoundThreads $ throwIO NotThreadedRTS
-  checkNodeVersion nodePath
   (_root, _p) <- do
     _tmp <- getTemporaryDirectory
     _root <- createTempDirectory _tmp "inline-js"

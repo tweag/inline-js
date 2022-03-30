@@ -8,12 +8,6 @@ data NotThreadedRTS
 
 instance Exception NotThreadedRTS
 
-data NodeVersionUnsupported
-  = NodeVersionUnsupported
-  deriving (Show)
-
-instance Exception NodeVersionUnsupported
-
 newtype EvalError = EvalError
   { evalErrorMessage :: String
   }

@@ -34,7 +34,6 @@ module Language.JavaScript.Inline.Core
     freeJSVal,
 
     -- * Exceptions
-    NodeVersionUnsupported (..),
     EvalError (..),
     SessionClosed (..),
   )
