@@ -5,7 +5,6 @@
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module Language.JavaScript.Inline.Core.Session where
 
@@ -183,7 +182,9 @@ newSession Config {..} = do
     pure _session
 
 sessionSend :: Session -> MessageHS -> IO ()
-sessionSend Session {..} msg = send ipc $ toLazyByteString $ messageHSPut msg
+sessionSend Session {..} msg = do
+  send ipc $ toLazyByteString $ messageHSPut msg
+  touch msg
 
 -- | Create a 'Session' with 'newSession', run the passed computation, then free
 -- the 'Session' with 'killSession'. The return value is forced to WHNF before

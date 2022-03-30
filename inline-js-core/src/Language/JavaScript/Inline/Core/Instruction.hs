@@ -38,7 +38,6 @@ evalWithDecoder _return_type _decoder _session@Session {..} _code = do
         code = _code,
         returnType = _return_type
       }
-  touch _code
   unsafeInterleaveIO $ do
     _resp <- atomically $ takeTMVar _inbox `orElse` readTMVar fatalErrorInbox
     freeStablePtr _sp

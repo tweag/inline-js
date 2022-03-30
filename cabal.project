@@ -5,5 +5,4 @@ packages:
   inline-js-tests
 
 tests:       True
-
 index-state: 2022-03-08T10:53:01Z
