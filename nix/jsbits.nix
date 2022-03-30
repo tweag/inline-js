@@ -1,11 +1,11 @@
 { sources ? import ./sources.nix { }
 , haskellNix ? import sources.haskell-nix { }
-, pkgs ? import sources.nixpkgs haskellNix.nixpkgsArgs
+, pkgs ? import haskellNix.sources.nixpkgs-unstable haskellNix.nixpkgsArgs
 }:
 pkgs.callPackage
-  ({ haskell-nix, nodePackages, nodejs-14_x, stdenvNoCC }:
+  ({ nodePackages, nodejs-14_x, stdenvNoCC }:
     let
-      src = haskell-nix.haskellLib.cleanGit {
+      src = pkgs.haskell-nix.haskellLib.cleanGit {
         name = "inline-js-parser-src";
         src = ../.;
         subDir = "inline-js-parser";

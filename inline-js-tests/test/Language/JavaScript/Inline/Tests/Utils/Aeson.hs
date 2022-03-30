@@ -4,6 +4,7 @@ module Language.JavaScript.Inline.Tests.Utils.Aeson
 where
 
 import qualified Data.Aeson as A
+import qualified Data.Aeson.Key as A
 import GHC.Exts
 import qualified Test.QuickCheck as Q
 import Test.QuickCheck.Instances ()
@@ -15,7 +16,9 @@ genValueWithSize n
     Q.oneof
       [ A.Object . fromList
           <$> sequence
-            [(,) <$> Q.arbitrary <*> genValueWithSize n' | n' <- ns],
+            [ (,) <$> (A.fromText <$> Q.arbitrary) <*> genValueWithSize n'
+              | n' <- ns
+            ],
         A.Array . fromList <$> sequence [genValueWithSize n' | n' <- ns]
       ]
   | n == 1 =
