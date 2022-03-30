@@ -66,7 +66,7 @@ for details.
 - Manage `node` sessions which run the eval server script for Haskell/JavaScript
   interop
 - Evaluate expressions with `require()`/`import()` support
-- Export Haskell functions to async/sync JavaScript functions
+- Export Haskell functions to async JavaScript functions
 - Load third party libraries in user-specified `node_modules`
 - Garbage-collected `JSVal` references in Haskell
 - Support `Promise`-based async evaluation

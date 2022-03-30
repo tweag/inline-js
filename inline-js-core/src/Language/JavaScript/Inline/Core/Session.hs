@@ -50,10 +50,7 @@ data Config = Config
     nodeExtraEnv :: [(String, String)],
     -- | To @require()@ or @import()@ third-party packages, set this to the
     -- @node_modules@ directory path.
-    nodeModules :: Maybe FilePath,
-    -- | Size in MiBs of the buffer for passing results of functions exported by
-    -- 'exportSync'. Most users don't need to care about this. Defaults to 1.
-    nodeExportSyncBufferSize :: Int
+    nodeModules :: Maybe FilePath
   }
   deriving (Show)
 
@@ -68,8 +65,7 @@ defaultConfig =
           "--unhandled-rejections=strict"
         ],
       nodeExtraEnv = [],
-      nodeModules = Nothing,
-      nodeExportSyncBufferSize = 1
+      nodeModules = Nothing
     }
 
 data Session = Session
@@ -106,11 +102,7 @@ newSession Config {..} = do
         { env =
             Just $
               kvDedup $
-                [ ( "INLINE_JS_EXPORT_SYNC_BUFFER_SIZE",
-                    show nodeExportSyncBufferSize
-                  )
-                ]
-                  <> map ("INLINE_JS_NODE_MODULES",) (maybeToList nodeModules)
+                map ("INLINE_JS_NODE_MODULES",) (maybeToList nodeModules)
                   <> nodeExtraEnv
                   <> _env,
           std_in = CreatePipe,
@@ -136,8 +128,7 @@ newSession Config {..} = do
                       sessionSend
                         _session
                         HSEvalResponse
-                          { hsEvalResponseIsSync = hsEvalRequestIsSync,
-                            hsEvalResponseId = hsEvalRequestId,
+                          { hsEvalResponseId = hsEvalRequestId,
                             hsEvalResponseContent = Right r
                           }
                   )
@@ -147,8 +138,7 @@ newSession Config {..} = do
                         sessionSend
                           _session
                           HSEvalResponse
-                            { hsEvalResponseIsSync = hsEvalRequestIsSync,
-                              hsEvalResponseId = hsEvalRequestId,
+                            { hsEvalResponseId = hsEvalRequestId,
                               hsEvalResponseContent = Left err_buf
                             }
                       Right () -> pure ()

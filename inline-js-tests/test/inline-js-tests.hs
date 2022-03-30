@@ -98,16 +98,6 @@ main = do
             r <- eval s [js| $v($x, $y) |]
             r @?= V (A.Array [A.String "asdf", A.String "233"])
             freeJSVal v,
-        testCase "exportSync" $
-          withDefaultSession $ \s -> replicateM_ 0x10 $ do
-            let f :: V -> V -> IO V
-                f x y = eval s [js| [$x, $y] |]
-            v <- exportSync s f
-            let x = V $ A.String "asdf"
-                y = V $ A.String "233"
-            r <- eval s [js| $v($x, $y) |]
-            r @?= V (A.Array [A.String "asdf", A.String "233"])
-            freeJSVal v,
         testCase "stream" $
           withDefaultSession $ \s ->
             bracket (randomFile 0x100000) removeFile $ \p -> do

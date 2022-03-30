@@ -181,15 +181,9 @@ What happens when we attempt to export Haskell functions to JavaScript:
 
 What happens when that JavaScript function is called:
 
-- The Haskell function can be exported as either an async or sync JavaScript
-  function. The async way is recommended. When the JavaScript function is
-  called, it queries the previously cached type information to decide how to
-  marshal the arguments and construct the `HSEvalRequest` payload. The request
-  is sent, and the function returns a `Promise` which fulfills or rejects when
-  the corresponding `HSEvalResponse` is sent back.
-- In some cases, you really really want the JavaScript function to be a sync
-  one: for instance, WebAssembly import functions can't be async. In that case,
-  the JavaScript function will block until the result is available. The blocking
-  mechanism is implemented by shared buffers and atomics, and that's the only
-  reason why we need the main/worker thread distinction in the eval server. It's
-  a very heavy hammer, slow and non-reentrant.
+- The Haskell function can be exported as an async JavaScript
+  function. When the JavaScript function is called, it queries the
+  previously cached type information to decide how to marshal the
+  arguments and construct the `HSEvalRequest` payload. The request is
+  sent, and the function returns a `Promise` which fulfills or rejects
+  when the corresponding `HSEvalResponse` is sent back.

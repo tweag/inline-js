@@ -29,7 +29,6 @@ module Language.JavaScript.Inline.Core
     -- * Exporting Haskell functions to JavaScript
     Export,
     export,
-    exportSync,
 
     -- * Manual resource management
     freeJSVal,

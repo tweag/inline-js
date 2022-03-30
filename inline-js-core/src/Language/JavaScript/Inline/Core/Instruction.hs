@@ -98,8 +98,20 @@ importMJS s p = do
 string :: String -> JSExpr
 string = toJS . EncodedString . stringToLBS
 
-exportAsyncOrSync :: forall f. Export f => Bool -> Session -> f -> IO JSVal
-exportAsyncOrSync _is_sync _session@Session {..} f = do
+-- | Export a Haskell function as a JavaScript async function, and return its
+-- 'JSVal'. Some points to keep in mind:
+--
+-- * The Haskell function itself can call into JavaScript again via 'eval', and
+--   vice versa.
+-- * When called in JavaScript, the Haskell function is run in a forked thread.
+-- * If the Haskell function throws, the JavaScript function will reject with an
+--   @Error@ with the exception string.
+-- * Unlike 'JSVal's returned by 'eval', 'JSVal's returned by 'export' are not
+--   garbage collected, since we don't know when a function is garbage collected
+--   on the @node@ side. These 'JSVal's need to be manually freed using
+--   'freeJSVal'.
+export :: forall f. Export f => Session -> f -> IO JSVal
+export _session@Session {..} f = do
   _inbox <- newEmptyTMVarIO
   let args_type =
         map (\(Dict p) -> (toRawJSType p, rawJSType p)) $
@@ -112,8 +124,7 @@ exportAsyncOrSync _is_sync _session@Session {..} f = do
   sessionSend
     _session
     HSExportRequest
-      { exportIsSync = _is_sync,
-        exportRequestId = _id_inbox,
+      { exportRequestId = _id_inbox,
         exportFuncId = _id_f,
         argsType = args_type
       }
@@ -127,34 +138,3 @@ exportAsyncOrSync _is_sync _session@Session {..} f = do
         newJSVal False _jsval_id $ do
           freeStablePtr _sp_f
           sessionSend _session $ JSValFree _jsval_id
-
--- | Export a Haskell function as a JavaScript async function, and return its
--- 'JSVal'. Some points to keep in mind:
---
--- * The Haskell function itself can call into JavaScript again via 'eval', and
---   vice versa.
--- * When called in JavaScript, the Haskell function is run in a forked thread.
--- * If the Haskell function throws, the JavaScript function will reject with an
---   @Error@ with the exception string.
--- * Unlike 'JSVal's returned by 'eval', 'JSVal's returned by 'export' are not
---   garbage collected, since we don't know when a function is garbage collected
---   on the @node@ side. These 'JSVal's need to be manually freed using
---   'freeJSVal'.
-export :: Export f => Session -> f -> IO JSVal
-export = exportAsyncOrSync False
-
--- | Export a Haskell function as a JavaScript sync function. This is quite
--- heavyweight and in most cases, 'export' is preferrable. 'exportSync' can be
--- useful in certain scenarios when a sync function is desired, e.g. converting
--- a Haskell function to a WebAssembly import.
---
--- Unlike 'export', 'exportSync' has limited reentrancy:
---
--- * The Haskell function may calculate the return value based on the result of
---   calling into JavaScript again, but only synchronous code is supported in
---   this case.
--- * The exported JavaScript sync function must not invoke other exported
---   JavaScript sync functions, either directly or indirectly(Haskell calling
---   into JavaScript again).
-exportSync :: Export f => Session -> f -> IO JSVal
-exportSync = exportAsyncOrSync True

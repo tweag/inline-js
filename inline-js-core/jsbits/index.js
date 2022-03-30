@@ -52,16 +52,8 @@ class JSValContext {
 class MainContext {
   constructor() {
     process.on("uncaughtException", (err) => this.onUncaughtException(err));
-    const exportSyncArrayBuffer = new SharedArrayBuffer(
-      8 +
-        Number.parseInt(process.env.INLINE_JS_EXPORT_SYNC_BUFFER_SIZE, 10) *
-          0x100000
-    );
-    this.exportSyncFlag = new Int32Array(exportSyncArrayBuffer, 0, 1);
-    this.exportSyncBuffer = Buffer.from(exportSyncArrayBuffer, 4);
     this.worker = new worker_threads.Worker(__filename, {
       stdout: true,
-      workerData: exportSyncArrayBuffer,
     });
     this.worker.on("message", (buf_msg) => this.onWorkerMessage(buf_msg));
     this.recvLoop();
@@ -80,17 +72,6 @@ class MainContext {
 
         if (buf_msg.readUInt8(0) === 4) {
           process.stdin.unref();
-        }
-
-        Atomics.wait(this.exportSyncFlag, 0, 2);
-        const export_sync_flag = Atomics.load(this.exportSyncFlag, 0);
-
-        if (export_sync_flag === 1) {
-          this.exportSyncBuffer.writeUInt32LE(buf_msg.length, 0);
-          buf_msg.copy(this.exportSyncBuffer, 4);
-          Atomics.store(this.exportSyncFlag, 0, 2);
-          Atomics.notify(this.exportSyncFlag, 0, 1);
-          continue;
         }
 
         this.worker.postMessage(buf_msg);
@@ -124,9 +105,6 @@ class MainContext {
 
 class WorkerContext {
   constructor() {
-    const exportSyncArrayBuffer = worker_threads.workerData;
-    this.exportSyncFlag = new Int32Array(exportSyncArrayBuffer, 0, 1);
-    this.exportSyncBuffer = Buffer.from(exportSyncArrayBuffer, 4);
     this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
     this.hsCtx = new JSValContext();
@@ -321,8 +299,6 @@ class WorkerContext {
 
       case 1: {
         // HSExportRequest
-        const is_sync = Boolean(buf_msg.readUInt8(p));
-        p += 1;
         const req_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         try {
@@ -357,23 +333,19 @@ class WorkerContext {
             }
 
             const req_buf = Buffer.allocUnsafe(
-              26 +
+              25 +
                 hs_func_args_len * 8 +
                 hs_args_buf.reduce((acc, hs_arg) => acc + hs_arg.length, 0)
             );
 
             const hs_eval_req_promise = newPromise();
             const hs_eval_req_id = this.hsCtx.new(hs_eval_req_promise);
-            if (is_sync) {
-              hs_eval_req_promise.catch(() => {});
-            }
 
             req_buf.writeUInt8(1, 0);
-            req_buf.writeUInt8(Number(is_sync), 1);
-            req_buf.writeBigUInt64LE(hs_eval_req_id, 2);
-            req_buf.writeBigUInt64LE(hs_func_id, 10);
-            req_buf.writeBigUInt64LE(BigInt(hs_func_args_len), 18);
-            let p = 26;
+            req_buf.writeBigUInt64LE(hs_eval_req_id, 1);
+            req_buf.writeBigUInt64LE(hs_func_id, 9);
+            req_buf.writeBigUInt64LE(BigInt(hs_func_args_len), 17);
+            let p = 25;
             for (const hs_arg of hs_args_buf) {
               req_buf.writeBigUInt64LE(BigInt(hs_arg.length), p);
               p += 8;
@@ -381,41 +353,10 @@ class WorkerContext {
               p += hs_arg.length;
             }
 
-            if (is_sync) {
-              Atomics.store(this.exportSyncFlag, 0, 1);
-            }
-
             worker_threads.parentPort.postMessage(req_buf);
 
-            if (is_sync) {
-              while (true) {
-                Atomics.wait(this.exportSyncFlag, 0, 1);
-                const buf_msg_len = this.exportSyncBuffer.readUInt32LE(0);
-                const buf_msg = Buffer.from(
-                  this.exportSyncBuffer.slice(4, 4 + buf_msg_len)
-                );
+            return hs_eval_req_promise;
 
-                this.onParentMessage(buf_msg);
-
-                Atomics.store(
-                  this.exportSyncFlag,
-                  0,
-                  hs_eval_req_promise.fulfilled || hs_eval_req_promise.rejected
-                    ? 0
-                    : 1
-                );
-                Atomics.notify(this.exportSyncFlag, 0, 1);
-
-                if (hs_eval_req_promise.fulfilled) {
-                  return hs_eval_req_promise.value;
-                }
-                if (hs_eval_req_promise.rejected) {
-                  throw hs_eval_req_promise.reason;
-                }
-              }
-            } else {
-              return hs_eval_req_promise;
-            }
           };
 
           const js_func_buf = this.fromJS(js_func, 3);
@@ -434,8 +375,6 @@ class WorkerContext {
 
       case 2: {
         // HSEvalResponse
-        const is_sync = Boolean(buf_msg.readUInt8(p));
-        p += 1;
         const hs_eval_resp_id = buf_msg.readBigUInt64LE(p);
         p += 8;
         const hs_eval_resp_promise = this.hsCtx.get(hs_eval_resp_id);
