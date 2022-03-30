@@ -37,7 +37,7 @@ test-suite inline-js-tests
 
   autogen-modules:  Paths_inline_js_tests
   hs-source-dirs:   test
-  ghc-options:      -Wall -threaded -rtsopts
+  ghc-options:      -Wall -rtsopts
   build-depends:
     , aeson
     , base                  >=4.12 && <5

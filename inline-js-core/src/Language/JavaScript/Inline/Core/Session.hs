@@ -24,10 +24,11 @@ import Language.JavaScript.Inline.Core.IPC
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.NodePath
 import Language.JavaScript.Inline.Core.Utils
+import Language.JavaScript.Inline.Core.WaitForProcess
 import System.Directory
 import System.Environment.Blank
 import System.FilePath
-import System.Process
+import System.Process hiding (waitForProcess)
 
 -- $session-todos
 --
@@ -85,7 +86,6 @@ instance Show Session where
 
 newSession :: Config -> IO Session
 newSession Config {..} = do
-  unless rtsSupportsBoundThreads $ throwIO NotThreadedRTS
   (_root, _p) <- do
     _tmp <- getTemporaryDirectory
     _root <- createTempDirectory _tmp "inline-js"

@@ -38,6 +38,7 @@ library
     Language.JavaScript.Inline.Core.NodePath
     Language.JavaScript.Inline.Core.Session
     Language.JavaScript.Inline.Core.Utils
+    Language.JavaScript.Inline.Core.WaitForProcess
 
   hs-source-dirs:   src
   ghc-options:      -Wall
