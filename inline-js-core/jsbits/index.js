@@ -5,7 +5,6 @@ const path = require("path");
 const string_decoder = require("string_decoder");
 const util = require("util");
 const vm = require("vm");
-const worker_threads = require("worker_threads");
 
 class JSValContext {
   constructor() {
@@ -52,14 +51,13 @@ class JSValContext {
 class MainContext {
   constructor() {
     process.on("uncaughtException", (err) => this.onUncaughtException(err));
-    this.worker = new worker_threads.Worker(__filename, {
-      stdout: true,
-    });
-    this.worker.on("message", (buf_msg) => this.onWorkerMessage(buf_msg));
+    this.worker = new WorkerContext(this);
     this.recvLoop();
   }
 
-  recvLoop() {
+  async recvLoop() {
+    await this.worker.ready;
+
     let buf = Buffer.allocUnsafe(0);
     process.stdin.on("data", (c) => {
       buf = Buffer.concat([buf, c]);
@@ -74,7 +72,7 @@ class MainContext {
           process.stdin.unref();
         }
 
-        this.worker.postMessage(buf_msg);
+        this.worker.onParentMessage(buf_msg);
       }
     });
   }
@@ -104,11 +102,12 @@ class MainContext {
 }
 
 class WorkerContext {
-  constructor() {
+  constructor(parent) {
+    this.parent = parent;
     this.decoder = new string_decoder.StringDecoder("utf-8");
     this.jsval = new JSValContext();
     this.hsCtx = new JSValContext();
-    (async () => {
+    this.ready = (async () => {
       if (process.env.INLINE_JS_NODE_MODULES) {
         await fs.symlink(
           process.env.INLINE_JS_NODE_MODULES,
@@ -116,9 +115,6 @@ class WorkerContext {
           "dir"
         );
       }
-      worker_threads.parentPort.on("message", (buf_msg) =>
-        this.onParentMessage(buf_msg)
-      );
     })();
   }
 
@@ -249,12 +245,12 @@ class WorkerContext {
     if (isPromise(r)) {
       r.then((resp_buf) => {
         if (resp_buf) {
-          worker_threads.parentPort.postMessage(resp_buf);
+          this.parent.onWorkerMessage(resp_buf);
         }
       });
     } else {
       if (r) {
-        worker_threads.parentPort.postMessage(r);
+        this.parent.onWorkerMessage(r);
       }
     }
   }
@@ -353,7 +349,7 @@ class WorkerContext {
               p += hs_arg.length;
             }
 
-            worker_threads.parentPort.postMessage(req_buf);
+            this.parent.onWorkerMessage(req_buf);
 
             return hs_eval_req_promise;
 
@@ -416,7 +412,6 @@ class WorkerContext {
       case 4: {
         // Close
         this.jsval.clear();
-        worker_threads.parentPort.unref();
         return;
       }
 
@@ -466,8 +461,4 @@ function bufferFromArrayBufferView(a) {
   return Buffer.from(a.buffer, a.byteOffset, a.byteLength);
 }
 
-if (worker_threads.isMainThread) {
-  new MainContext();
-} else {
-  new WorkerContext();
-}
+new MainContext();
