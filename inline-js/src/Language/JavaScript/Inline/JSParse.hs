@@ -10,7 +10,7 @@ import Language.JavaScript.Inline.Core
 import UnliftIO
 import UnliftIO.Process
 
-jsParse :: String -> IO (Bool, Bool, [String])
+jsParse :: String -> IO (Bool, [String])
 jsParse src =
   do
     let node_path = nodePath defaultConfig
@@ -19,10 +19,9 @@ jsParse src =
         hClose h
         BS.writeFile p parserSrc
         readProcess node_path [p] src
-    let is_sync_str : is_expr_str : toks = lines o
-        !is_sync = read is_sync_str
+    let is_expr_str : toks = lines o
         !is_expr = read is_expr_str
-    pure (is_sync, is_expr, toks)
+    pure (is_expr, toks)
 
 parserSrc :: ByteString
 parserSrc = $(makeRelativeToProject "jsbits/main.js" >>= embedFile)

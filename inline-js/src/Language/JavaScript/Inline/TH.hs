@@ -35,7 +35,7 @@ fromQuoteExp q =
 inlineJS :: String -> Q Exp
 inlineJS js_code =
   do
-    (is_sync, is_expr, hs_vars) <- runIO $ jsParse js_code
+    (is_expr, hs_vars) <- runIO $ jsParse js_code
     [|
       mconcat
         $( listE
@@ -43,9 +43,7 @@ inlineJS js_code =
                    fromString
                      $( litE
                           ( stringL
-                              ( ( if is_sync
-                                    then "(("
-                                    else "(async ("
+                              ( ( "(async ("
                                 )
                                   <> intercalate
                                     ","

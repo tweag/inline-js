@@ -16,31 +16,17 @@ function tokenize(s) {
 
 const s = await getStdin();
 
-let toks, is_sync, is_expr;
+let toks, is_expr;
 
 try {
-  toks = tokenize(`() => (${s})`);
-  is_sync = true;
+  toks = tokenize(`async () => (${s})`);
   is_expr = true;
 } catch (_) {
-  try {
-    toks = tokenize(`() => {${s}}`);
-    is_sync = true;
-    is_expr = false;
-  } catch (_) {
-    try {
-      toks = tokenize(`async () => (${s})`);
-      is_sync = false;
-      is_expr = true;
-    } catch (_) {
-      toks = tokenize(`async () => {${s}}`);
-      is_sync = false;
-      is_expr = false;
-    }
-  }
+  toks = tokenize(`async () => {${s}}`);
+  is_expr = false;
 }
 
-let o = `${is_sync ? "True" : "False"}\n${is_expr ? "True" : "False"}\n`;
+let o = `${is_expr ? "True" : "False"}\n`;
 toks.forEach((tok) => {
   o = `${o}${tok}\n`;
 });
