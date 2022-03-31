@@ -92,7 +92,7 @@ newSession Config {..} = do
     BS.writeFile _p evalServerSrc
     pure (_root, _p)
   _env <- getEnvironment
-  (Just _wh, Just _rh, _, _ph) <-
+  (Just _wh, Just _rh, Nothing, _ph) <-
     createProcess
       (proc nodePath $ nodeExtraArgs <> [_p])
         { env =
@@ -171,7 +171,7 @@ newSession Config {..} = do
           send _ipc $ toLazyByteString $ messageHSPut Close
           wait_for_exit
         session_kill = do
-          terminateProcess _ph
+          cleanupProcess (Just _wh, Just _rh, Nothing, _ph)
           wait_for_exit
         _session =
           Session
