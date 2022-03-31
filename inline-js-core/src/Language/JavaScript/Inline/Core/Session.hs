@@ -102,7 +102,8 @@ newSession Config {..} = do
                   <> nodeExtraEnv
                   <> _env,
           std_in = CreatePipe,
-          std_out = CreatePipe
+          std_out = CreatePipe,
+          create_group = True
         }
   _err_inbox <- newEmptyTMVarIO
   _exit_inbox <- newEmptyTMVarIO
