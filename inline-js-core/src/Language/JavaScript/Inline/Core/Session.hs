@@ -187,7 +187,7 @@ sessionSend Session {..} msg = do
   touch msg
 
 -- | Create a 'Session' with 'newSession', run the passed computation, then free
--- the 'Session' with 'killSession'. The return value is forced to WHNF before
+-- the 'Session' with 'closeSession'. The return value is forced to WHNF before
 -- freeing the 'Session' to reduce the likelihood of use-after-free errors.
 withSession :: Config -> (Session -> IO r) -> IO r
-withSession c m = bracket (newSession c) killSession (evaluate <=< m)
+withSession c m = bracket (newSession c) closeSession (evaluate <=< m)

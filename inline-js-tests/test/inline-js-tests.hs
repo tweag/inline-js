@@ -46,7 +46,7 @@ main = do
               let buf = "asdf"
               buf' <- (eval @LBS.ByteString) s $ toJS buf
               buf' @?= buf,
-        withResource (newSession defaultConfig) killSession $ \m ->
+        withResource (newSession defaultConfig) closeSession $ \m ->
           testProperty "JSON" $
             forAll (V <$> genValueWithSize 0x400) $ \v ->
               ioProperty $ do
@@ -68,7 +68,7 @@ main = do
                 { nodeModules = Just $ data_dir </> "jsbits" </> "node_modules"
                 }
           )
-          killSession
+          closeSession
           $ \m -> testCase "left-pad" $ do
             s <- m
             (Aeson r :: Aeson String) <-
