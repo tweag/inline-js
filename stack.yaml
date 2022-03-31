@@ -4,3 +4,6 @@ packages:
   - inline-js-core
   - inline-js-examples
   - inline-js-tests
+flags:
+  inline-js-core:
+    smaller-jsval: false

@@ -86,6 +86,7 @@ jobs:
 
       - name: build
         run: |
+          echo "constraints: inline-js-core -smaller-jsval" > cabal.project.local
           C:\msys64\msys2_shell.cmd -mingw64 -defterm -full-path -here -no-start -c "cabal v2-build all"
 
       - name: setup-node-17

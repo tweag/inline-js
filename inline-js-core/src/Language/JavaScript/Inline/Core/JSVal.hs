@@ -1,6 +1,8 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE GHCForeignImportPrim #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE StrictData #-}
 {-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE UnliftedFFITypes #-}
 
 module Language.JavaScript.Inline.Core.JSVal where
 
@@ -28,19 +30,26 @@ import GHC.Types
 --      'JSVal' in the send queue.
 --   3. There is no response message for the 'JSVal' free message. Freeing or
 --      using a non-existent 'JSVal' should result in a fatal error.
-
 -- | An opaque reference of a JavaScript value. Each 'JSVal' is registered with
 -- a finalizer which frees the reference on the @node@ side when it's garbage
 -- collected in Haskell. It's also possible to manually free a 'JSVal' using
 -- 'freeJSVal'.
-data JSVal
-  = JSVal Word64 (MutVar# RealWorld ()) (Weak# ())
+
+#if defined(SMALLER_JSVAL)
+data JSVal = JSVal !Word64 Any (Weak# ())
+#else
+data JSVal = JSVal !Word64 (MutVar# RealWorld ()) (Weak# ())
+#endif
 
 instance Show JSVal where
   show (JSVal i _ _) = "JSVal " <> show i
 
 newJSVal :: Bool -> Word64 -> IO () -> IO JSVal
+#if defined(SMALLER_JSVAL)
+newJSVal gc i (IO f) = IO $ \s0 -> case stg_newJSValzh s0 of
+#else
 newJSVal gc i (IO f) = IO $ \s0 -> case newMutVar# () s0 of
+#endif
   (# s1, v #) ->
     if gc
       then case mkWeak# v () f s1 of
@@ -55,3 +64,7 @@ freeJSVal :: JSVal -> IO ()
 freeJSVal (JSVal _ _ w) = IO $ \s0 -> case finalizeWeak# w s0 of
   (# s1, 0#, _ #) -> (# s1, () #)
   (# s1, _, f #) -> f s1
+
+#if defined(SMALLER_JSVAL)
+foreign import prim "stg_newJSValzh" stg_newJSValzh :: State# RealWorld -> (# State# RealWorld, Any #)
+#endif

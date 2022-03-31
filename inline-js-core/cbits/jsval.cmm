@@ -1,0 +1,16 @@
+#include "Cmm.h"
+
+INFO_TABLE(stg_JSVAL,0,0,PRIM,"JSVAL","JSVAL")
+{ foreign "C" barf("JSVAL object (%p) entered!", R1) never returns; }
+
+stg_newJSValzh ()
+{
+    P_ jv;
+
+    ALLOC_PRIM_ (SIZEOF_StgHeader, stg_newJSValzh);
+
+    jv = Hp - SIZEOF_StgHeader + WDS(1);
+    SET_HDR(jv,stg_JSVAL_info,CCCS);
+
+    return (jv);
+}
