@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -21,6 +22,11 @@ import Language.JavaScript.Inline.Core.EvalServer
 import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.IPC
 import Language.JavaScript.Inline.Core.Message
+#if defined(mingw32_HOST_OS)
+import Language.JavaScript.Inline.Core.NamedPipe.Win32
+#else
+import Language.JavaScript.Inline.Core.NamedPipe.Posix
+#endif
 import Language.JavaScript.Inline.Core.NodePath
 import Language.JavaScript.Inline.Core.Utils
 import Language.JavaScript.Inline.Core.WaitForProcess
@@ -88,19 +94,24 @@ newSession Config {..} = do
     BS.writeFile _p evalServerSrc
     pure (_root, _p)
   _env <- getEnvironment
-  (Just _wh, Just _rh, Nothing, _ph) <-
+  (_wh_path, _wh_get, _wh_cleanup) <- mkNamedPipe False
+  (_rh_path, _rh_get, _rh_cleanup) <- mkNamedPipe True
+  (_, _, _, _ph) <-
     createProcess
       (proc nodePath $ nodeExtraArgs <> [_p])
         { env =
             Just $
               kvDedup $
                 map ("INLINE_JS_NODE_MODULES",) (maybeToList nodeModules)
+                  <> [ ("INLINE_JS_PIPE_INBOUND", _wh_path),
+                       ("INLINE_JS_PIPE_OUTBOUND", _rh_path)
+                     ]
                   <> nodeExtraEnv
                   <> _env,
-          std_in = CreatePipe,
-          std_out = CreatePipe,
           create_group = True
         }
+  _rh <- _rh_get
+  _wh <- _wh_get
   _err_inbox <- newEmptyTMVarIO
   _exit_inbox <- newEmptyTMVarIO
   mdo
@@ -151,6 +162,8 @@ newSession Config {..} = do
             _ <- tryPutTMVar _err_inbox $ Left $ toException SessionClosed
             putTMVar _exit_inbox ec
           removePathForcibly _root
+          _wh_cleanup
+          _rh_cleanup
     _ipc <-
       ipcFork $
         ipcFromHandles

@@ -1,6 +1,6 @@
 "use strict";
 
-const fs = require("fs").promises;
+const fs = require("fs");
 const path = require("path");
 const string_decoder = require("string_decoder");
 const util = require("util");
@@ -56,10 +56,16 @@ class MainContext {
   }
 
   async recvLoop() {
+    this.outbound = await fs.promises.open(
+      process.env.INLINE_JS_PIPE_OUTBOUND,
+      "w"
+    );
+
     await this.worker.ready;
 
+    this.inbound = fs.createReadStream(process.env.INLINE_JS_PIPE_INBOUND);
     let buf = Buffer.allocUnsafe(0);
-    process.stdin.on("data", (c) => {
+    inbound.on("data", (c) => {
       buf = Buffer.concat([buf, c]);
       while (true) {
         if (buf.length < 8) return;
@@ -69,7 +75,7 @@ class MainContext {
         buf = buf.slice(8 + len);
 
         if (buf_msg.readUInt8(0) === 4) {
-          process.stdin.unref();
+          this.inbound.close();
         }
 
         this.worker.onParentMessage(buf_msg);
@@ -82,7 +88,7 @@ class MainContext {
       const buf_send = Buffer.allocUnsafe(8 + buf_msg.length);
       buf_send.writeBigUInt64LE(BigInt(buf_msg.length));
       buf_msg.copy(buf_send, 8);
-      process.stdout.write(buf_send, (err) => (err ? reject(err) : resolve()));
+      this.outbound.write(buf_send, (err) => (err ? reject(err) : resolve()));
     });
   }
 
@@ -109,7 +115,7 @@ class WorkerContext {
     this.hsCtx = new JSValContext();
     this.ready = (async () => {
       if (process.env.INLINE_JS_NODE_MODULES) {
-        await fs.symlink(
+        await fs.promises.symlink(
           process.env.INLINE_JS_NODE_MODULES,
           path.join(__dirname, "node_modules"),
           "dir"
@@ -352,7 +358,6 @@ class WorkerContext {
             this.parent.onWorkerMessage(req_buf);
 
             return hs_eval_req_promise;
-
           };
 
           const js_func_buf = this.fromJS(js_func, 3);
