@@ -23,6 +23,6 @@ mkNamedPipe pipe_inbound = do
   h <- hANDLEToHandle pipe_handle
   pure (pipe_name, pure h, pure ())
 
-foreign import ccall unsafe "mkNamedPipe"
+foreign import ccall unsafe "inline_js_mkNamedPipe"
   c_mkNamedPipe ::
     CBool -> CString -> CSize -> Ptr HANDLE -> IO CBool

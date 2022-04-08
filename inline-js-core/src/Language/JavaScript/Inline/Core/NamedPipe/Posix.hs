@@ -18,6 +18,6 @@ mkNamedPipe pipe_inbound = do
       removePathForcibly pipe_name
     )
 
-foreign import ccall unsafe "mkNamedPipe"
+foreign import ccall unsafe "inline_js_mkNamedPipe"
   c_mkNamedPipe ::
     CString -> CSize -> IO CBool

@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-bool mkNamedPipe(char *pipe_name, size_t pipe_name_length) {
+bool inline_js_mkNamedPipe(char *pipe_name, size_t pipe_name_length) {
   char *env = getenv("TMPDIR");
   char *dest_dir = env ? env : "/tmp";
   if (snprintf(pipe_name, pipe_name_length, "%s/%s", dest_dir,

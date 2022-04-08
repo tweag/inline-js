@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <windows.h>
 
-bool mkNamedPipe(bool pipe_inbound, char *pipe_name, size_t pipe_name_length,
-                 HANDLE *pipe_handle) {
+bool inline_js_mkNamedPipe(bool pipe_inbound, char *pipe_name,
+                           size_t pipe_name_length, HANDLE *pipe_handle) {
   GUID guid;
   if (CoCreateGuid(&guid) != S_OK)
     return false;
