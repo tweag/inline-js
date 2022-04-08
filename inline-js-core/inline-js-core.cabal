@@ -32,6 +32,12 @@ library
     cpp-options: -DSMALLER_JSVAL
     cmm-sources: cbits/jsval.cmm
 
+  if os(windows)
+    c-sources: cbits/win32.c
+
+  else
+    c-sources: cbits/posix.c
+
   exposed-modules:  Language.JavaScript.Inline.Core
   other-modules:
     Language.JavaScript.Inline.Core.Class
@@ -51,7 +57,7 @@ library
   hs-source-dirs:   src
   ghc-options:      -Wall
   build-depends:
-    , base              >=4.12    && <5
+    , base              >=4.12 && <5
     , binary
     , bytestring
     , Cabal
