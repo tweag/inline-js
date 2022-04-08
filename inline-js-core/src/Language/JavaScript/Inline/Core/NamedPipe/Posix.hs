@@ -14,7 +14,12 @@ mkNamedPipe pipe_inbound = do
     peekCString buf_pipe_name
   pure
     ( pipe_name,
-      openBinaryFile pipe_name $ if pipe_inbound then ReadMode else WriteMode,
+      do
+        h <-
+          openBinaryFile pipe_name $
+            if pipe_inbound then ReadMode else WriteMode
+        hSetBuffering h NoBuffering
+        pure h,
       removePathForcibly pipe_name
     )
 

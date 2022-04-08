@@ -21,6 +21,7 @@ mkNamedPipe pipe_inbound = do
       pipe_handle <- peek buf_pipe_handle
       pure (pipe_name, pipe_handle)
   h <- hANDLEToHandle pipe_handle
+  hSetBuffering h NoBuffering
   pure (pipe_name, pure h, pure ())
 
 foreign import ccall unsafe "inline_js_mkNamedPipe"

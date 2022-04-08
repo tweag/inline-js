@@ -37,19 +37,17 @@ instance Show IPC where
 -- message header, which is just a little-endian 64-bit unsigned integer,
 -- representing the message byte length (sans header). Then follows the actual
 -- message.
-
 -- The 'Handle' for send is flushed after each 'send' call to allow the remote
 -- device to get the 'Msg' immediately.
 ipcFromHandles :: Handle -> Handle -> IPC -> IPC
 ipcFromHandles h_send h_recv ipc =
   ipc
-    { send = \msg -> do
+    { send = \msg ->
         BS.hPut h_send $
           LBS.toStrict $
             toLazyByteString $
               storablePut (LBS.length msg)
-                <> lazyByteString msg
-        hFlush h_send,
+                <> lazyByteString msg,
       recv = do
         len <- runGet storableGet <$> hGetExact h_recv 8
         hGetExact h_recv $ fromIntegral (len :: Word64)
