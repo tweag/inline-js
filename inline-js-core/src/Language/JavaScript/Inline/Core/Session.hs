@@ -3,7 +3,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE StrictData #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 
 module Language.JavaScript.Inline.Core.Session where
@@ -18,6 +17,7 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Maybe
 import Distribution.Simple.Utils
 import Foreign
+import Language.JavaScript.Inline.Core.EvalServer
 import Language.JavaScript.Inline.Core.Exception
 import Language.JavaScript.Inline.Core.IPC
 import Language.JavaScript.Inline.Core.Message
@@ -33,10 +33,6 @@ import System.Process hiding (waitForProcess)
 --
 -- * Using closed sessions throw immediately
 -- * Handle errors in send/recv thread
-
-{-# NOINLINE evalServerSrc #-}
-evalServerSrc :: BS.ByteString
-evalServerSrc = $(embedFile $ "jsbits" </> "index.js")
 
 data Config = Config
   { -- | Path to the @node@ executable. Defaults to @node@.

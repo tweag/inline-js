@@ -45,6 +45,7 @@ library
   other-modules:
     Language.JavaScript.Inline.Core.Class
     Language.JavaScript.Inline.Core.Dict
+    Language.JavaScript.Inline.Core.EvalServer
     Language.JavaScript.Inline.Core.Exception
     Language.JavaScript.Inline.Core.Export
     Language.JavaScript.Inline.Core.Import
