@@ -21,7 +21,7 @@ lazyStream _session _stream = do
       _session
       (lazyOnError . toException . userError . show @EncodedString)
   lazySetFinalizer $ for_ [_on_data, _on_end, _on_error] freeJSVal
-  eval @()
+  evaluate =<< eval @()
     _session
     [js|
       $_stream.on("data", $_on_data);

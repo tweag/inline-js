@@ -11,6 +11,7 @@ import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
 import Data.Proxy
 import Foreign
+import GHC.IO
 import Language.JavaScript.Inline.Core.Class
 import Language.JavaScript.Inline.Core.Dict
 import Language.JavaScript.Inline.Core.Export
@@ -19,7 +20,6 @@ import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
 import Language.JavaScript.Inline.Core.Utils
 import System.Directory
-import System.IO.Unsafe
 
 evalWithDecoder ::
   RawJSType ->
@@ -136,4 +136,4 @@ export _session@Session {..} f = do
         _jsval_id <- runGetExact getWord64host _jsval_id_buf
         newJSVal False _jsval_id $ do
           freeStablePtr _sp_f
-          sessionSend _session $ JSValFree _jsval_id
+          catchAny (sessionSend _session $ JSValFree _jsval_id) (\_ -> pure ())

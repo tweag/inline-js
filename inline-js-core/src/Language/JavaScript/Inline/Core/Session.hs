@@ -162,8 +162,6 @@ newSession Config {..} = do
             _ <- tryPutTMVar _err_inbox $ Left $ toException SessionClosed
             putTMVar _exit_inbox ec
           removePathForcibly _root
-          _wh_cleanup
-          _rh_cleanup
     _ipc <-
       ipcFork $
         ipcFromHandles
@@ -175,7 +173,10 @@ newSession Config {..} = do
               onRecv = on_recv,
               postClose = ipc_post_close
             }
-    let wait_for_exit = atomically $ () <$ readTMVar _exit_inbox
+    let wait_for_exit = do
+          _wh_cleanup
+          atomically $ () <$ readTMVar _exit_inbox
+          _rh_cleanup
         session_close = do
           send _ipc $ toLazyByteString $ messageHSPut Close
           wait_for_exit

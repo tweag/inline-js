@@ -29,17 +29,6 @@ class JSValContext {
     if (!this.jsvalMap.delete(i)) {
       throw new Error(`jsval.free(${i}): invalid key`);
     }
-
-    if (i === this.jsvalLast) {
-      if (this.jsvalMap.size > 0) {
-        --this.jsvalLast;
-        while (!this.jsvalMap.has(this.jsvalLast)) {
-          --this.jsvalLast;
-        }
-      } else {
-        this.jsvalLast = 0n;
-      }
-    }
   }
 
   clear() {
@@ -65,7 +54,7 @@ class MainContext {
 
     this.inbound = fs.createReadStream(process.env.INLINE_JS_PIPE_INBOUND);
     let buf = Buffer.allocUnsafe(0);
-    inbound.on("data", (c) => {
+    this.inbound.on("data", (c) => {
       buf = Buffer.concat([buf, c]);
       while (true) {
         if (buf.length < 8) return;
@@ -75,7 +64,10 @@ class MainContext {
         buf = buf.slice(8 + len);
 
         if (buf_msg.readUInt8(0) === 4) {
-          this.inbound.close();
+          this.inbound.destroy();
+          this.worker.jsval.clear();
+          this.worker.hsCtx.clear();
+          return;
         }
 
         this.worker.onParentMessage(buf_msg);
@@ -84,12 +76,10 @@ class MainContext {
   }
 
   send(buf_msg) {
-    return new Promise((resolve, reject) => {
-      const buf_send = Buffer.allocUnsafe(8 + buf_msg.length);
-      buf_send.writeBigUInt64LE(BigInt(buf_msg.length));
-      buf_msg.copy(buf_send, 8);
-      this.outbound.write(buf_send, (err) => (err ? reject(err) : resolve()));
-    });
+    const buf_send = Buffer.allocUnsafe(8 + buf_msg.length);
+    buf_send.writeBigUInt64LE(BigInt(buf_msg.length));
+    buf_msg.copy(buf_send, 8);
+    return this.outbound.write(buf_send);
   }
 
   onWorkerMessage(buf_msg) {
@@ -417,6 +407,7 @@ class WorkerContext {
       case 4: {
         // Close
         this.jsval.clear();
+        this.hsCtx.clear();
         return;
       }
 

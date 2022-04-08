@@ -9,6 +9,7 @@ import Data.Binary.Get
 import qualified Data.ByteString.Lazy as LBS
 import Data.Proxy
 import Data.String
+import GHC.IO
 import Language.JavaScript.Inline.Core.JSVal
 import Language.JavaScript.Inline.Core.Message
 import Language.JavaScript.Inline.Core.Session
@@ -84,4 +85,5 @@ instance FromJS JSVal where
   toRawJSType _ = "a => a"
   fromJS _session _jsval_id_buf = do
     _jsval_id <- runGetExact getWord64host _jsval_id_buf
-    newJSVal True _jsval_id (sessionSend _session $ JSValFree _jsval_id)
+    newJSVal True _jsval_id $
+      catchAny (sessionSend _session $ JSValFree _jsval_id) (\_ -> pure ())
