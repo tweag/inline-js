@@ -59,7 +59,6 @@ library
     , directory
     , filepath
     , ghc-prim
-    , network           >=3.1.2.7 && <5
     , process
     , stm
     , template-haskell
