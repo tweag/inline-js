@@ -33,10 +33,13 @@ library
     cmm-sources: cbits/jsval.cmm
 
   if os(windows)
-    c-sources: cbits/win32.c
+    build-depends: Win32
+    c-sources:     cbits/win32.c
+    other-modules: Language.JavaScript.Inline.Core.NamedPipe.Win32
 
   else
-    c-sources: cbits/posix.c
+    c-sources:     cbits/posix.c
+    other-modules: Language.JavaScript.Inline.Core.NamedPipe.Posix
 
   exposed-modules:  Language.JavaScript.Inline.Core
   other-modules:
