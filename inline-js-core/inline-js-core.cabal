@@ -33,7 +33,6 @@ library
     cmm-sources: cbits/jsval.cmm
 
   if os(windows)
-    build-depends: Win32
     c-sources:     cbits/win32.c
     other-modules: Language.JavaScript.Inline.Core.NamedPipe.Win32
 
